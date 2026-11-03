@@ -59,9 +59,13 @@ for app in "$SYSTEM_APPS"/*.desktop; do
         fi
     fi
 
-    # 1. Teď už můžeme bezpečně zkopírovat (přepíšeme jen viditelné)
-    cp -f "$app" "$local_file"
+    # 1. Zkopírujeme jen tehdy, pokud soubor lokálně ještě neexistuje.
+    # Tím zachráníme naše upravené názvy a ikony před smazáním!
+    if [ ! -f "$local_file" ]; then
+        cp "$app" "$local_file"
+    fi
     chmod +x "$local_file"
+
 
     # --- FILTR 2: Blacklist (podle názvu) ---
     if echo "$filename" | grep -qE "$BLACKLIST"; then
