@@ -510,6 +510,49 @@ lxqt_setup_apps_and_defaults() {
 
     # Ošetření práv na závěr
     chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.local" 2>/dev/null || true
+
+    # Změna názvu u aplikací pro uživatelskou intuitivnost
+    local APP_NAMES_CONF="$CONTENTS_DIR/lxqt/config/app-names.conf"
+    
+    if [ -f "$APP_NAMES_CONF" ]; then
+        log "Aplikuji české a intuitivní názvy aplikací z app-names.conf..."
+        local CURRENT_DESKTOP=""
+        
+        while IFS= read -r line || [ -n "$line" ]; do
+            # Vyčištění řádku od bílých znaků a \r (Windows formátování)
+            line=$(echo "$line" | tr -d '\r' | xargs)
+            
+            # Přeskočení prázdných řádků a komentářů
+            [[ -z "$line" || "$line" =~ ^# ]] && continue
+            
+            # Detekce sekce [neco.desktop]
+            if [[ "$line" =~ ^\[(.*\.desktop)\]$ ]]; then
+                CURRENT_DESKTOP="${BASH_REMATCH[1]}"
+                
+                # Pokud spouštěč v lokální složce ještě není, zkusíme ho stáhnout ze systému
+                if [ ! -f "$LOCAL_APPS/$CURRENT_DESKTOP" ] && [ -f "/usr/share/applications/$CURRENT_DESKTOP" ]; then
+                    cp "/usr/share/applications/$CURRENT_DESKTOP" "$LOCAL_APPS/" || true
+                fi
+                
+            # Zpracování klíč=hodnota, pokud máme aktivní a existující desktop soubor
+            elif [ -n "$CURRENT_DESKTOP" ] && [ -f "$LOCAL_APPS/$CURRENT_DESKTOP" ] && [[ "$line" == *"="* ]]; then
+                local KEY="${line%%=*}"
+                local VALUE="${line#*=}"
+                
+                # 1. Smaže všechny existující řádky s tímto klíčem (i případné Name[cs]= atd.)
+                sed -i "/^${KEY}\(\[.*\]\)\?=/d" "$LOCAL_APPS/$CURRENT_DESKTOP"
+                
+                # 2. Vloží nový klíč=hodnota bezpečně hned pod [Desktop Entry]
+                sed -i "/^\[Desktop Entry\]/a ${KEY}=${VALUE}" "$LOCAL_APPS/$CURRENT_DESKTOP"
+            fi
+        done < "$APP_NAMES_CONF"
+        
+        # Oprava vlastnictví pro jistotu a vynucený update databáze spouštěčů
+        chown -R "$REAL_USER:$REAL_USER" "$LOCAL_APPS" 2>/dev/null || true
+        su - "$REAL_USER" -c "update-desktop-database ~/.local/share/applications" || true
+    else
+        log "UPOZORNĚNÍ: Soubor $APP_NAMES_CONF nebyl nalezen."
+    fi
 }
 
 prepare_system() {
@@ -531,7 +574,7 @@ prepare_system() {
     fi
 
     apt-get update -qq || true
-    apt-get install -y sudo curl wget dpkg-dev git dbus-x11 numlockx plymouth plymouth-themes network-manager
+    apt-get install -y sudo curl wget dpkg-dev git dbus-x11 numlockx plymouth plymouth-themes network-manager ntfs-3g
     usermod -aG sudo,audio,video,plugdev "$REAL_USER" || true
 
     # Likvidace ifupdown
@@ -557,7 +600,13 @@ prepare_system() {
         if ping -c 1 8.8.8.8 &> /dev/null; then break; fi
         sleep 2
     done
-}
+
+    # 2. Zakázání zabugovaného systémového ntfs3 ovladače
+    echo "blacklist ntfs3" | sudo tee /etc/modprobe.d/disable-ntfs3.conf
+
+    # 3. Propsání změn do bootovací image
+    sudo update-initramfs -u
+    }
 
 # === 2. INSTALACE BALÍČKŮ A PROHLÍŽEČŮ ===
 
