@@ -59,14 +59,17 @@ init_setup() {
         while true; do
             echo "1) KDE Plasma"
             echo "2) LXQT"
-            read -p "Zadej číslo (1 nebo 2): " DISTRO_ANS
+            echo "3) XFCE"
+            read -p "Zadej číslo: " DISTRO_ANS
             case "$DISTRO_ANS" in
                 1) DESKTOP_ENV="PLASMA"; DESKTOP_STR="KDE Plasma"; break ;;
                 2) DESKTOP_ENV="LXQT"; DESKTOP_STR="LXQt"; break ;;
+                3) DESKTOP_ENV="XFCE"; DESKTOP_STR="XFCE"; break ;;
                 r|R) continue 2 ;;
-                *) echo -e "\033[1;31mNeplatná volba! Zadej 1, 2 nebo R.\033[0m" ;;
+                *) echo -e "\033[1;31mNeplatná volba! Zadej 1, 2, 3 nebo R.\033[0m" ;;
             esac
         done
+
 
         echo "--------------------------------------------------"
         echo "2. Vyber prohlížeč"
@@ -1489,6 +1492,39 @@ lxqt_drive_automount() {
     done
 }
 
+configure_xfce() {
+    log "=== ZAHAJUJI KONFIGURACI ČISTÉHO XFCE ==="
+    
+    local XFCE_CONF_SRC="$CONTENTS_DIR/xfce/config/xfce4"
+    local TARGET_CONF_DIR="$USER_HOME/.config/xfce4"
+
+    # 1. Pojistka: vytvoření základní .config složky, kdyby náhodou neexistovala
+    mkdir -p "$USER_HOME/.config"
+
+    if [ -d "$XFCE_CONF_SRC" ]; then
+        log "Kopíruji vyklikanou XFCE konfiguraci (panel, whiskermenu, klávesnice, plocha)..."
+        
+        # 2. Nemilosrdné smazání staré složky (pokud existuje), aby se to nesmíchalo s balastem
+        rm -rf "$TARGET_CONF_DIR"
+        
+        # 3. Zkopírování tvé čisté složky z projektu k uživateli
+        cp -r "$XFCE_CONF_SRC" "$USER_HOME/.config/"
+        
+        # 4. KRITICKÉ: Nastavení vlastníka, aby XFCE neshodilo práva (musí patřit uživateli, ne rootovi)
+        chown -R "$REAL_USER:$REAL_USER" "$TARGET_CONF_DIR"
+        
+        log "XFCE konfigurace úspěšně nasazena."
+    else
+        log "CHYBA: Zdrojová složka $XFCE_CONF_SRC nebyla nalezena!"
+    fi
+
+    # Sem si pak časem můžeš přidat volání tvých dalších skriptů, 
+    # např. setup_apps_and_defaults, pokud je přeneseš z LXQt.
+    
+    log "=== KONFIGURACE XFCE BYLA ÚSPĚŠNĚ DOKONČENA ==="
+}
+
+
 configure_lxqt() {
     log "=== ZAHAJUJI KOMPLEXNÍ KONFIGURACI LXQT ==="
     
@@ -1508,10 +1544,6 @@ configure_lxqt() {
     
     log "=== KONFIGURACE LXQT BYLA ÚSPĚŠNĚ DOKONČENA ==="
 }
-
-# ==============================================================================
-# KONFIGURACE KDE PLASMA
-# ==============================================================================
 
 configure_plasma() {
     log "Aplikuji specifické nastavení pro Plasmu..."
@@ -2086,9 +2118,12 @@ main() {
 
     if [ "$DESKTOP_ENV" == "PLASMA" ]; then
         configure_plasma
-    else
+    elif [ "$DESKTOP_ENV" == "LXQT" ]; then
         configure_lxqt
+    else
+        configure_xfce
     fi
+
     setup_display_manager
     setup_boot
     admin_security
