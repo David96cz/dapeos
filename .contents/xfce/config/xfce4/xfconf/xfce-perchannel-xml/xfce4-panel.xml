@@ -52,10 +52,10 @@
       <property name="menu-width" type="int" value="450"/>
       <property name="menu-height" type="int" value="450"/>
       <property name="recent" type="array">
+        <value type="string" value="xfce-ui-settings.desktop"/>
         <value type="string" value="xfce4-terminal.desktop"/>
         <value type="string" value="system-config-printer.desktop"/>
         <value type="string" value="xfce4-taskmanager.desktop"/>
-        <value type="string" value="xfce-ui-settings.desktop"/>
         <value type="string" value="vlc.desktop"/>
         <value type="string" value="org.gnome.gThumb.desktop"/>
         <value type="string" value="panel-preferences.desktop"/>
@@ -73,7 +73,7 @@
       </property>
     </property>
     <property name="plugin-2" type="string" value="clock">
-      <property name="digital-date-format" type="string" value="%d/%m/%Y"/>
+      <property name="digital-date-format" type="string" value="%d.%m.%Y"/>
       <property name="digital-layout" type="uint" value="1"/>
       <property name="digital-time-format" type="string" value="%_H:%M"/>
       <property name="digital-date-font" type="string" value="Sans 8"/>
