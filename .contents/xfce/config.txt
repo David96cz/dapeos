@@ -1,5 +1,5 @@
 [CORE_PACKAGES]
-lightdm lightdm-gtk-greeter xfce4-session xfwm4 xfdesktop4 xfce4-panel xfce4-settings xfconf xfce4-whiskermenu-plugin xfce4-terminal xfce4-notifyd thunar thunar-volman thunar-archive-plugin gvfs gvfs-backends gvfs-fuse udisks2 gnome-disk-utility network-manager-gnome blueman pulseaudio pavucontrol alsa-utils brightnessctl arc-theme papirus-icon-theme fonts-liberation
+lightdm lightdm-gtk-greeter xfce4-session xfwm4 xfdesktop4 xfce4-panel xfce4-settings xfconf xfce4-whiskermenu-plugin xfce4-terminal xfce4-notifyd thunar thunar-volman thunar-archive-plugin gvfs gvfs-backends gvfs-fuse udisks2 gnome-disk-utility network-manager-gnome blueman pulseaudio pavucontrol alsa-utils brightnessctl arc-theme papirus-icon-theme fonts-liberation desktop-base adwaita-icon-theme hicolor-icon-theme policykit-1-gnome
 
 [EXTRA_PACKAGES]
 xfce4-taskmanager galculator cheese gdebi icoutils ffmpegthumbnailer gthumb cabextract yad libnotify-bin flameshot copyq python3-pyqt5 python3-pexpect
