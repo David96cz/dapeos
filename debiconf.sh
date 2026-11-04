@@ -1549,6 +1549,8 @@ configure_xfce() {
         log "CHYBA: Zdrojová složka $XFCE_CONF_SRC nebyla nalezena!"
     fi
 
+    xfce_setup_apps_and_defaults
+
     # 4. KRITICKÉ: Kobercový nálet na práva. 
     # Vrací uživateli celou .config, .cache a .local složku zpět, jinak XFCE a GTK padají při zápisu!
     chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local" 2>/dev/null || true
