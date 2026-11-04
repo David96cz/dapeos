@@ -1134,57 +1134,19 @@ lxqt_setup_appearance() {
     fi
 
     # 1. Konfigurace GTK-3 pro Thunar a systém (ikony Papirus, Adwaita, světlý režim)
+     # 1. Zápis do gtk-3.0/settings.ini
     sudo -u "$REAL_USER" mkdir -p "$USER_HOME/.config/gtk-3.0"
-    sudo -u "$REAL_USER" bash -c "cat << 'EOF' > $USER_HOME/.config/gtk-3.0/settings.ini
-[Settings]
-gtk-icon-theme-name = Papirus
-gtk-theme-name = Adwaita
-gtk-application-prefer-dark-theme = false
-EOF"
+    sudo -u "$REAL_USER" printf "[Settings]\ngtk-icon-theme-name = Papirus\ngtk-theme-name = Adwaita\ngtk-application-prefer-dark-theme = false\n" > "$USER_HOME/.config/gtk-3.0/settings.ini"
 
     # 2. Vytvoření složek pro XFCE konfiguraci
     sudo -u "$REAL_USER" mkdir -p "$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
 
     # 3. Zápis ikon (Papirus) přímo do xsettings.xml
-    sudo -u "$REAL_USER" bash -c "cat << 'EOF' > $USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
-<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<channel name=\"xsettings\" version=\"1.0\">
-  <property name=\"Net\" type=\"empty\">
-    <property name=\"IconThemeName\" type=\"string\" value=\"Papirus\"/>
-  </property>
-</channel>
-EOF"
+    sudo -u "$REAL_USER" printf '<?xml version="1.0" encoding="UTF-8"?>\n<channel name="xsettings" version="1.0">\n  <property name="Net" type="empty">\n    <property name="IconThemeName" type="string" value="Papirus"/>\n  </property>\n</channel>\n' > "$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml"
 
     # 4. Zápis tapety a viditelnosti ikon na ploše přímo do xfce4-desktop.xml
-    sudo -u "$REAL_USER" bash -c "cat << 'EOF' > $USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml
-<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<channel name=\"xfce4-desktop\" version=\"1.0\">
-  <property name=\"desktop-icons\" type=\"empty\">
-    <property name=\"icon-theme-name\" type=\"string\" value=\"Papirus\"/>
-    <property name=\"file-icons\" type=\"empty\">
-      <property name=\"show-filesystem\" type=\"bool\" value=\"false\"/>
-      <property name=\"show-trash\" type=\"bool\" value=\"true\"/>
-      <property name=\"show-removable\" type=\"bool\" value=\"false\"/>
-    </property>
-  </property>
-  <property name=\"backdrop\" type=\"empty\">
-    <property name=\"screen0\" type=\"empty\">
-      <property name=\"monitor0\" type=\"empty\">
-        <property name=\"workspace0\" type=\"empty\">
-          <property name=\"last-image\" type=\"string\" value=\"/usr/share/backgrounds/wallpaper.png\"/>
-          <property name=\"image-style\" type=\"int\" value=\"5\"/>
-        </property>
-      </property>
-      <property name=\"monitorVirtual-1\" type=\"empty\">
-        <property name=\"workspace0\" type=\"empty\">
-          <property name=\"last-image\" type=\"string\" value=\"/usr/share/backgrounds/wallpaper.png\"/>
-          <property name=\"image-style\" type=\"int\" value=\"5\"/>
-        </property>
-      </property>
-    </property>
-  </property>
-</channel>
-EOF"
+    sudo -u "$REAL_USER" printf '<?xml version="1.0" encoding="UTF-8"?>\n<channel name="xfce4-desktop" version="1.0">\n  <property name="desktop-icons" type="empty">\n    <property name="icon-theme-name" type="string" value="Papirus"/>\n    <property name="file-icons" type="empty">\n      <property name="show-filesystem" type="bool" value="false"/>\n      <property name="show-trash" type="bool" value="true"/>\n      <property name="show-removable" type="bool" value="false"/>\n    </property>\n  </property>\n  <property name="backdrop" type="empty">\n    <property name="screen0" type="empty">\n      <property name="monitor0" type="empty">\n        <property name="workspace0" type="empty">\n          <property name="last-image" type="string" value="/usr/share/backgrounds/wallpaper.png"/>\n          <property name="image-style" type="int" value="5"/>\n        </property>\n      </property>\n      <property name="monitorVirtual-1" type="empty">\n        <property name="workspace0" type="empty">\n          <property name="last-image" type="string" value="/usr/share/backgrounds/wallpaper.png"/>\n          <property name="image-style" type="int" value="5"/>\n        </property>\n      </property>\n    </property>\n  </property>\n</channel>\n' > "$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
+
 
     # 3. Architektura panelu
     local CONF_SRC="$CONTENTS_DIR/lxqt/config"
@@ -1501,11 +1463,14 @@ configure_xfce() {
     # 1. Pojistka: vytvoření základní .config složky, kdyby náhodou neexistovala
     mkdir -p "$USER_HOME/.config"
 
-    if [ -d "$XFCE_CONF_SRC" ]; then
+        if [ -d "$XFCE_CONF_SRC" ]; then
         log "Kopíruji vyklikanou XFCE konfiguraci (panel, whiskermenu, klávesnice, plocha)..."
         
-        # 2. Nemilosrdné smazání staré složky (pokud existuje), aby se to nesmíchalo s balastem
-        rm -rf "$TARGET_CONF_DIR"
+        # 1.5 Odstřelíme démona nastavení, který drží soubory pod zámkem
+        killall xfconfd 2>/dev/null || true
+
+        # 2. Nemilosrdné smazání s pojistkou (|| true zabrání pádu celého skriptu)
+        rm -rf "$TARGET_CONF_DIR" 2>/dev/null || true
         
         # 3. Zkopírování tvé čisté složky z projektu k uživateli
         cp -r "$XFCE_CONF_SRC" "$USER_HOME/.config/"
@@ -1514,6 +1479,7 @@ configure_xfce() {
         chown -R "$REAL_USER:$REAL_USER" "$TARGET_CONF_DIR"
         
         log "XFCE konfigurace úspěšně nasazena."
+
     else
         log "CHYBA: Zdrojová složka $XFCE_CONF_SRC nebyla nalezena!"
     fi
@@ -1523,7 +1489,6 @@ configure_xfce() {
     
     log "=== KONFIGURACE XFCE BYLA ÚSPĚŠNĚ DOKONČENA ==="
 }
-
 
 configure_lxqt() {
     log "=== ZAHAJUJI KOMPLEXNÍ KONFIGURACI LXQT ==="

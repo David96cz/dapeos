@@ -12,6 +12,9 @@ configs:
       width: 1024
       height: 768
   icons:
+    "/home/david/Plocha/wallpaper.png":
+      row: 4
+      col: 3
     "/home/david":
       row: 0
       col: 0
