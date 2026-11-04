@@ -551,15 +551,20 @@ app_names() {
                 
             # Zpracování klíč=hodnota, pokud máme aktivní a existující desktop soubor
             elif [ -n "$CURRENT_DESKTOP" ] && [ -f "$LOCAL_APPS/$CURRENT_DESKTOP" ] && [[ "$line" == *"="* ]]; then
-                local KEY="${line%%=*}"
-                local VALUE="${line#*=}"
-                
-                # 1. Smaže všechny existující řádky s tímto klíčem (i případné Name[cs]= atd.)
-                sed -i "/^${KEY}\(\[.*\]\)\?=/d" "$LOCAL_APPS/$CURRENT_DESKTOP"
-                
-                # 2. Vloží nový klíč=hodnota bezpečně hned pod [Desktop Entry]
-                sed -i "/^\[Desktop Entry\]/a ${KEY}=${VALUE}" "$LOCAL_APPS/$CURRENT_DESKTOP"
-            fi
+            KEY="${line%%=*}"
+            VALUE="${line#*=}"
+            
+            # OPRAVA: Převede Name[cs] na Name\[cs\], aby to sed pochopil doslovně
+            SAFE_KEY=$(echo "$KEY" | sed 's/\[/\\[/g; s/\]/\\]/g')
+            
+            # 1. Odstraní z cílového souboru původní řádek (aby se to netlouklo)
+            sed -i "/^${SAFE_KEY}=/d" "$LOCAL_APPS/$CURRENT_DESKTOP"
+            
+            # 2. Vloží nový řádek z tvého conf souboru hned pod [Desktop Entry]
+            sed -i "/^\[Desktop Entry\]/a ${KEY}=${VALUE}" "$LOCAL_APPS/$CURRENT_DESKTOP"
+            
+            echo "  -> Nastaveno: $KEY=$VALUE"
+        fi
         done < "$APP_NAMES_CONF"
         
         # Oprava vlastnictví pro jistotu a vynucený update databáze spouštěčů
