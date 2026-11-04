@@ -1571,6 +1571,13 @@ configure_xfce() {
         log "CHYBA: Zdrojová složka $XFCE_CONF_SRC nebyla nalezena!"
     fi
 
+    local SCRIPTS_SRC="$CONTENTS_DIR/xfce/scripts"
+    mkdir -p "$USER_HOME/.local/bin"
+    if [ -d "$SCRIPTS_SRC" ]; then
+        cp -u "$SCRIPTS_SRC/"* "$USER_HOME/.local/bin/" 2>/dev/null || true
+        chmod +x "$USER_HOME/.local/bin/"* 2>/dev/null || true
+    fi
+
     xfce_setup_apps_and_defaults
     albert_peazip_config
     app_names
