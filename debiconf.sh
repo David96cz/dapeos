@@ -433,7 +433,15 @@ lxqt_setup_apps_and_defaults() {
         done
     fi
 
-    # --- KONFIGURACE ALBERT A PEAZIP ---
+    albert_peazip_config
+    app_names
+
+    # Ošetření práv na závěr
+    chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.local" 2>/dev/null || true
+}
+
+albert_peazip_config() {
+        # --- KONFIGURACE ALBERT A PEAZIP ---
     log "Nasazuji konfigurace pro Albert a PeaZip..."
     
     local ALBERT_SRC="$CONTENTS_DIR/lxqt/config/albert.conf"
@@ -462,60 +470,64 @@ lxqt_setup_apps_and_defaults() {
     fi
 
     # PeaZip
-    local PEAZIP_SRC="$CONTENTS_DIR/lxqt/config/peazip.conf"
-    local PEAZIP_DEST="$USER_HOME/.config/peazip/conf.txt"
-    if [ -f "$PEAZIP_SRC" ]; then
-        mkdir -p "$(dirname "$PEAZIP_DEST")"
-        cp "$PEAZIP_SRC" "$PEAZIP_DEST"
-        sed -i "s|/home/david|$USER_HOME|g" "$PEAZIP_DEST"
+    # local PEAZIP_SRC="$CONTENTS_DIR/lxqt/config/peazip.conf"
+    # local PEAZIP_DEST="$USER_HOME/.config/peazip/conf.txt"
+    # if [ -f "$PEAZIP_SRC" ]; then
+    #     mkdir -p "$(dirname "$PEAZIP_DEST")"
+    #     cp "$PEAZIP_SRC" "$PEAZIP_DEST"
+    #     sed -i "s|/home/david|$USER_HOME|g" "$PEAZIP_DEST"
         
-        # Dynamický jazyk PeaZipu
-        local PEAZIP_LANG="en.txt"
-        case "${SYS_LANG_CODE,,}" in
-            cs*) PEAZIP_LANG="cz.txt" ;;
-            sk*) PEAZIP_LANG="sk.txt" ;;
-            de*) PEAZIP_LANG="de.txt" ;;
-            fr*) PEAZIP_LANG="fr.txt" ;;
-            es*) PEAZIP_LANG="es.txt" ;;
-            pl*) PEAZIP_LANG="pl.txt" ;;
-        esac
+    #     # Dynamický jazyk PeaZipu
+    #     local PEAZIP_LANG="en.txt"
+    #     case "${SYS_LANG_CODE,,}" in
+    #         cs*) PEAZIP_LANG="cz.txt" ;;
+    #         sk*) PEAZIP_LANG="sk.txt" ;;
+    #         de*) PEAZIP_LANG="de.txt" ;;
+    #         fr*) PEAZIP_LANG="fr.txt" ;;
+    #         es*) PEAZIP_LANG="es.txt" ;;
+    #         pl*) PEAZIP_LANG="pl.txt" ;;
+    #     esac
         
-        awk -v lang="$PEAZIP_LANG" '
-            /^\[language\]\r?$/ { print; getline; print lang; next }
-            { print }
-        ' "$PEAZIP_DEST" > "${PEAZIP_DEST}.tmp" && mv "${PEAZIP_DEST}.tmp" "$PEAZIP_DEST"
+    #     awk -v lang="$PEAZIP_LANG" '
+    #         /^\[language\]\r?$/ { print; getline; print lang; next }
+    #         { print }
+    #     ' "$PEAZIP_DEST" > "${PEAZIP_DEST}.tmp" && mv "${PEAZIP_DEST}.tmp" "$PEAZIP_DEST"
 
-        # Odstranění nativní komprimace a nasazení PeaZip akce
-        log "Odstraňuji nativní nefunkční komprimaci a nasazuji PeaZip akci..."
-        rm -f /usr/share/libfm-qt/archivers.list 2>/dev/null || true
-        rm -f /usr/share/libfm-qt6/archivers.list 2>/dev/null || true
-        rm -f /usr/share/libfm/archivers.list 2>/dev/null || true
-        rm -f /etc/xdg/libfm/archivers.list 2>/dev/null || true
+    #     # Odstranění nativní komprimace a nasazení PeaZip akce
+    #     log "Odstraňuji nativní nefunkční komprimaci a nasazuji PeaZip akci..."
+    #     rm -f /usr/share/libfm-qt/archivers.list 2>/dev/null || true
+    #     rm -f /usr/share/libfm-qt6/archivers.list 2>/dev/null || true
+    #     rm -f /usr/share/libfm/archivers.list 2>/dev/null || true
+    #     rm -f /etc/xdg/libfm/archivers.list 2>/dev/null || true
         
-        local PCMANFM_CONF="$USER_HOME/.config/pcmanfm-qt/lxqt/settings.conf"
-        if [ -f "$PCMANFM_CONF" ]; then
-            sed -i '/^Archiver=/d' "$PCMANFM_CONF" || true
-        fi
+    #     local PCMANFM_CONF="$USER_HOME/.config/pcmanfm-qt/lxqt/settings.conf"
+    #     if [ -f "$PCMANFM_CONF" ]; then
+    #         sed -i '/^Archiver=/d' "$PCMANFM_CONF" || true
+    #     fi
         
-        local ACTIONS_DIR="$USER_HOME/.local/share/file-manager/actions"
-        mkdir -p "$ACTIONS_DIR"
+    #     local ACTIONS_DIR="$USER_HOME/.local/share/file-manager/actions"
+    #     mkdir -p "$ACTIONS_DIR"
         
-        local PEAZIP_ACTION="$ACTIONS_DIR/peazip.desktop"
-        echo '[Desktop Entry]' > "$PEAZIP_ACTION"
-        echo 'Type=Action' >> "$PEAZIP_ACTION"
-        echo 'Name=Komprimovat (PeaZip)...' >> "$PEAZIP_ACTION"
-        echo 'Icon=peazip' >> "$PEAZIP_ACTION"
-        echo 'Profiles=profile-zero;' >> "$PEAZIP_ACTION"
-        echo '[X-Action-Profile profile-zero]' >> "$PEAZIP_ACTION"
-        echo 'MimeTypes=all/allfiles;inode/directory;' >> "$PEAZIP_ACTION"
-        echo 'Exec=peazip -add %F' >> "$PEAZIP_ACTION"
-    fi
+    #     local PEAZIP_ACTION="$ACTIONS_DIR/peazip.desktop"
+    #     echo '[Desktop Entry]' > "$PEAZIP_ACTION"
+    #     echo 'Type=Action' >> "$PEAZIP_ACTION"
+    #     echo 'Name=Komprimovat (PeaZip)...' >> "$PEAZIP_ACTION"
+    #     echo 'Icon=peazip' >> "$PEAZIP_ACTION"
+    #     echo 'Profiles=profile-zero;' >> "$PEAZIP_ACTION"
+    #     echo '[X-Action-Profile profile-zero]' >> "$PEAZIP_ACTION"
+    #     echo 'MimeTypes=all/allfiles;inode/directory;' >> "$PEAZIP_ACTION"
+    #     echo 'Exec=peazip -add %F' >> "$PEAZIP_ACTION"
+    # fi
+}
 
-    # Ošetření práv na závěr
-    chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.local" 2>/dev/null || true
-
+app_names() {
     # Změna názvu u aplikací pro uživatelskou intuitivnost
-    local APP_NAMES_CONF="$CONTENTS_DIR/lxqt/config/app-names.conf"
+    
+    if [ "$DESKTOP_ENV" == "XFCE" ]; then
+        local APP_NAMES_CONF="$CONTENTS_DIR/xfce/config/app-names.conf"
+    else
+        local APP_NAMES_CONF="$CONTENTS_DIR/lxqt/config/app-names.conf"
+    fi
     
     if [ -f "$APP_NAMES_CONF" ]; then
         log "Aplikuji české a intuitivní názvy aplikací z app-names.conf..."
@@ -1241,10 +1253,20 @@ lxqt_setup_shortcuts_and_menus() {
         done < "$CONTEXT_CONF"
     fi
 
+    actions_config
+}
+
+actions_config() {
     # Zástupci z actions.conf - OPRAVENÁ VERZE (Custom Filenames)
     local LOCAL_APPS_DIR="$USER_HOME/.local/share/applications"
     mkdir -p "$LOCAL_APPS_DIR"
-    local SRC_ACTIONS="$CONTENTS_DIR/lxqt/config/actions.conf"
+
+    if [ "$DESKTOP_ENV" == "XFCE" ]; then
+        local SRC_ACTIONS="$CONTENTS_DIR/xfce/config/actions.conf"
+    else
+        local SRC_ACTIONS="$CONTENTS_DIR/lxqt/config/actions.conf"
+    fi
+    
     
     if [ -f "$SRC_ACTIONS" ]; then
         local BLOCK=""
@@ -1550,6 +1572,10 @@ configure_xfce() {
     fi
 
     xfce_setup_apps_and_defaults
+    albert_peazip_config
+    app_names
+    actions_config
+
 
     # 4. KRITICKÉ: Kobercový nálet na práva. 
     # Vrací uživateli celou .config, .cache a .local složku zpět, jinak XFCE a GTK padají při zápisu!
