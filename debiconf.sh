@@ -1454,38 +1454,104 @@ lxqt_drive_automount() {
     done
 }
 
+xfce_setup_apps_and_defaults() {
+    log "Nastavuji chování aplikací, skrytí bloatware a ikony pro XFCE..."
+    
+    local LOCAL_APPS="$USER_HOME/.local/share/applications"
+    mkdir -p "$LOCAL_APPS"
+    
+    # 1. Zkopírování vybraných systémových spouštěčů do uživatelského prostoru,
+    # aby je bylo možné bezpečně upravit (skrýt) bez zásahu do celého systému.
+    for app in /usr/share/applications/*.desktop; do
+        [ -e "$app" ] || continue
+        app_name=$(basename "$app")
+        # Kopírujeme jen pokud už tam není, nebo jej chceme přepsat
+        if [ ! -f "$LOCAL_APPS/$app_name" ]; then
+            cp "$app" "$LOCAL_APPS/" || true
+        fi
+    done
+
+    # 2. Skrytí aplikací definovaných v sekci [APPS_TO_HIDE] v xfce/config.txt
+    local APPS_TO_HIDE_STR
+    APPS_TO_HIDE_STR=$(get_section "$LOCAL_CONFIG" "APPS_TO_HIDE" | tr -d '\r')
+    
+    for app in $APPS_TO_HIDE_STR; do
+        local target_desktop="$LOCAL_APPS/$app"
+        # Pokud soubor není v lokální složce, zkusíme ho vzít ze systémové
+        if [ ! -f "$target_desktop" ] && [ -f "/usr/share/applications/$app" ]; then
+            cp "/usr/share/applications/$app" "$target_desktop"
+        fi
+        
+        if [ -f "$target_desktop" ]; then
+            sed -i '/^Hidden=/d' "$target_desktop"
+            echo "Hidden=true" >> "$target_desktop"
+            log "Skryta aplikace: $app"
+        else
+            log "UPOZORNĚNÍ: Aplikace $app k zacištění nebyla nalezena."
+        fi
+    done
+
+    # 3. Čistý Autostart aplikací podle sekce [AUTORUN] v xfce/config.txt
+    local AUTOSTART_DIR="$USER_HOME/.config/autostart"
+    mkdir -p "$AUTOSTART_DIR"
+    
+    local AUTORUN_APPS
+    AUTORUN_APPS=$(get_section "$LOCAL_CONFIG" "AUTORUN" | tr -d '\r')
+
+    if [ -n "$AUTORUN_APPS" ]; then
+        for APP in $AUTORUN_APPS; do
+            local DEST_DESKTOP="$AUTOSTART_DIR/${APP}.desktop"
+            local EXEC_CMD="$APP"
+            
+            if [[ "$APP" == *.sh || "$APP" == *.py ]]; then
+                EXEC_CMD="$USER_HOME/.local/bin/$APP"
+            fi
+            
+            echo "[Desktop Entry]" > "$DEST_DESKTOP"
+            echo "Type=Application" >> "$DEST_DESKTOP"
+            echo "Name=$(echo "$APP" | tr '[:lower:]' '[:upper:]' | cut -c1)$(echo "$APP" | cut -c2-)" >> "$DEST_DESKTOP"
+            echo "Exec=$EXEC_CMD" >> "$DEST_DESKTOP"
+            echo "Terminal=false" >> "$DEST_DESKTOP"
+            echo "Hidden=false" >> "$DEST_DESKTOP"
+            log "Přidáno do autostartu: $APP"
+        done
+    fi
+    
+    # 4. Aktualizace desktopové databáze, aby menu (Whisker) okamžitě reflektovalo změny
+    chown -R "$REAL_USER:$REAL_USER" "$LOCAL_APPS" 2>/dev/null || true
+    su - "$REAL_USER" -c "update-desktop-database ~/.local/share/applications" || true
+}
+
+
 configure_xfce() {
     log "=== ZAHAJUJI KONFIGURACI ČISTÉHO XFCE ==="
     
     local XFCE_CONF_SRC="$CONTENTS_DIR/xfce/config/xfce4"
     local TARGET_CONF_DIR="$USER_HOME/.config/xfce4"
 
-    # 1. Pojistka: vytvoření základní .config složky, kdyby náhodou neexistovala
-    mkdir -p "$USER_HOME/.config"
+    # 1. Pojistka: vytvoření základních složek (bohužel je vytvoří root)
+    mkdir -p "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local"
 
-        if [ -d "$XFCE_CONF_SRC" ]; then
+    if [ -d "$XFCE_CONF_SRC" ]; then
         log "Kopíruji vyklikanou XFCE konfiguraci (panel, whiskermenu, klávesnice, plocha)..."
         
-        # 1.5 Odstřelíme démona nastavení, který drží soubory pod zámkem
+        # 1.5 Odstřelíme démona nastavení (pojistka, kdybys to testoval v zapnutém GUI)
         killall xfconfd 2>/dev/null || true
 
-        # 2. Nemilosrdné smazání s pojistkou (|| true zabrání pádu celého skriptu)
+        # 2. Nemilosrdné smazání staré složky
         rm -rf "$TARGET_CONF_DIR" 2>/dev/null || true
         
         # 3. Zkopírování tvé čisté složky z projektu k uživateli
         cp -r "$XFCE_CONF_SRC" "$USER_HOME/.config/"
         
-        # 4. KRITICKÉ: Nastavení vlastníka, aby XFCE neshodilo práva (musí patřit uživateli, ne rootovi)
-        chown -R "$REAL_USER:$REAL_USER" "$TARGET_CONF_DIR"
-        
         log "XFCE konfigurace úspěšně nasazena."
-
     else
         log "CHYBA: Zdrojová složka $XFCE_CONF_SRC nebyla nalezena!"
     fi
 
-    # Sem si pak časem můžeš přidat volání tvých dalších skriptů, 
-    # např. setup_apps_and_defaults, pokud je přeneseš z LXQt.
+    # 4. KRITICKÉ: Kobercový nálet na práva. 
+    # Vrací uživateli celou .config, .cache a .local složku zpět, jinak XFCE a GTK padají při zápisu!
+    chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local" 2>/dev/null || true
     
     log "=== KONFIGURACE XFCE BYLA ÚSPĚŠNĚ DOKONČENA ==="
 }

@@ -14,12 +14,11 @@
       <property name="plugin-ids" type="array">
         <value type="int" value="1"/>
         <value type="int" value="12"/>
-        <value type="int" value="13"/>
-        <value type="int" value="10"/>
-        <value type="int" value="14"/>
+        <value type="int" value="3"/>
         <value type="int" value="6"/>
         <value type="int" value="7"/>
         <value type="int" value="8"/>
+        <value type="int" value="4"/>
         <value type="int" value="2"/>
       </property>
       <property name="icon-size" type="uint" value="28"/>
@@ -38,27 +37,20 @@
     <property name="plugin-12" type="string" value="separator">
       <property name="style" type="uint" value="0"/>
     </property>
-    <property name="plugin-13" type="string" value="launcher">
-      <property name="items" type="array">
-        <value type="string" value="17937369951.desktop"/>
-      </property>
-    </property>
-    <property name="plugin-14" type="string" value="launcher">
-      <property name="items" type="array">
-        <value type="string" value="17937369952.desktop"/>
-      </property>
-    </property>
     <property name="plugin-1" type="string" value="whiskermenu">
       <property name="menu-width" type="int" value="450"/>
       <property name="menu-height" type="int" value="450"/>
       <property name="recent" type="array">
-        <value type="string" value="xfce-ui-settings.desktop"/>
         <value type="string" value="xfce4-terminal.desktop"/>
-        <value type="string" value="system-config-printer.desktop"/>
+        <value type="string" value="xfce4-notifyd-config.desktop"/>
+        <value type="string" value="xfce4-power-manager-settings.desktop"/>
+        <value type="string" value="org.pulseaudio.pavucontrol.desktop"/>
+        <value type="string" value="thunar.desktop"/>
+        <value type="string" value="blueman-manager.desktop"/>
+        <value type="string" value="xfce-mouse-settings.desktop"/>
         <value type="string" value="xfce4-taskmanager.desktop"/>
-        <value type="string" value="vlc.desktop"/>
-        <value type="string" value="org.gnome.gThumb.desktop"/>
-        <value type="string" value="panel-preferences.desktop"/>
+        <value type="string" value="simple-scan.desktop"/>
+        <value type="string" value="xfce-ui-settings.desktop"/>
       </property>
       <property name="view-mode" type="int" value="1"/>
       <property name="position-categories-alternate" type="bool" value="true"/>
@@ -66,11 +58,8 @@
       <property name="button-title" type="string" value="Start"/>
       <property name="button-icon" type="string" value="windows95"/>
       <property name="favorites" type="array">
-        <value type="string" value="xfce4-web-browser.desktop"/>
-        <value type="string" value="xfce4-mail-reader.desktop"/>
-        <value type="string" value="xfce4-file-manager.desktop"/>
-        <value type="string" value="xfce4-terminal-emulator.desktop"/>
       </property>
+      <property name="command-lockscreen" type="string" value="dm-tool lock"/>
     </property>
     <property name="plugin-2" type="string" value="clock">
       <property name="digital-date-format" type="string" value="%d.%m.%Y"/>
@@ -86,12 +75,28 @@
     </property>
     <property name="plugin-8" type="string" value="systray">
       <property name="known-legacy-items" type="array">
+        <value type="string" value="připojení k drátové síti „drátové připojení 1“ je aktivní"/>
         <value type="string" value="applet networkmanager"/>
+        <value type="string" value="xfce4-power-manager"/>
+      </property>
+      <property name="hidden-legacy-items" type="array">
+        <value type="string" value="připojení k drátové síti „drátové připojení 1“ je aktivní"/>
+      </property>
+      <property name="icon-size" type="int" value="22"/>
+      <property name="square-icons" type="bool" value="false"/>
+      <property name="single-row" type="bool" value="false"/>
+      <property name="known-items" type="array">
+        <value type="string" value="CopyQ_copyq"/>
       </property>
     </property>
-    <property name="plugin-10" type="string" value="launcher">
+    <property name="plugin-3" type="string" value="launcher">
       <property name="items" type="array">
-        <value type="string" value="17937389565.desktop"/>
+        <value type="string" value="17937775391.desktop"/>
+      </property>
+    </property>
+    <property name="plugin-4" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="17937790532.desktop"/>
       </property>
     </property>
   </property>
