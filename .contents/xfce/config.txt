@@ -21,7 +21,29 @@ xfce4-settings-editor.desktop
 gdebi.desktop
 
 [UNREMOVALBE]
-
+thunar-bulk-rename.desktop
+thunar-settings.desktop
+xfce4-file-manager.desktop
+xfce4-mail-reader.desktop
+xfce4-terminal-settings.desktop
+xfce4-web-browser.desktop
+info.desktop
+yad-icon-browser.desktop
+vim.desktop
+albert.desktop
+xfce4-terminal-emulator.desktop
+blueman-adapters.desktop
+xfce4-settings-editor.desktop
+gdebi.desktop
+galculator.desktop
+thunar.desktop
+org.gnome.Cheese.desktop
+featherpad.desktop
+org.flameshot.Flameshot.desktop
+com.github.hluk.copyq.desktop
+simple-scan.desktop
+org.gnome.gThumb.desktop
+org.gnome.DiskUtility.desktop
 
 [AUTORUN]
 copyq
