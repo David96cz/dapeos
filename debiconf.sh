@@ -1529,20 +1529,32 @@ xfce_setup_apps_and_defaults() {
 
     if [ -n "$AUTORUN_APPS" ]; then
         for APP in $AUTORUN_APPS; do
-            local DEST_DESKTOP="$AUTOSTART_DIR/${APP}.desktop"
+            # Odstraníme příponu pro název .desktop souboru a čisté jméno aplikace
+            local APP_BASE="${APP%.*}"
+            local DEST_DESKTOP="$AUTOSTART_DIR/${APP_BASE}.desktop"
+            
+            # Výchozí stav pro běžné binárky/příkazy
             local EXEC_CMD="$APP"
             
-            if [[ "$APP" == *.sh || "$APP" == *.py ]]; then
-                EXEC_CMD="$USER_HOME/.local/bin/$APP"
+            # Dynamická detekce podle koncovky souboru
+            if [[ "$APP" == *.py ]]; then
+                EXEC_CMD="python3 $USER_HOME/.local/bin/$APP"
+            elif [[ "$APP" == *.sh ]]; then
+                EXEC_CMD="bash $USER_HOME/.local/bin/$APP"
             fi
             
+            # Formátování názvu: První písmeno velké, zbytek malé (bez přípony .py/.sh)
+            local APP_NAME="$(echo "${APP_BASE:0:1}" | tr '[:lower:]' '[:upper:]')${APP_BASE:1}"
+
+            # Zápis do .desktop souboru
             echo "[Desktop Entry]" > "$DEST_DESKTOP"
             echo "Type=Application" >> "$DEST_DESKTOP"
-            echo "Name=$(echo "$APP" | tr '[:lower:]' '[:upper:]' | cut -c1)$(echo "$APP" | cut -c2-)" >> "$DEST_DESKTOP"
+            echo "Name=$APP_NAME" >> "$DEST_DESKTOP"
             echo "Exec=$EXEC_CMD" >> "$DEST_DESKTOP"
             echo "Terminal=false" >> "$DEST_DESKTOP"
             echo "Hidden=false" >> "$DEST_DESKTOP"
-            log "Přidáno do autostartu: $APP"
+            
+            log "Přidáno do autostartu: $APP (Exec: $EXEC_CMD)"
         done
     fi
     

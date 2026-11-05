@@ -50,3 +50,4 @@ atril.desktop
 [AUTORUN]
 copyq
 albert
+win-titles.py
