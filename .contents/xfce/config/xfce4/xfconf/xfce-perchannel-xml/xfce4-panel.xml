@@ -18,7 +18,9 @@
         <value type="int" value="6"/>
         <value type="int" value="7"/>
         <value type="int" value="8"/>
+        <value type="int" value="10"/>
         <value type="int" value="4"/>
+        <value type="int" value="9"/>
         <value type="int" value="5"/>
         <value type="int" value="2"/>
       </property>
@@ -62,7 +64,7 @@
       <property name="command-lockscreen" type="string" value="dm-tool lock"/>
     </property>
     <property name="plugin-2" type="string" value="clock">
-      <property name="digital-date-format" type="string" value="%d.%m.%Y "/>
+      <property name="digital-date-format" type="string" value="%a, %d.%m.%Y "/>
       <property name="digital-layout" type="uint" value="1"/>
       <property name="digital-time-format" type="string" value="%_H:%M"/>
       <property name="digital-date-font" type="string" value="Sans 10"/>
@@ -81,21 +83,15 @@
     </property>
     <property name="plugin-8" type="string" value="systray">
       <property name="known-legacy-items" type="array">
-        <value type="string" value="kupfer"/>
-        <value type="string" value="kupfer.py"/>
-        <value type="string" value="připojení k drátové síti „drátové připojení 1“ je aktivní"/>
         <value type="string" value="applet networkmanager"/>
         <value type="string" value="xfce4-power-manager"/>
       </property>
       <property name="hidden-legacy-items" type="array">
       </property>
-      <property name="icon-size" type="int" value="28"/>
-      <property name="square-icons" type="bool" value="false"/>
+      <property name="icon-size" type="int" value="32"/>
+      <property name="square-icons" type="bool" value="true"/>
       <property name="single-row" type="bool" value="true"/>
       <property name="known-items" type="array">
-        <value type="string" value="albert"/>
-        <value type="string" value="ulauncher"/>
-        <value type="string" value="Kupfer"/>
         <value type="string" value="CopyQ_copyq"/>
       </property>
       <property name="symbolic-icons" type="bool" value="false"/>
@@ -117,5 +113,9 @@
     <property name="plugin-5" type="string" value="separator">
       <property name="style" type="uint" value="3"/>
     </property>
+    <property name="plugin-9" type="string" value="pulseaudio">
+      <property name="enable-keyboard-shortcuts" type="bool" value="true"/>
+    </property>
+    <property name="plugin-10" type="string" value="power-manager-plugin"/>
   </property>
 </channel>
