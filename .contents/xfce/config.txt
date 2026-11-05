@@ -18,7 +18,6 @@ albert.desktop
 xfce4-terminal-emulator.desktop
 blueman-adapters.desktop
 xfce4-settings-editor.desktop
-gdebi.desktop
 xfce4-session-logout.desktop
 
 [UNREMOVABLE]
