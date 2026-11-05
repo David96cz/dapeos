@@ -1549,6 +1549,26 @@ xfce_setup_apps_and_defaults() {
     # 4. Aktualizace desktopové databáze, aby menu (Whisker) okamžitě reflektovalo změny
     chown -R "$REAL_USER:$REAL_USER" "$LOCAL_APPS" 2>/dev/null || true
     su - "$REAL_USER" -c "update-desktop-database ~/.local/share/applications" || true
+
+        # Zamezení možnosti odinstalace
+    echo ">> Ukládám seznam neodstranitelných aplikací..."
+    
+    # Použití tvé elegantní funkce pro vytažení sekce (taháme z LOCAL_CONFIG pro LXQt!)
+    LOCAL_UNREMOVABLE=$(get_section "$LOCAL_CONFIG" "UNREMOVABLE")
+    
+    if [ -n "$LOCAL_UNREMOVABLE" ]; then
+        # Vezmeme výstup, smažeme Windows znaky (\r) a nahradíme mezery novým řádkem (\n)
+        echo "$LOCAL_UNREMOVABLE" | tr -d '\r' | tr ' ' '\n' > /etc/debiconf-unremovable.txt
+        
+        chmod 644 /etc/debiconf-unremovable.txt
+        echo ">> Obsah uloženého blacklistu:"
+        cat /etc/debiconf-unremovable.txt
+    else
+        echo ">> Seznam [UNREMOVABLE] je prázdný, soubor nebyl vytvořen."
+        # Vytvoření prázdného souboru pro jistotu, aby systém neřval, že chybí
+        touch /etc/debiconf-unremovable.txt
+        chmod 644 /etc/debiconf-unremovable.txt
+    fi
 }
 
 

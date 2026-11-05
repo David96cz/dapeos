@@ -42,7 +42,10 @@
       <property name="menu-width" type="int" value="450"/>
       <property name="menu-height" type="int" value="450"/>
       <property name="recent" type="array">
+        <value type="string" value="org.flameshot.Flameshot.desktop"/>
+        <value type="string" value="gdebi.desktop"/>
         <value type="string" value="xfce4-terminal.desktop"/>
+        <value type="string" value="app-uninstaller.desktop"/>
         <value type="string" value="com.github.hluk.copyq.desktop"/>
         <value type="string" value="xfce4-notifyd-config.desktop"/>
         <value type="string" value="xfce4-power-manager-settings.desktop"/>
@@ -52,7 +55,7 @@
       <property name="position-categories-alternate" type="bool" value="true"/>
       <property name="show-button-title" type="bool" value="true"/>
       <property name="button-title" type="string" value="Start"/>
-      <property name="button-icon" type="string" value="windows95"/>
+      <property name="button-icon" type="string" value="/home/david/.config/xfce4/desktop/linux.png"/>
       <property name="favorites" type="array">
       </property>
       <property name="command-lockscreen" type="string" value="dm-tool lock"/>
@@ -96,17 +99,14 @@
     </property>
     <property name="plugin-3" type="string" value="launcher">
       <property name="items" type="array">
-        <value type="string" value="17937775391.desktop"/>
       </property>
     </property>
     <property name="plugin-4" type="string" value="launcher">
       <property name="items" type="array">
-        <value type="string" value="17937790532.desktop"/>
       </property>
     </property>
     <property name="plugin-5" type="string" value="launcher">
       <property name="items" type="array">
-        <value type="string" value="17937843481.desktop"/>
       </property>
     </property>
   </property>
