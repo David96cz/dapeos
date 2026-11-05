@@ -522,6 +522,8 @@ albert_peazip_config() {
 
 app_names() {
     # Změna názvu u aplikací pro uživatelskou intuitivnost
+
+    local LOCAL_APPS="$USER_HOME/.local/share/applications"
     
     if [ "$DESKTOP_ENV" == "XFCE" ]; then
         local APP_NAMES_CONF="$CONTENTS_DIR/xfce/config/app-names.conf"

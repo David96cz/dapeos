@@ -47,5 +47,6 @@
   <property name="desktop-menu" type="empty">
     <property name="show-icons" type="bool" value="true"/>
     <property name="show" type="bool" value="false"/>
+    <property name="show-delete" type="bool" value="false"/>
   </property>
 </channel>
