@@ -19,8 +19,9 @@ xfce4-terminal-emulator.desktop
 blueman-adapters.desktop
 xfce4-settings-editor.desktop
 gdebi.desktop
+xfce4-session-logout.desktop
 
-[UNREMOVALBE]
+[UNREMOVABLE]
 thunar-bulk-rename.desktop
 thunar-settings.desktop
 xfce4-file-manager.desktop
@@ -44,6 +45,7 @@ com.github.hluk.copyq.desktop
 simple-scan.desktop
 org.gnome.gThumb.desktop
 org.gnome.DiskUtility.desktop
+atril.desktop
 
 [AUTORUN]
 copyq

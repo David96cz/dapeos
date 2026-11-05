@@ -162,18 +162,17 @@ class AppUninstaller(QWidget):
         layout.addWidget(self.btn_uninstall)
         
         self.setLayout(layout)
-
     def load_apps(self):
         self.app_list.clear()
         apps_data = {}
+        linux_apps = {}
 
-        # 1. NAČTENÍ LINUXOVÝCH APLIKACÍ
-        dirs_to_scan = ["/usr/share/applications", os.path.expanduser("~/.local/share/applications")]
-        for directory in dirs_to_scan:
-            if not os.path.exists(directory): continue
-            for filename in os.listdir(directory):
+        # 1. NAČTENÍ SYSTÉMOVÝCH APLIKACÍ (/usr/share/applications)
+        sys_dir = "/usr/share/applications"
+        if os.path.exists(sys_dir):
+            for filename in os.listdir(sys_dir):
                 if not filename.endswith(".desktop") or filename.lower() in self.unremovable_list: continue
-                filepath = os.path.join(directory, filename)
+                filepath = os.path.join(sys_dir, filename)
                 try:
                     with open(filepath, 'r', errors='ignore') as f: content = f.read()
                     if "NoDisplay=true" in content or "X-Debiconf-Custom=true" in content: continue
@@ -192,11 +191,54 @@ class AppUninstaller(QWidget):
                     cat_lower = categories.lower()
                     if "settings" in cat_lower or "system" in cat_lower or "desktopsettings" in cat_lower: continue
                     
-                    if name not in apps_data:
-                        apps_data[name] = {"filepath": filepath, "filename": filename, "icon": icon_name, "is_wine": False}
+                    linux_apps[filename] = {"filepath": filepath, "name": name, "icon": icon_name}
                 except: continue
 
-        # 2. NAČTENÍ WINE APLIKACÍ
+        # 2. NAČTENÍ LOKÁLNÍCH APLIKACÍ (~/.local/share/applications) - PŘEPIS NÁZVŮ
+        local_dir = os.path.expanduser("~/.local/share/applications")
+        if os.path.exists(local_dir):
+            for filename in os.listdir(local_dir):
+                if not filename.endswith(".desktop") or filename.lower() in self.unremovable_list: continue
+                filepath = os.path.join(local_dir, filename)
+                try:
+                    with open(filepath, 'r', errors='ignore') as f: content = f.read()
+                    if "NoDisplay=true" in content or "X-Debiconf-Custom=true" in content: continue
+                    
+                    temp_name, temp_name_cs, icon_name, categories, in_main = "", "", "application-x-executable", "", False
+                    for line in content.splitlines():
+                        line = line.strip()
+                        if line.startswith("["): in_main = (line == "[Desktop Entry]"); continue
+                        if not in_main: continue
+                        if line.startswith("Name="): temp_name = line.split("=", 1)[1].strip()
+                        elif line.startswith("Name[cs]="): temp_name_cs = line.split("=", 1)[1].strip()
+                        elif line.startswith("Icon="): icon_name = line.split("=", 1)[1].strip()
+                        elif line.startswith("Categories="): categories = line.split("=", 1)[1].strip()
+
+                    name = temp_name_cs if temp_name_cs else (temp_name if temp_name else filename)
+                    cat_lower = categories.lower()
+                    if "settings" in cat_lower or "system" in cat_lower or "desktopsettings" in cat_lower: continue
+                    
+                    if filename in linux_apps:
+                        # PŘEPÍŠEME NÁZEV a IKONU lokální verzí
+                        # ALE filepath musí zůstat systémový (/usr/share/...), aby dpkg -S našel balíček!
+                        linux_apps[filename]["name"] = name
+                        linux_apps[filename]["icon"] = icon_name
+                    else:
+                        # Aplikace je pouze lokální (např. ručně přidaný zástupce)
+                        linux_apps[filename] = {"filepath": filepath, "name": name, "icon": icon_name}
+                except: continue
+
+        # 3. PŘESUN LINUX APLIKACÍ DO FINÁLNÍHO SLOVNÍKU (řešení případných shod jmen)
+        for filename, data in linux_apps.items():
+            final_name = data["name"]
+            orig_name = final_name
+            counter = 1
+            while final_name in apps_data:
+                final_name = f"{orig_name} ({counter})"
+                counter += 1
+            apps_data[final_name] = {"filepath": data["filepath"], "filename": filename, "icon": data["icon"], "is_wine": False}
+
+        # 4. NAČTENÍ WINE APLIKACÍ
         wine_apps = {}
         for reg_file in ["system.reg", "user.reg"]:
             reg_path = os.path.expanduser(f"~/.wine/{reg_file}")
@@ -230,7 +272,7 @@ class AppUninstaller(QWidget):
                 real_icon = extract_wine_icon(data["icon"], app_name) or "wine"
                 apps_data[display_name] = {"filepath": data["uuid"], "filename": "wine_app", "icon": real_icon, "is_wine": True}
 
-        # 3. VYKRESLENÍ VŠEHO DO JEDNOHO SEZNAMU
+        # 5. VYKRESLENÍ VŠEHO DO JEDNOHO SEZNAMU
         for name in sorted(apps_data.keys()):
             item_data = apps_data[name]
             item = QListWidgetItem(name)
@@ -259,6 +301,7 @@ class AppUninstaller(QWidget):
             
             if item_data["is_wine"]: item.setForeground(Qt.darkMagenta)
             self.app_list.addItem(item)
+
 
     def filter_apps(self, text):
         for i in range(self.app_list.count()):
