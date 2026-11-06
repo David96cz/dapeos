@@ -3,6 +3,8 @@ import sys
 import os
 import subprocess
 import pexpect
+import base64
+import pwd
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QFormLayout, 
                              QLineEdit, QPushButton, QMessageBox, QCheckBox)
 from PyQt5.QtCore import Qt
@@ -10,12 +12,23 @@ from PyQt5.QtCore import Qt
 class PasswordChanger(QWidget):
     def __init__(self):
         super().__init__()
-        self.user_name = os.getlogin()
+        
+        # 1. Agresivní a neprůstřelné zjištění uživatele (i když je to spuštěno přes sudo)
+        self.user_name = os.environ.get("SUDO_USER")
+        if not self.user_name:
+            self.user_name = pwd.getpwuid(os.getuid()).pw_name
+        
+        # Pokud se i tak načte root, najdeme prvního běžného člověka v systému (id 1000+)
+        if self.user_name == "root":
+            users = [u.pw_name for u in pwd.getpwall() if 1000 <= u.pw_uid < 65000]
+            if users:
+                self.user_name = users[0]
+
         self.autologin_conf = "/etc/lightdm/lightdm.conf.d/autologin.conf"
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('Změna uživatelského hesla')
+        self.setWindowTitle(f'Změna hesla pro: {self.user_name}')
         self.setFixedSize(420, 310)
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
         
@@ -43,7 +56,7 @@ class PasswordChanger(QWidget):
         self.cb_show_pass.stateChanged.connect(self.toggle_echo_mode)
         layout.addWidget(self.cb_show_pass)
 
-        self.cb_autologin = QCheckBox('Automatické přihlášení (při startu bez přihlašovací obrazovky)')
+        self.cb_autologin = QCheckBox('Automatické přihlášení (bez hesla při startu)')
         if os.path.exists(self.autologin_conf):
             self.cb_autologin.setChecked(True)
         self.cb_autologin.stateChanged.connect(self.toggle_autologin)
@@ -70,28 +83,31 @@ class PasswordChanger(QWidget):
         conf_dir = "/etc/lightdm/lightdm.conf.d"
         
         if state == Qt.Checked:
-            cmd = f"mkdir -p {conf_dir} && echo -e '[Seat:*]\nautologin-user={self.user_name}\nautologin-user-timeout=0' > {self.autologin_conf}"
+            cmd = f"mkdir -p {conf_dir} && echo -e '[Seat:*]\\nautologin-user={self.user_name}\\nautologin-user-timeout=0' > {self.autologin_conf}"
             try:
-                subprocess.run(['lxqt-sudo', 'bash', '-c', cmd], check=True)
-                QMessageBox.information(self, "Nastavení přihlášení", "Automatické přihlášení bylo ZAPNUTO.\nPočítač půjde po startu rovnou na plochu.")
+                subprocess.run(['pkexec', 'bash', '-c', cmd], check=True)
+                QMessageBox.information(self, "Nastavení", "Autologin ZAPNUT. Počítač půjde rovnou na plochu.")
             except Exception as e:
-                QMessageBox.critical(self, "Chyba", f"Nepodařilo se zapnout automatické přihlášení.\n{e}")
+                QMessageBox.critical(self, "Chyba", f"Nepodařilo se zapnout.\n{e}")
                 self.cb_autologin.blockSignals(True)
                 self.cb_autologin.setChecked(False)
                 self.cb_autologin.blockSignals(False)
         else:
+            # 2. BRUTÁLNÍ VYPNUTÍ: Smaže drop-in konfig a ještě natvrdo vygumuje záchvěvy z hlavního lightdm.conf
+            cmd = f"rm -f {self.autologin_conf} && sed -i '/^[[:space:]]*autologin-user[[:space:]]*=/d' /etc/lightdm/lightdm.conf 2>/dev/null || true"
             try:
-                subprocess.run(['lxqt-sudo', 'rm', '-f', self.autologin_conf], check=True)
-                QMessageBox.information(self, "Nastavení přihlášení", "Automatické přihlášení bylo VYPNUTO.\nPři startu bude vyžadováno heslo.")
+                subprocess.run(['pkexec', 'bash', '-c', cmd], check=True)
+                QMessageBox.information(self, "Nastavení", "Autologin VYPNUT. Heslo bude striktně vyžadováno.")
             except Exception as e:
-                QMessageBox.critical(self, "Chyba", f"Nepodařilo se vypnout automatické přihlášení.\n{e}")
+                QMessageBox.critical(self, "Chyba", f"Nepodařilo se vypnout.\n{e}")
                 self.cb_autologin.blockSignals(True)
                 self.cb_autologin.setChecked(True)
                 self.cb_autologin.blockSignals(False)
 
     def verify_current_password(self, old_p):
         try:
-            child = pexpect.spawn('env LANG=C passwd')
+            # Cílíme striktně na konkrétního uživatele, aby to neověřovalo roota
+            child = pexpect.spawn(f'env LANG=C passwd {self.user_name}')
             idx = child.expect(['Current password:', 'New password:', pexpect.EOF], timeout=3)
             if idx == 0:
                 if not old_p:
@@ -120,30 +136,38 @@ class PasswordChanger(QWidget):
             return
 
         if not self.verify_current_password(old_p):
-            QMessageBox.critical(self, "Chyba ověření", "Stávající heslo je nesprávné.")
+            QMessageBox.critical(self, "Chyba", "Stávající heslo je nesprávné.")
             return
 
         if not new_p:
             reply = QMessageBox.question(self, 'Varování', 
-                "Opravdu chcete ZRUŠIT heslo? Počítač bude nezabezpečený a při přihlášení či instalaci programů nebudete zadávat heslo.",
+                "Opravdu chcete ZRUŠIT heslo? Počítač bude nezabezpečený.",
                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 try:
-                    subprocess.run(['lxqt-sudo', 'passwd', '-d', self.user_name], check=True)
-                    QMessageBox.information(self, "Hotovo", "Heslo bylo úspěšně odstraněno.")
+                    subprocess.run(['pkexec', 'passwd', '-d', self.user_name], check=True)
+                    QMessageBox.information(self, "Hotovo", "Heslo smazáno.")
                 except:
                     QMessageBox.critical(self, "Chyba", "Nepodařilo se smazat heslo.")
             return
             
         try:
-            process = subprocess.Popen(['lxqt-sudo', '/usr/sbin/chpasswd'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            out, err = process.communicate(input=f"{self.user_name}:{new_p}\n")
+            # 3. BEZPEČNÝ PŘENOS HESLA: Heslo zabalíme do Base64, aby ho bash nesežral jako příkaz
+            b64_pass = base64.b64encode(f"{self.user_name}:{new_p}".encode()).decode()
+            
+            # 4. KONEČNÁ POJISTKA: Po změně hesla tě systém agresivně vykopne ze skupiny nopasswdlogin
+            cmd = f"echo '{b64_pass}' | base64 -d | /usr/sbin/chpasswd && gpasswd -d {self.user_name} nopasswdlogin 2>/dev/null || true"
+            process = subprocess.run(['pkexec', 'bash', '-c', cmd], capture_output=True, text=True)
+            
             if process.returncode == 0:
-                QMessageBox.information(self, "Úspěch", "Vaše nové heslo bylo úspěšně nastaveno.")
+                if self.cb_autologin.isChecked():
+                    QMessageBox.information(self, "Úspěch", "Heslo nastaveno!\n\nPOZOR: Máš zaškrtnuté Automatické přihlášení. LightDM se tě proto na heslo nezeptá ani po odhlášení. Pro vyžadování hesla jej musíš odškrtnout.")
+                else:
+                    QMessageBox.information(self, "Úspěch", "Vaše nové heslo bylo úspěšně nastaveno a bude vyžadováno.")
             else:
-                QMessageBox.warning(self, "Chyba Systému", f"Systém odmítl heslo nastavit.\n\nTechnický důvod:\n{err}")
+                QMessageBox.warning(self, "Chyba", f"Systém odmítl heslo nastavit.\n{process.stderr}")
         except Exception as e:
-            QMessageBox.critical(self, "Chyba", f"Došlo ke kritické chybě: {str(e)}")
+            QMessageBox.critical(self, "Chyba", f"Kritická chyba: {str(e)}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
