@@ -1616,11 +1616,63 @@ xfce_setup_apps_and_defaults() {
     fi
 }
 
+keyboard_shortcuts() {
+    local conf_file="$XFCE_CONF_SRC/shortcuts.conf"
+    
+    # Pojistka, zda soubor vůbec existuje
+    if [ ! -f "$conf_file" ]; then
+        echo "Varování: Soubor se zkratkami nenalezen: $conf_file"
+        return
+    fi
+
+    while IFS='|' read -r label shortcut command; do
+        # Přeskočit prázdné řádky a komentáře
+        [[ -z "$label" || "$label" =~ ^# ]] && continue
+        
+        # Vyčištění mezer
+        shortcut=$(echo "$shortcut" | xargs)
+        command=$(echo "$command" | xargs)
+        
+        # Rozsekání zkratky podle '+' a sestavení bez plusek
+        IFS='+' read -ra PARTS <<< "$shortcut"
+        xfce_shortcut=""
+        
+        for i in "${!PARTS[@]}"; do
+            key="${PARTS[$i]}"
+            
+            # Sjednocení Ctrl -> Primary
+            if [[ "$key" == "Ctrl" || "$key" == "Control" ]]; then
+                key="Primary"
+            fi
+            
+            # Pokud je to poslední položka (samotná klávesa)
+            if [ $i -eq $((${#PARTS[@]} - 1)) ]; then
+                # Pokud je to jedno písmeno, XFCE ho chce mít malé
+                if [ ${#key} -eq 1 ]; then
+                    key=$(echo "$key" | tr '[:upper:]' '[:lower:]')
+                fi
+                xfce_shortcut="${xfce_shortcut}${key}"
+            else
+                # Modifikátory se obalí do špičatých závorek bez pluska
+                xfce_shortcut="${xfce_shortcut}<${key}>"
+            fi
+        done
+
+        echo "Zapisuji zkratku: $xfce_shortcut -> $command"
+        
+        # Zápis do XFCE
+        xfconf-query -c xfce4-keyboard-shortcuts -p "/commands/custom/$xfce_shortcut" -n -t string -s "$command"
+    done < "$conf_file"
+
+    # Restartování démona nastavení, aby se zkratky okamžitě aktivovaly
+    xfsettingsd --replace &
+}
+
 
 configure_xfce() {
     log "=== ZAHAJUJI KONFIGURACI ČISTÉHO XFCE ==="
     
-    local XFCE_CONF_SRC="$CONTENTS_DIR/xfce/config/xfce4"
+    XFCE_CONF_SRC="$CONTENTS_DIR/xfce/config/xfce4"
     local TARGET_CONF_DIR="$USER_HOME/.config/xfce4"
 
     # 1. Pojistka: vytvoření základních složek (bohužel je vytvoří root)
@@ -1656,6 +1708,7 @@ configure_xfce() {
     albert_peazip_config
     app_names
     actions_config
+    keyboard_shortcuts
 
 
     # 4. KRITICKÉ: Kobercový nálet na práva. 
