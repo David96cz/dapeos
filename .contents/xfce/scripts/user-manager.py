@@ -244,7 +244,10 @@ class UserManagerApp(QWidget):
         real_name, ok2 = QInputDialog.getText(self, "Nový uživatel", "Zadejte celé jméno (např. Jan Novák):")
         if not ok2: return
         
-        cmd = f"useradd -m -s /bin/bash -c '{real_name.strip()}' {login.strip()}"
+        login_clean = login.strip()
+        
+        # Přidáme passwd -d pro absolutní odemčení nového účtu (vymaže defaultní zámek)
+        cmd = f"useradd -m -s /bin/bash -c '{real_name.strip()}' {login_clean} && passwd -d {login_clean}"
         self.run_command(cmd, "add_user")
 
     def delete_user(self):

@@ -87,8 +87,13 @@ class UninstallWorker(QThread):
             if dpkg_result.returncode == 0:
                 pkg_name = dpkg_result.stdout.split(":")[0].strip()
                 cmd = f"apt-get remove --purge -y {pkg_name} && apt-get autoremove -y"
-                result = subprocess.run(["lxqt-sudo", "bash", "-c", cmd])
+                
+                # Zjištění dostupného nástroje pro práva roota (primárně pkexec)
+                sudo_bin = "pkexec" if shutil.which("pkexec") else "lxqt-sudo"
+                
+                result = subprocess.run([sudo_bin, "bash", "-c", cmd])
                 self.finished.emit(result.returncode, self.filepath, self.app_name, self.filename, False)
+
             else:
                 self.remove_local()
         else:

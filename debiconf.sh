@@ -1687,7 +1687,7 @@ configure_xfce() {
         # 2. Nemilosrdné smazání staré složky
         rm -rf "$TARGET_CONF_DIR" 2>/dev/null || true
 
-        cp -r "$CONTENTS_DIR/xfce/config/window-titles.conf" "$XFCE_CONF_SRC/xfwm4"
+        cp -r "$CONTENTS_DIR/xfce/config/window-titles.conf" "$XFCE_CONF_SRC/xfwm4/"
         
         # 3. Zkopírování tvé čisté složky z projektu k uživateli
         cp -r "$XFCE_CONF_SRC" "$USER_HOME/.config/"
