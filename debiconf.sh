@@ -1581,6 +1581,39 @@ xfce_setup_apps_and_defaults() {
         touch /etc/debiconf-unremovable.txt
         chmod 644 /etc/debiconf-unremovable.txt
     fi
+
+    # Vložení správných kategorií do nastavení tisku, aby se zobrazoval v nastavení
+    DESKTOP_FILE="$LOCAL_APPS/system-config-printer.desktop"
+
+    # Kontrola existence souboru
+    if [ -f "$DESKTOP_FILE" ]; then
+        # Kategorie k doplnění
+        NEW_CATEGORIES=("XFCE" "X-XFCE-SettingsDialog" "X-XFCE-HardwareSettings")
+
+        # Načtení aktuálního řádku Categories
+        CURRENT_LINE=$(grep "^Categories=" "$DESKTOP_FILE")
+
+        # Pokud řádek Categories v souboru vůbec neexistuje, vytvoříme ho na konci souboru
+        if [ -z "$CURRENT_LINE" ]; then
+            echo "Categories=;" >> "$DESKTOP_FILE"
+            CURRENT_LINE="Categories=;"
+        fi
+
+        # Postupná kontrola a přidávání chybějících kategorií
+        for cat in "${NEW_CATEGORIES[@]}"; do
+            # Kontroluje, zda se kategorie nachází mezi středníky, na začátku hodnoty nebo na konci
+            if ! echo "$CURRENT_LINE" | grep -qE "(=|;)$cat(;|$|$)"; then
+                # Pokud na konci řádku chybí středník, zajistíme jeho správné doplnění
+                sed -i "/^Categories=/ s/\([^;]\)$/\1;/" "$DESKTOP_FILE"
+                # Přidá chybějící kategorii na konec řádku
+                sed -i "/^Categories=/ s/$/$cat;/" "$DESKTOP_FILE"
+                # Aktualizace proměnné pro další průchod smyčky
+                CURRENT_LINE=$(grep "^Categories=" "$DESKTOP_FILE")
+            fi
+        done
+    else
+        echo "Chyba: Soubor $DESKTOP_FILE nebyl nalezen." >&2
+    fi
 }
 
 
@@ -1601,6 +1634,8 @@ configure_xfce() {
 
         # 2. Nemilosrdné smazání staré složky
         rm -rf "$TARGET_CONF_DIR" 2>/dev/null || true
+
+        cp -r "$CONTENTS_DIR/xfce/config/window-titles.conf" "$XFCE_CONF_SRC/xfwm4"
         
         # 3. Zkopírování tvé čisté složky z projektu k uživateli
         cp -r "$XFCE_CONF_SRC" "$USER_HOME/.config/"
