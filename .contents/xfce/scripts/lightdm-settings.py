@@ -23,19 +23,62 @@ class LightDMWorker(QThread):
         self.draw_user = draw_user
 
     def run(self):
+        conf_path = "/etc/lightdm/lightdm-gtk-greeter.conf"
+        tmp_path = "/tmp/lightdm-gtk-greeter.conf.tmp"
         draw_user_str = "true" if self.draw_user else "false"
+
+        # 1. Čtení aktuálního souboru (Python má vždy práva číst)
+        lines = []
+        try:
+            with open(conf_path, 'r') as f:
+                lines = f.readlines()
+        except FileNotFoundError:
+            pass
+
+        # 2. Filtrace a čištění od starých hodnot (řeší duplicity i MEZERY kolem "=")
+        new_lines = []
+        has_greeter = False
         
-        # Vytvoříme override konfiguraci s NEJVYŠŠÍ prioritou (99).
-        # SPRÁVNÝ klíč pro zakázání crossfadu uživatelské tapety je user-background.
-        cmd = f"""
-        mkdir -p /etc/lightdm/lightdm-gtk-greeter.conf.d
-        cat << 'EOF' > /etc/lightdm/lightdm-gtk-greeter.conf.d/99_custom.conf
-[greeter]
-background={self.wallpaper_path}
-background-color={self.bg_color}
-user-background={draw_user_str}
-EOF
-        """
+        for line in lines:
+            stripped = line.strip().replace(" ", "")
+            
+            if stripped == "[greeter]":
+                has_greeter = True
+                new_lines.append("[greeter]\n") # Normalizovaná hlavička
+                continue
+                
+            # Pokud to byl dříve zakomentovaný řádek, odstraníme křížek pro snazší detekci
+            if stripped.startswith("#"):
+                stripped = stripped[1:]
+                
+            # Všechny staré hodnoty jdou nekompromisně do koše
+            if stripped.startswith("background=") or \
+               stripped.startswith("background-color=") or \
+               stripped.startswith("user-background=") or \
+               stripped.startswith("draw-user-backgrounds="):
+                continue 
+                
+            new_lines.append(line)
+
+        # 3. Zápis nových hodnot natvrdo hned pod hlavičku
+        if not has_greeter:
+            new_lines.insert(0, "[greeter]\n")
+            
+        insert_idx = new_lines.index("[greeter]\n") + 1
+        new_lines.insert(insert_idx, f"user-background={draw_user_str}\n")
+        new_lines.insert(insert_idx, f"background-color={self.bg_color}\n")
+        new_lines.insert(insert_idx, f"background={self.wallpaper_path}\n")
+
+        # 4. Zápis do dočasného souboru v /tmp
+        try:
+            with open(tmp_path, 'w') as f:
+                f.writelines(new_lines)
+        except Exception as e:
+            self.finished.emit(1, f"Chyba zápisu: {e}")
+            return
+
+        # 5. Brutální přepsání originálu s právy roota
+        cmd = f"cp {tmp_path} {conf_path} && chmod 644 {conf_path} && rm {tmp_path}"
         
         sudo_bin = None
         for b in ["lxqt-sudo", "pkexec", "gksudo"]:
@@ -44,7 +87,7 @@ EOF
                 break
                 
         if not sudo_bin:
-            self.finished.emit(1, "Chybí grafický nástroj pro zadání hesla správce (lxqt-sudo, pkexec)!")
+            self.finished.emit(1, "Chybí grafický nástroj pro zadání hesla správce!")
             return
 
         result = subprocess.run([sudo_bin, "bash", "-c", cmd])
