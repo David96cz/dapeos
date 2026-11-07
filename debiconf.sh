@@ -1646,7 +1646,7 @@ xfce_actions_config() {
 }
 
 xfce_keyboard_shortcuts() {
-    local conf_file="${XFCE_CONF_SRC:-$CONTENTS_DIR/xfce/config}/shortcuts.conf"
+    local conf_file="$CONTENTS_DIR/xfce/config/shortcuts.conf"
 
     if [ ! -f "$conf_file" ]; then
         log "UPOZORNĚNÍ: Soubor se zkratkami nenalezen: $conf_file"
