@@ -1647,6 +1647,7 @@ xfce_actions_config() {
 
 xfce_keyboard_shortcuts() {
     local conf_file="$CONTENTS_DIR/xfce/config/shortcuts.conf"
+    local label shortcut command key xfce_shortcut i last_cmd=""
 
     if [ ! -f "$conf_file" ]; then
         log "UPOZORNĚNÍ: Soubor se zkratkami nenalezen: $conf_file"
@@ -1690,6 +1691,7 @@ xfce_keyboard_shortcuts() {
         done
 
         log "Zkratka: $xfce_shortcut -> $command"
+        last_cmd="$command"
         printf 'xfconf-query -c xfce4-keyboard-shortcuts -p %q -n -t string -s %q\n' \
             "/commands/custom/$xfce_shortcut" "$command" >> "$tmp"
     done < "$conf_file"
@@ -1708,6 +1710,19 @@ xfce_keyboard_shortcuts() {
         # čerstvá instalace bez relace: dočasná sběrnice
         su - "$REAL_USER" -c "dbus-run-session -- bash -c 'bash \"$tmp\"; sleep 3'"
     fi
+
+    # Počkáme, až xfconfd zapíše změny do XML (zapisuje se se zpožděním)
+    local xml="$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml"
+    local waited=0
+    while [ -n "$last_cmd" ] && ! grep -qF -- "$last_cmd" "$xml" 2>/dev/null; do
+        sleep 0.5
+        waited=$((waited + 1))
+        if [ "$waited" -ge 40 ]; then
+            log "VAROVÁNÍ: zkratky se do $xml nezapsaly do 20 s!"
+            break
+        fi
+    done
+    
     rm -f "$tmp"
 }
 
@@ -1717,56 +1732,79 @@ configure_xfce() {
     XFCE_CONF_SRC="$CONTENTS_DIR/xfce/config/xfce4"
     local TARGET_CONF_DIR="$USER_HOME/.config/xfce4"
 
+    # 1. Pojistka: vytvoření základních složek (bohužel je vytvoří root)
     mkdir -p "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local"
 
     if [ -d "$XFCE_CONF_SRC" ]; then
-        log "Kopíruji vyklikanou XFCE konfiguraci..."
+        log "Kopíruji vyklikanou XFCE konfiguraci (panel, whiskermenu, klávesnice, plocha)..."
+        
+        # 1.5 Odstřelíme démona nastavení (pojistka, kdybys to testoval v zapnutém GUI)
         killall xfconfd 2>/dev/null || true
+
+        # 2. Nemilosrdné smazání staré složky
         rm -rf "$TARGET_CONF_DIR" 2>/dev/null || true
+
         mkdir -p "$XFCE_CONF_SRC/xfwm4"
+
         cp -r "$CONTENTS_DIR/xfce/config/window-titles.conf" "$XFCE_CONF_SRC/xfwm4/"
+        
+        # 3. Zkopírování tvé čisté složky z projektu k uživateli
         cp -r "$XFCE_CONF_SRC" "$USER_HOME/.config/"
+        
         log "XFCE konfigurace úspěšně nasazena."
     else
         log "CHYBA: Zdrojová složka $XFCE_CONF_SRC nebyla nalezena!"
     fi
 
-    # ... (Zde zůstává tvoje kopírování skriptů do /usr/local/bin) ...
+    local SCRIPTS_SRC="$CONTENTS_DIR/xfce/scripts"
+    local TARGET_DIR="/usr/local/bin"
+    
+    # Systémový adresář standardně existuje, ale pro jistotu
+    mkdir -p "$TARGET_DIR"
+    
+    if [ -d "$SCRIPTS_SRC" ]; then
+        # Kopírování do globální cesty
+        cp -u "$SCRIPTS_SRC/"* "$TARGET_DIR/" 2>/dev/null || true
+        
+        # Zabezpečení skriptů: vlastník root, všichni ostatní mohou číst a spouštět (755)
+        chown root:root "$TARGET_DIR/"* 2>/dev/null || true
+        chmod 755 "$TARGET_DIR/"* 2>/dev/null || true
+    fi
 
-    # 1. NEJPRVE NASTAVÍME VŠECHNO HLAVNÍMU UŽIVATELI (VČETNĚ ZKRATEK)
     xfce_setup_apps_and_defaults
     xfce_albert_peazip_config
     xfce_app_names
     xfce_actions_config
-    xfce_keyboard_shortcuts   # Spustí se xfconf-query pro hlavního uživatele
-
-    # 2. KRITICKÝ KROK: Donutíme xfconfd, aby okamžitě zapsal změny z RAM do XML souborů na disk
-    log "Vynucuji uložení XFCE konfigurace z RAM na disk..."
-    killall -u "$REAL_USER" xfconfd 2>/dev/null || true
-    sleep 1  # Krátká pauza, aby systém stihl soubory zavřít a uložit
+    xfce_keyboard_shortcuts
 
     log "=== JEDNOTNÉ ZÁLOHOVÁNÍ PROFILE CONFIGS PRO NOVÉ UŽIVATELE ==="
 
-    # 3. TEPRVE TEĎ, když jsou soubory fyzicky na disku u hlavního uživatele, kopírujeme do skel
+    # Projdeme obě hlavní složky a přeneseme jejich kompletní vnitřek do /etc/skel/
     for dir_name in ".config" ".local"; do
         if [ -d "$USER_HOME/$dir_name" ]; then
             log "Přenáším kompletní složku $dir_name do záchranné kostry..."
             
+            # Vytvoříme cílový adresář v kostře a předem ho vyčistíme
             mkdir -p "/etc/skel/$dir_name"
             rm -rf "/etc/skel/$dir_name"/* 2>/dev/null || true
+            
+            # Zkopírujeme vnitřní obsah složky (včetně skrytých souborů)
             cp -r "$USER_HOME/$dir_name/"* "/etc/skel/$dir_name/" 2>/dev/null || true
         else
             log "VAROVÁNÍ: Zdrojová složka $USER_HOME/$dir_name nebyla nalezena."
         fi
     done
 
+    # Hromadná oprava práv a vlastníků pro CELÝ /etc/skel najednou
+    # Nemusíme to dělat po složkách, proženeme to rekurzivně pro celou kostru
     log "Aplikuji systémová práva pro /etc/skel..."
     chown -R root:root /etc/skel/
     chmod -R u+rwX,go+rX /etc/skel/
 
     log "Zálohování uživatelského profilu kompletně dokončeno."
 
-    # Vrátíme práva složek hlavnímu uživateli
+    # 4. KRITICKÉ: Kobercový nálet na práva. 
+    # Vrací uživateli celou .config, .cache a .local složku zpět, jinak XFCE a GTK padají při zápisu!
     chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local" 2>/dev/null || true
     
     log "=== KONFIGURACE XFCE BYLA ÚSPĚŠNĚ DOKONČENA ==="
