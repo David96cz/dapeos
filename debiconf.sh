@@ -1647,56 +1647,47 @@ xfce_actions_config() {
 
 xfce_keyboard_shortcuts() {
     local conf_file="$XFCE_CONF_SRC/shortcuts.conf"
-   
-    # Pojistka, zda soubor vůbec existuje
+    
     if [ ! -f "$conf_file" ]; then
         echo "Varování: Soubor se zkratkami nenalezen: $conf_file"
         return
     fi
 
-    # Zpracování i posledního řádku bez prázdného konce (EOF)
     while IFS='|' read -r label shortcut command || [ -n "$label" ]; do
         
-        # Bezpečné odstranění mezer (nerozbije mezery v samotném příkazu)
         label=$(echo "$label" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
         shortcut=$(echo "$shortcut" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
         command=$(echo "$command" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
         
-        # Přeskočit prázdné řádky a komentáře
         [[ -z "$label" || "$label" =~ ^# ]] && continue
         
-        # Rozsekání zkratky podle '+' a sestavení bez plusek
         IFS='+' read -ra PARTS <<< "$shortcut"
         xfce_shortcut=""
         
         for i in "${!PARTS[@]}"; do
             key="${PARTS[$i]}"
             
-            # Sjednocení Ctrl -> Primary
             if [[ "$key" == "Ctrl" || "$key" == "Control" ]]; then
                 key="Primary"
             fi
             
-            # Pokud je to poslední položka (samotná klávesa)
             if [ $i -eq $((${#PARTS[@]} - 1)) ]; then
-                # Pokud je to jedno písmeno, XFCE ho chce mít malé
                 if [ ${#key} -eq 1 ]; then
                     key=$(echo "$key" | tr '[:upper:]' '[:lower:]')
+                # Záchrana samostatné klávesy Super pro spouštěče aplikací
+                elif [[ "$key" == "Super" || "$key" == "Win" ]]; then
+                    key="Super_L"
                 fi
                 xfce_shortcut="${xfce_shortcut}${key}"
             else
-                # Modifikátory se obalí do špičatých závorek bez pluska
                 xfce_shortcut="${xfce_shortcut}<${key}>"
             fi
         done
 
         echo "Zapisuji zkratku: $xfce_shortcut -> $command"
-        
-        # Zápis do XFCE
         xfconf-query -c xfce4-keyboard-shortcuts -p "/commands/custom/$xfce_shortcut" -n -t string -s "$command"
     done < "$conf_file"
 
-    # Restartování démona nastavení, aby se zkratky okamžitě aktivovaly potichu na pozadí
     xfsettingsd --replace >/dev/null 2>&1 &
 }
 
@@ -1757,27 +1748,40 @@ configure_xfce() {
     xfce_actions_config
     xfce_keyboard_shortcuts
 
-    log "=== ZÁLOHOVÁNÍ .local/share PRO NOVÉ UŽIVATELE ==="
+log "=== ZÁLOHOVÁNÍ .local/share a .config/autostart PRO NOVÉ UŽIVATELE ==="
 
     # 1. Pojistka: Vytvoříme skrytou strukturu ve skel, pokud neexistuje
     mkdir -p /etc/skel/.local
+    mkdir -p /etc/skel/.config
 
     # 2. Smažeme případný starý balast ve skel, ať je záloha dokonale čistá
     rm -rf /etc/skel/.local/share 2>/dev/null || true
+    rm -rf /etc/skel/.config/autostart 2>/dev/null || true
 
-    # 3. Zkopírujeme kompletní naformátovanou složku od uživatele
+    # 3. Zkopírujeme kompletní naformátovanou složku .local/share od uživatele
     if [ -d "$USER_HOME/.local/share" ]; then
         cp -r "$USER_HOME/.local/share" /etc/skel/.local/
         
         # 4. KLÍČOVÝ KROK: Všechno v /etc/skel musí vlastnit root:root s právy pro čtení!
-        # Příkaz useradd -m to pak při kopírování k novému uživateli sám automaticky 
-        # přeregistruje na jméno toho nového uživatele.
         chown -R root:root /etc/skel/.local/share
         chmod -R u+rwX,go+rX /etc/skel/.local/share
         
         log "Složka .local/share byla úspěšně uložena do /etc/skel/."
     else
         log "VAROVÁNÍ: Zdrojová složka $USER_HOME/.local/share nebyla nalezena, přeskakuji."
+    fi
+
+    # 5. Zkopírujeme kompletní naformátovanou složku .config/autostart od uživatele
+    if [ -d "$USER_HOME/.config/autostart" ]; then
+        cp -r "$USER_HOME/.config/autostart" /etc/skel/.config/
+        
+        # Opět nastavíme root:root a práva, aby to useradd -m mohl v pořádku duplikovat a podepsat novým userem
+        chown -R root:root /etc/skel/.config/autostart
+        chmod -R u+rwX,go+rX /etc/skel/.config/autostart
+        
+        log "Složka .config/autostart byla úspěšně uložena do /etc/skel/."
+    else
+        log "VAROVÁNÍ: Zdrojová složka $USER_HOME/.config/autostart nebyla nalezena, přeskakuji."
     fi
 
     # 4. KRITICKÉ: Kobercový nálet na práva. 
