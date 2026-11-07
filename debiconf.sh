@@ -420,7 +420,7 @@ lxqt_setup_apps_and_defaults() {
             local EXEC_CMD="$APP"
             
             if [[ "$APP" == *.sh || "$APP" == *.py ]]; then
-                EXEC_CMD="$USER_HOME/.local/bin/$APP"
+                EXEC_CMD="$APP"
             fi
             
             echo "[Desktop Entry]" > "$DEST_DESKTOP"
@@ -1351,9 +1351,9 @@ xfce_setup_apps_and_defaults() {
             
             # Dynamická detekce podle koncovky souboru
             if [[ "$APP" == *.py ]]; then
-                EXEC_CMD="python3 $APP"
+                EXEC_CMD="$APP"
             elif [[ "$APP" == *.sh ]]; then
-                EXEC_CMD="bash $APP"
+                EXEC_CMD="$APP"
             fi
             
             # Formátování názvu: První písmeno velké, zbytek malé (bez přípony .py/.sh)
@@ -1764,12 +1764,6 @@ configure_xfce() {
 
     log "=== ZÁLOHOVÁNÍ .local/share a .config/autostart PRO NOVÉ UŽIVATELE ==="
 
-    # 1. Vytvoříme strukturu v systémové kostře
-    mkdir -p /etc/skel/.config/xfce4
-
-    # 2. Nakopírujeme tam tvou kompletní vyladěnou konfiguraci z projektu
-    cp -r "$CONTENTS_DIR/xfce/config/xfce4/"* /etc/skel/.config/xfce4/
-
     # 1. Pojistka: Vytvoříme skrytou strukturu ve skel, pokud neexistuje
     mkdir -p /etc/skel/.local
     mkdir -p /etc/skel/.config
@@ -1803,7 +1797,12 @@ configure_xfce() {
     else
         log "VAROVÁNÍ: Zdrojová složka $USER_HOME/.config/autostart nebyla nalezena, přeskakuji."
     fi
+    
+    # 1. Vytvoříme strukturu v systémové kostře
+    mkdir -p /etc/skel/.config/xfce4
 
+    # 2. Nakopírujeme tam tvou kompletní vyladěnou konfiguraci z projektu
+    cp -r "$CONTENTS_DIR/xfce/config/xfce4/"* /etc/skel/.config/xfce4/
     # 4. KRITICKÉ: Kobercový nálet na práva. 
     # Vrací uživateli celou .config, .cache a .local složku zpět, jinak XFCE a GTK padají při zápisu!
     chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local" 2>/dev/null || true
