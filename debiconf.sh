@@ -448,43 +448,43 @@ prepare_system() {
     cp "$CONTENTS_DIR/wallpaper.png" "/usr/share/backgrounds/wallpaper.png"
     chmod 644 "/usr/share/backgrounds/wallpaper.png"
 
-    log "Základní příprava systému a záchrana Wi-Fi sítě..."
+    log "Základní příprava systému..."
     
     # Záchrana Wi-Fi z instalátoru
-    local WIFI_SSID=""
-    local WIFI_PSK=""
-    if [ -f /etc/network/interfaces ]; then
-        WIFI_SSID=$(grep 'wpa-ssid' /etc/network/interfaces | cut -d' ' -f2- | tr -d '"' | xargs)
-        WIFI_PSK=$(grep 'wpa-psk' /etc/network/interfaces | cut -d' ' -f2- | tr -d '"' | xargs)
-    fi
+    # local WIFI_SSID=""
+    # local WIFI_PSK=""
+    # if [ -f /etc/network/interfaces ]; then
+    #     WIFI_SSID=$(grep 'wpa-ssid' /etc/network/interfaces | cut -d' ' -f2- | tr -d '"' | xargs)
+    #     WIFI_PSK=$(grep 'wpa-psk' /etc/network/interfaces | cut -d' ' -f2- | tr -d '"' | xargs)
+    # fi
 
     apt-get update -qq || true
     apt-get install -y sudo curl wget dpkg-dev git dbus-x11 numlockx plymouth plymouth-themes network-manager ntfs-3g
     usermod -aG sudo,audio,video,plugdev "$REAL_USER" || true
 
-    # Likvidace ifupdown
-    apt-get purge -y ifupdown || true
-    rm -rf /etc/network/interfaces.d/* || true
-    printf "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
+    # # Likvidace ifupdown
+    # apt-get purge -y ifupdown || true
+    # rm -rf /etc/network/interfaces.d/* || true
+    # printf "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
 
-    # Předání NetworkManageru
-    if [ -f /etc/NetworkManager/NetworkManager.conf ]; then
-        sed -i 's/managed=false/managed=true/g' /etc/NetworkManager/NetworkManager.conf
-    fi
-    systemctl restart NetworkManager || true
+    # # Předání NetworkManageru
+    # if [ -f /etc/NetworkManager/NetworkManager.conf ]; then
+    #     sed -i 's/managed=false/managed=true/g' /etc/NetworkManager/NetworkManager.conf
+    # fi
+    # systemctl restart NetworkManager || true
 
-    # Obnovení připojení
-    sleep 3
-    if [ -n "$WIFI_SSID" ] && [ -n "$WIFI_PSK" ]; then
-        log "Předávám Wi-Fi síť do NetworkManageru..."
-        nmcli dev wifi connect "$WIFI_SSID" password "$WIFI_PSK" >/dev/null 2>&1 || true
-    fi
+    # # Obnovení připojení
+    # sleep 3
+    # if [ -n "$WIFI_SSID" ] && [ -n "$WIFI_PSK" ]; then
+    #     log "Předávám Wi-Fi síť do NetworkManageru..."
+    #     nmcli dev wifi connect "$WIFI_SSID" password "$WIFI_PSK" >/dev/null 2>&1 || true
+    # fi
 
-    log "Čekám na stabilizaci sítě..."
-    for i in {1..10}; do
-        if ping -c 1 8.8.8.8 &> /dev/null; then break; fi
-        sleep 2
-    done
+    # log "Čekám na stabilizaci sítě..."
+    # for i in {1..10}; do
+    #     if ping -c 1 8.8.8.8 &> /dev/null; then break; fi
+    #     sleep 2
+    # done
 
     # 2. Zakázání zabugovaného systémového ntfs3 ovladače
     echo "blacklist ntfs3" | sudo tee /etc/modprobe.d/disable-ntfs3.conf
@@ -505,7 +505,7 @@ install_packages() {
     read -r -a PKG_ARRAY <<< "$ALL_PKGS"
     
     if [ ${#PKG_ARRAY[@]} -gt 0 ]; then
-        apt-get install -y --no-install-recommends "${PKG_ARRAY[@]}"
+        apt-get install -y --no-install-recommends --fix-missing "${PKG_ARRAY[@]}"
     fi
 
     log "Instaluji prohlížeč..."
