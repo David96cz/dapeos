@@ -1193,7 +1193,7 @@ lxqt_packages_install() {
 }
 
 lxqt_config_backup() {
-    --- ZÁLOHA A AUTOMATICKÁ OBNOVA (100% TAR Snapshot) ---
+    log "ZÁLOHA A AUTOMATICKÁ OBNOVA (100% TAR Snapshot)"
     log "8/8 Vytvářím 1:1 TAR snapshot .config pro případ, že by si uživatel smazal .config z domovského adresáře..."
     
     # 0. Nasazení kanárka (tajný soubor)
