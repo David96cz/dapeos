@@ -1762,47 +1762,32 @@ configure_xfce() {
     xfce_actions_config
     xfce_keyboard_shortcuts
 
-    log "=== ZÁLOHOVÁNÍ .local/share a .config/autostart PRO NOVÉ UŽIVATELE ==="
+    log "=== JEDNOTNÉ ZÁLOHOVÁNÍ PROFILE CONFIGS PRO NOVÉ UŽIVATELE ==="
 
-    # 1. Pojistka: Vytvoříme skrytou strukturu ve skel, pokud neexistuje
-    mkdir -p /etc/skel/.local
-    mkdir -p /etc/skel/.config
+    # Projdeme obě hlavní složky a přeneseme jejich kompletní vnitřek do /etc/skel/
+    for dir_name in ".config" ".local"; do
+        if [ -d "$USER_HOME/$dir_name" ]; then
+            log "Přenáším kompletní složku $dir_name do záchranné kostry..."
+            
+            # Vytvoříme cílový adresář v kostře a předem ho vyčistíme
+            mkdir -p "/etc/skel/$dir_name"
+            rm -rf "/etc/skel/$dir_name"/* 2>/dev/null || true
+            
+            # Zkopírujeme vnitřní obsah složky (včetně skrytých souborů)
+            cp -r "$USER_HOME/$dir_name/"* "/etc/skel/$dir_name/" 2>/dev/null || true
+        else
+            log "VAROVÁNÍ: Zdrojová složka $USER_HOME/$dir_name nebyla nalezena."
+        fi
+    done
 
-    # 2. Smažeme případný starý balast ve skel, ať je záloha dokonale čistá
-    rm -rf /etc/skel/.local/share 2>/dev/null || true
-    rm -rf /etc/skel/.config/autostart 2>/dev/null || true
+    # Hromadná oprava práv a vlastníků pro CELÝ /etc/skel najednou
+    # Nemusíme to dělat po složkách, proženeme to rekurzivně pro celou kostru
+    log "Aplikuji systémová práva pro /etc/skel..."
+    chown -R root:root /etc/skel/
+    chmod -R u+rwX,go+rX /etc/skel/
 
-    # 3. Zkopírujeme kompletní naformátovanou složku .local/share od uživatele
-    if [ -d "$USER_HOME/.local/share" ]; then
-        cp -r "$USER_HOME/.local/share" /etc/skel/.local/
-        
-        # 4. KLÍČOVÝ KROK: Všechno v /etc/skel musí vlastnit root:root s právy pro čtení!
-        chown -R root:root /etc/skel/.local/share
-        chmod -R u+rwX,go+rX /etc/skel/.local/share
-        
-        log "Složka .local/share byla úspěšně uložena do /etc/skel/."
-    else
-        log "VAROVÁNÍ: Zdrojová složka $USER_HOME/.local/share nebyla nalezena, přeskakuji."
-    fi
+    log "Zálohování uživatelského profilu kompletně dokončeno."
 
-    # 5. Zkopírujeme kompletní naformátovanou složku .config/autostart od uživatele
-    if [ -d "$USER_HOME/.config/autostart" ]; then
-        cp -r "$USER_HOME/.config/autostart" /etc/skel/.config/
-        
-        # Opět nastavíme root:root a práva, aby to useradd -m mohl v pořádku duplikovat a podepsat novým userem
-        chown -R root:root /etc/skel/.config/autostart
-        chmod -R u+rwX,go+rX /etc/skel/.config/autostart
-        
-        log "Složka .config/autostart byla úspěšně uložena do /etc/skel/."
-    else
-        log "VAROVÁNÍ: Zdrojová složka $USER_HOME/.config/autostart nebyla nalezena, přeskakuji."
-    fi
-    
-    # 1. Vytvoříme strukturu v systémové kostře
-    mkdir -p /etc/skel/.config/xfce4
-
-    # 2. Nakopírujeme tam tvou kompletní vyladěnou konfiguraci z projektu
-    cp -r "$CONTENTS_DIR/xfce/config/xfce4/"* /etc/skel/.config/xfce4/
     # 4. KRITICKÉ: Kobercový nálet na práva. 
     # Vrací uživateli celou .config, .cache a .local složku zpět, jinak XFCE a GTK padají při zápisu!
     chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local" 2>/dev/null || true
