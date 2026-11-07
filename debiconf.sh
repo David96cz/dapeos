@@ -495,6 +495,24 @@ prepare_system() {
 
 # === 2. INSTALACE BALÍČKŮ A PROHLÍŽEČŮ ===
 
+# Obal pro apt-get: opakuje a před každým novým pokusem aktualizuje indexy
+apt_retry() {
+    local tries=5 n=1
+    while true; do
+        log "apt-get $* (pokus $n/$tries)"
+        if apt-get "$@"; then
+            return 0
+        fi
+        if [ "$n" -ge "$tries" ]; then
+            return 1
+        fi
+        log "Selhání (pravděpodobně nekonzistentní zrcadlo), za $((n*10)) s zkusím znovu s čerstvými indexy..."
+        sleep $((n*10))
+        apt-get update -o Acquire::http::No-Cache=true || true
+        n=$((n+1))
+    done
+}
+
 install_packages() {
     log "Načítám konfigurace a instaluji balíčky pro architekturu: $SYS_ARCH..."
     
@@ -505,7 +523,18 @@ install_packages() {
     read -r -a PKG_ARRAY <<< "$ALL_PKGS"
     
     if [ ${#PKG_ARRAY[@]} -gt 0 ]; then
-        apt-get install -y --no-install-recommends --fix-missing "${PKG_ARRAY[@]}"
+        log "Aktualizuji indexy repositářů..."
+        apt_retry update
+
+        log "Opravuji případné porouchané balíčky..."
+        apt_retry install -f -y || true
+
+        log "Spouštím instalaci balíčků..."
+        if ! apt_retry install -y --no-install-recommends "${PKG_ARRAY[@]}"; then
+            log "CHYBA: Balíčky se nepodařilo nainstalovat ani po opakovaných pokusech."
+            exit 1
+        fi
+        log "Instalace balíčků byla úspěšně dokončena."
     fi
 
     log "Instaluji prohlížeč..."
