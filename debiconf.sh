@@ -1618,14 +1618,7 @@ xfce_actions_config() {
 
 xfce_keyboard_shortcuts() {
     local conf_file="$XFCE_CONF_SRC/shortcuts.conf"
-
-    # 1. Vyčistíme kompletně starý bordel pouze v sekci zkratek aplikací
-    xfconf-query -c xfce4-keyboard-shortcuts -p /commands/custom -r -R 2>/dev/null || true
-
-    # 2. Zapneme ten magický "override", který zablokuje načítání XFCE defaultů pro aplikace
-    xfconf-query -c xfce4-keyboard-shortcuts -p /commands/custom/override -n -t bool -s true
-
-    
+   
     # Pojistka, zda soubor vůbec existuje
     if [ ! -f "$conf_file" ]; then
         echo "Varování: Soubor se zkratkami nenalezen: $conf_file"
