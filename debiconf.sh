@@ -1646,35 +1646,40 @@ xfce_actions_config() {
 }
 
 xfce_keyboard_shortcuts() {
-    local conf_file="$XFCE_CONF_SRC/shortcuts.conf"
-    
+    local conf_file="${XFCE_CONF_SRC:-$CONTENTS_DIR/xfce/config}/shortcuts.conf"
+
     if [ ! -f "$conf_file" ]; then
-        echo "Varování: Soubor se zkratkami nenalezen: $conf_file"
+        log "UPOZORNĚNÍ: Soubor se zkratkami nenalezen: $conf_file"
         return
     fi
 
+    local tmp
+    tmp=$(mktemp /tmp/xfce-shortcuts.XXXXXX)
+    echo '#!/bin/bash' > "$tmp"
+
+    local label shortcut command key xfce_shortcut i
     while IFS='|' read -r label shortcut command || [ -n "$label" ]; do
-        
-        label=$(echo "$label" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-        shortcut=$(echo "$shortcut" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-        command=$(echo "$command" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-        
+        label=$(echo "$label" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        shortcut=$(echo "$shortcut" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        command=$(echo "$command" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
         [[ -z "$label" || "$label" =~ ^# ]] && continue
-        
+        [ -z "$shortcut" ] && continue
+
+        local PARTS=()
         IFS='+' read -ra PARTS <<< "$shortcut"
         xfce_shortcut=""
-        
+
         for i in "${!PARTS[@]}"; do
             key="${PARTS[$i]}"
-            
+
             if [[ "$key" == "Ctrl" || "$key" == "Control" ]]; then
                 key="Primary"
             fi
-            
-            if [ $i -eq $((${#PARTS[@]} - 1)) ]; then
+
+            if [ "$i" -eq $((${#PARTS[@]} - 1)) ]; then
                 if [ ${#key} -eq 1 ]; then
                     key=$(echo "$key" | tr '[:upper:]' '[:lower:]')
-                # Záchrana samostatné klávesy Super pro spouštěče aplikací
                 elif [[ "$key" == "Super" || "$key" == "Win" ]]; then
                     key="Super_L"
                 fi
@@ -1684,11 +1689,26 @@ xfce_keyboard_shortcuts() {
             fi
         done
 
-        echo "Zapisuji zkratku: $xfce_shortcut -> $command"
-        xfconf-query -c xfce4-keyboard-shortcuts -p "/commands/custom/$xfce_shortcut" -n -t string -s "$command"
+        log "Zkratka: $xfce_shortcut -> $command"
+        printf 'xfconf-query -c xfce4-keyboard-shortcuts -p %q -n -t string -s %q\n' \
+            "/commands/custom/$xfce_shortcut" "$command" >> "$tmp"
     done < "$conf_file"
 
-    xfsettingsd --replace >/dev/null 2>&1 &
+    mkdir -p "$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
+    chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config/xfce4"
+    chmod 755 "$tmp"
+    chown "$REAL_USER:$REAL_USER" "$tmp"
+
+    local uid
+    uid=$(id -u "$REAL_USER")
+    if [ -S "/run/user/$uid/bus" ]; then
+        # běžící relace uživatele: zapisuje se přímo do ní
+        su - "$REAL_USER" -c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus bash '$tmp'"
+    else
+        # čerstvá instalace bez relace: dočasná sběrnice
+        su - "$REAL_USER" -c "dbus-run-session -- bash -c 'bash \"$tmp\"; sleep 3'"
+    fi
+    rm -f "$tmp"
 }
 
 configure_xfce() {
@@ -1748,7 +1768,7 @@ configure_xfce() {
     xfce_actions_config
     xfce_keyboard_shortcuts
 
-log "=== ZÁLOHOVÁNÍ .local/share a .config/autostart PRO NOVÉ UŽIVATELE ==="
+    log "=== ZÁLOHOVÁNÍ .local/share a .config/autostart PRO NOVÉ UŽIVATELE ==="
 
     # 1. Pojistka: Vytvoříme skrytou strukturu ve skel, pokud neexistuje
     mkdir -p /etc/skel/.local
