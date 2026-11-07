@@ -440,143 +440,6 @@ lxqt_setup_apps_and_defaults() {
     chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.local" 2>/dev/null || true
 }
 
-albert_peazip_config() {
-        # --- KONFIGURACE ALBERT A PEAZIP ---
-    log "Nasazuji konfigurace pro Albert a PeaZip..."
-    
-    local ALBERT_SRC="$CONTENTS_DIR/lxqt/config/albert.conf"
-    local ALBERT_DEST="$USER_HOME/.config/albert/config"
-    if [ -f "$ALBERT_SRC" ]; then
-        mkdir -p "$(dirname "$ALBERT_DEST")"
-        cp "$ALBERT_SRC" "$ALBERT_DEST"
-        sed -i "s|/home/david|$USER_HOME|g" "$ALBERT_DEST"
-        sed -i "s|home\\\\david|home\\\\$REAL_USER|g" "$ALBERT_DEST"
-    fi
-
-    local ALBERT_DISKS="$USER_HOME/.local/share/albert_disks"
-    mkdir -p "$ALBERT_DISKS"
-    ln -sfn /media "$ALBERT_DISKS/media"
-    ln -sfn /mnt "$ALBERT_DISKS/mnt"
-
-    # Zabití "first run" dialogu
-    local ALBERT_STATE_DIR="$USER_HOME/.local/share/albert"
-    mkdir -p "$ALBERT_STATE_DIR"
-    echo -e "[General]\nlast_used_version=34.0.10" > "$ALBERT_STATE_DIR/state"
-
-    # Fix autostartu Alberta (zabití staré instance při přihlášení)
-    cp /usr/share/applications/albert.desktop "$AUTOSTART_DIR/" 2>/dev/null || true
-    if [ -f "$AUTOSTART_DIR/albert.desktop" ]; then
-        sed -i 's/^Exec=.*/Exec=sh -c "killall -9 albert 2>\/dev\/null; sleep 1 \&\& albert"/' "$AUTOSTART_DIR/albert.desktop"
-    fi
-
-    # PeaZip
-    # local PEAZIP_SRC="$CONTENTS_DIR/lxqt/config/peazip.conf"
-    # local PEAZIP_DEST="$USER_HOME/.config/peazip/conf.txt"
-    # if [ -f "$PEAZIP_SRC" ]; then
-    #     mkdir -p "$(dirname "$PEAZIP_DEST")"
-    #     cp "$PEAZIP_SRC" "$PEAZIP_DEST"
-    #     sed -i "s|/home/david|$USER_HOME|g" "$PEAZIP_DEST"
-        
-    #     # Dynamický jazyk PeaZipu
-    #     local PEAZIP_LANG="en.txt"
-    #     case "${SYS_LANG_CODE,,}" in
-    #         cs*) PEAZIP_LANG="cz.txt" ;;
-    #         sk*) PEAZIP_LANG="sk.txt" ;;
-    #         de*) PEAZIP_LANG="de.txt" ;;
-    #         fr*) PEAZIP_LANG="fr.txt" ;;
-    #         es*) PEAZIP_LANG="es.txt" ;;
-    #         pl*) PEAZIP_LANG="pl.txt" ;;
-    #     esac
-        
-    #     awk -v lang="$PEAZIP_LANG" '
-    #         /^\[language\]\r?$/ { print; getline; print lang; next }
-    #         { print }
-    #     ' "$PEAZIP_DEST" > "${PEAZIP_DEST}.tmp" && mv "${PEAZIP_DEST}.tmp" "$PEAZIP_DEST"
-
-    #     # Odstranění nativní komprimace a nasazení PeaZip akce
-    #     log "Odstraňuji nativní nefunkční komprimaci a nasazuji PeaZip akci..."
-    #     rm -f /usr/share/libfm-qt/archivers.list 2>/dev/null || true
-    #     rm -f /usr/share/libfm-qt6/archivers.list 2>/dev/null || true
-    #     rm -f /usr/share/libfm/archivers.list 2>/dev/null || true
-    #     rm -f /etc/xdg/libfm/archivers.list 2>/dev/null || true
-        
-    #     local PCMANFM_CONF="$USER_HOME/.config/pcmanfm-qt/lxqt/settings.conf"
-    #     if [ -f "$PCMANFM_CONF" ]; then
-    #         sed -i '/^Archiver=/d' "$PCMANFM_CONF" || true
-    #     fi
-        
-    #     local ACTIONS_DIR="$USER_HOME/.local/share/file-manager/actions"
-    #     mkdir -p "$ACTIONS_DIR"
-        
-    #     local PEAZIP_ACTION="$ACTIONS_DIR/peazip.desktop"
-    #     echo '[Desktop Entry]' > "$PEAZIP_ACTION"
-    #     echo 'Type=Action' >> "$PEAZIP_ACTION"
-    #     echo 'Name=Komprimovat (PeaZip)...' >> "$PEAZIP_ACTION"
-    #     echo 'Icon=peazip' >> "$PEAZIP_ACTION"
-    #     echo 'Profiles=profile-zero;' >> "$PEAZIP_ACTION"
-    #     echo '[X-Action-Profile profile-zero]' >> "$PEAZIP_ACTION"
-    #     echo 'MimeTypes=all/allfiles;inode/directory;' >> "$PEAZIP_ACTION"
-    #     echo 'Exec=peazip -add %F' >> "$PEAZIP_ACTION"
-    # fi
-}
-
-app_names() {
-    # Změna názvu u aplikací pro uživatelskou intuitivnost
-
-    local LOCAL_APPS="$USER_HOME/.local/share/applications"
-    
-    if [ "$DESKTOP_ENV" == "XFCE" ]; then
-        local APP_NAMES_CONF="$CONTENTS_DIR/xfce/config/app-names.conf"
-    else
-        local APP_NAMES_CONF="$CONTENTS_DIR/lxqt/config/app-names.conf"
-    fi
-    
-    if [ -f "$APP_NAMES_CONF" ]; then
-        log "Aplikuji české a intuitivní názvy aplikací z app-names.conf..."
-        local CURRENT_DESKTOP=""
-        
-        while IFS= read -r line || [ -n "$line" ]; do
-            # Vyčištění řádku od bílých znaků a \r (Windows formátování)
-            line=$(echo "$line" | tr -d '\r' | xargs)
-            
-            # Přeskočení prázdných řádků a komentářů
-            [[ -z "$line" || "$line" =~ ^# ]] && continue
-            
-            # Detekce sekce [neco.desktop]
-            if [[ "$line" =~ ^\[(.*\.desktop)\]$ ]]; then
-                CURRENT_DESKTOP="${BASH_REMATCH[1]}"
-                
-                # Pokud spouštěč v lokální složce ještě není, zkusíme ho stáhnout ze systému
-                if [ ! -f "$LOCAL_APPS/$CURRENT_DESKTOP" ] && [ -f "/usr/share/applications/$CURRENT_DESKTOP" ]; then
-                    cp "/usr/share/applications/$CURRENT_DESKTOP" "$LOCAL_APPS/" || true
-                fi
-                
-            # Zpracování klíč=hodnota, pokud máme aktivní a existující desktop soubor
-            elif [ -n "$CURRENT_DESKTOP" ] && [ -f "$LOCAL_APPS/$CURRENT_DESKTOP" ] && [[ "$line" == *"="* ]]; then
-            KEY="${line%%=*}"
-            VALUE="${line#*=}"
-            
-            # OPRAVA: Převede Name[cs] na Name\[cs\], aby to sed pochopil doslovně
-            SAFE_KEY=$(echo "$KEY" | sed 's/\[/\\[/g; s/\]/\\]/g')
-            
-            # 1. Odstraní z cílového souboru původní řádek (aby se to netlouklo)
-            sed -i "/^${SAFE_KEY}=/d" "$LOCAL_APPS/$CURRENT_DESKTOP"
-            
-            # 2. Vloží nový řádek z tvého conf souboru hned pod [Desktop Entry]
-            sed -i "/^\[Desktop Entry\]/a ${KEY}=${VALUE}" "$LOCAL_APPS/$CURRENT_DESKTOP"
-            
-            echo "  -> Nastaveno: $KEY=$VALUE"
-        fi
-        done < "$APP_NAMES_CONF"
-        
-        # Oprava vlastnictví pro jistotu a vynucený update databáze spouštěčů
-        chown -R "$REAL_USER:$REAL_USER" "$LOCAL_APPS" 2>/dev/null || true
-        su - "$REAL_USER" -c "update-desktop-database ~/.local/share/applications" || true
-    else
-        log "UPOZORNĚNÍ: Soubor $APP_NAMES_CONF nebyl nalezen."
-    fi
-}
-
 prepare_system() {
     log "Vypínám otravný systémový PC speaker (pípání)..."
     echo -e "blacklist pcspkr\nblacklist snd_pcsp" > /etc/modprobe.d/nobeep.conf
@@ -1263,85 +1126,6 @@ lxqt_setup_shortcuts_and_menus() {
     actions_config
 }
 
-actions_config() {
-    # Zástupci z actions.conf - OPRAVENÁ VERZE (Custom Filenames)
-    local LOCAL_APPS_DIR="$USER_HOME/.local/share/applications"
-    mkdir -p "$LOCAL_APPS_DIR"
-
-    if [ "$DESKTOP_ENV" == "XFCE" ]; then
-        local SRC_ACTIONS="$CONTENTS_DIR/xfce/config/actions.conf"
-    else
-        local SRC_ACTIONS="$CONTENTS_DIR/lxqt/config/actions.conf"
-    fi
-    
-    
-    if [ -f "$SRC_ACTIONS" ]; then
-        local BLOCK=""
-        local APP_NAME=""
-        local CUSTOM_FILENAME=""
-        
-        # Načítáme soubor řádek po řádku
-        while IFS= read -r line || [ -n "$line" ]; do
-            # Oříznutí bílých znaků (včetně neviditelných \r z Windows)
-            trimmed=$(echo "$line" | tr -d '\r' | xargs)
-            
-            # 1. Zachycení našeho vlastního jména souboru
-            if [[ "$trimmed" == \[FileName=*\] ]]; then
-                # Pokud už máme uložený předchozí blok, zapíšeme ho
-                if [ -n "$BLOCK" ]; then
-                    local TARGET_FILE="${CUSTOM_FILENAME:-$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed -e 's/ /-/g' -e 's/[^a-z0-9-]//g')}"
-                    [ -z "$TARGET_FILE" ] && TARGET_FILE="unknown-app-$(date +%s%N)"
-                    
-                    echo -e "$BLOCK" > "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
-                    chmod +x "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
-                fi
-                
-                # Vytažení samotného jména (odstranění [FileName= a ])
-                CUSTOM_FILENAME="${trimmed#\[FileName=}"
-                CUSTOM_FILENAME="${CUSTOM_FILENAME%\]}"
-                
-                # Resetujeme buffer, protože hned po tomhle by mělo následovat [Desktop Entry]
-                BLOCK=""
-                APP_NAME=""
-                continue
-            fi
-            
-            # 2. Zachycení začátku bloku zástupce (Pokud tam není FileName)
-            if [[ "$trimmed" == "[Desktop Entry]" ]]; then
-                # Zápis předchozího bloku (pojistka, pokud někdo vynechal [FileName=])
-                if [ -n "$BLOCK" ]; then
-                    local TARGET_FILE="${CUSTOM_FILENAME:-$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed -e 's/ /-/g' -e 's/[^a-z0-9-]//g')}"
-                    [ -z "$TARGET_FILE" ] && TARGET_FILE="unknown-app-$(date +%s%N)"
-                    
-                    echo -e "$BLOCK" > "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
-                    chmod +x "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
-                    CUSTOM_FILENAME=""
-                fi
-                BLOCK="[Desktop Entry]"
-                APP_NAME=""
-                
-            # 3. Zpracování vnitřku bloku
-            elif [ -n "$BLOCK" ] && [ -n "$trimmed" ]; then
-                local processed_line="${line//~\/.local/$USER_HOME\/.local}"
-                BLOCK="${BLOCK}\n${processed_line}"
-                
-                if [[ "$processed_line" == Name=* ]]; then
-                    APP_NAME="${processed_line#Name=}"
-                fi
-            fi
-        done < "$SRC_ACTIONS"
-        
-        # Nezapomenout uložit úplně poslední blok ze souboru!
-        if [ -n "$BLOCK" ]; then
-            local TARGET_FILE="${CUSTOM_FILENAME:-$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed -e 's/ /-/g' -e 's/[^a-z0-9-]//g')}"
-            [ -z "$TARGET_FILE" ] && TARGET_FILE="unknown-app-$(date +%s%N)"
-            
-            echo -e "$BLOCK" > "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
-            chmod +x "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
-        fi
-    fi
-}
-
 lxqt_packages_install() {
         
     log "5/8 Instaluji balíčky a externí aplikace (Albert & PeaZip čistě pro amd64)..."
@@ -1408,34 +1192,34 @@ lxqt_packages_install() {
     fi
 }
 
-# lxqt_config_backup() {
-#     # --- ZÁLOHA A AUTOMATICKÁ OBNOVA (100% TAR Snapshot) ---
-#     # log "8/8 Vytvářím 1:1 TAR snapshot .config pro případ, že by si uživatel smazal .config z domovského adresáře..."
+lxqt_config_backup() {
+    --- ZÁLOHA A AUTOMATICKÁ OBNOVA (100% TAR Snapshot) ---
+    log "8/8 Vytvářím 1:1 TAR snapshot .config pro případ, že by si uživatel smazal .config z domovského adresáře..."
     
-#     # # 0. Nasazení kanárka (tajný soubor)
-#     # touch "$USER_HOME/.config/lxqt/.debiconf_ok"
+    # 0. Nasazení kanárka (tajný soubor)
+    touch "$USER_HOME/.config/lxqt/.debiconf_ok"
     
-#     # # 1. Čistá záloha do archivu (Zaručí zachování struktury a zamezí slučování zmetků)
-#     # mkdir -p /opt/debiconf-backup
-#     # tar -czf /opt/debiconf-backup/config.tar.gz -C "$USER_HOME" .config
+    # 1. Čistá záloha do archivu (Zaručí zachování struktury a zamezí slučování zmetků)
+    mkdir -p /opt/debiconf-backup
+    tar -czf /opt/debiconf-backup/config.tar.gz -C "$USER_HOME" .config
     
-#     # # Zabezpečíme, aby si to uživatel mohl po přihlášení sám rozbalit
-#     # chmod 644 /opt/debiconf-backup/config.tar.gz
+    # Zabezpečíme, aby si to uživatel mohl po přihlášení sám rozbalit
+    chmod 644 /opt/debiconf-backup/config.tar.gz
     
-#     # # 2. Záchranný skript (Běží při KAŽDÉM přihlášení)
-#     # local RESTORE_SCRIPT="/etc/X11/Xsession.d/90debiconf-restore"
+    # 2. Záchranný skript (Běží při KAŽDÉM přihlášení)
+    local RESTORE_SCRIPT="/etc/X11/Xsession.d/90debiconf-restore"
     
-#     # echo '# Kontrola na základě chybějícího kanárka' > "$RESTORE_SCRIPT"
-#     # echo 'if [ ! -f "$HOME/.config/lxqt/.debiconf_ok" ]; then' >> "$RESTORE_SCRIPT"
-#     # echo '    # 1. Nemilosrdně smazat zmetka, kterého LXQt vytvořilo při odhlášení' >> "$RESTORE_SCRIPT"
-#     # echo '    rm -rf "$HOME/.config/lxqt"' >> "$RESTORE_SCRIPT"
-#     # echo '    # 2. Rozbalit čistý 1:1 snapshot přesně tak, jak byl nastaven při instalaci' >> "$RESTORE_SCRIPT"
-#     # echo '    tar -xzf /opt/debiconf-backup/config.tar.gz -C "$HOME"' >> "$RESTORE_SCRIPT"
-#     # echo 'fi' >> "$RESTORE_SCRIPT"
+    echo '# Kontrola na základě chybějícího kanárka' > "$RESTORE_SCRIPT"
+    echo 'if [ ! -f "$HOME/.config/lxqt/.debiconf_ok" ]; then' >> "$RESTORE_SCRIPT"
+    echo '    # 1. Nemilosrdně smazat zmetka, kterého LXQt vytvořilo při odhlášení' >> "$RESTORE_SCRIPT"
+    echo '    rm -rf "$HOME/.config/lxqt"' >> "$RESTORE_SCRIPT"
+    echo '    # 2. Rozbalit čistý 1:1 snapshot přesně tak, jak byl nastaven při instalaci' >> "$RESTORE_SCRIPT"
+    echo '    tar -xzf /opt/debiconf-backup/config.tar.gz -C "$HOME"' >> "$RESTORE_SCRIPT"
+    echo 'fi' >> "$RESTORE_SCRIPT"
     
-#     # chmod 644 "$RESTORE_SCRIPT"
-#     # -------------------------------------------------------------
-# }
+    chmod 644 "$RESTORE_SCRIPT"
+    -------------------------------------------------------------
+}
 
 lxqt_drive_automount() {
     log "7/8: Konfiguruji automatické a trvalé připojení interních datových disků (FSTAB)..."
@@ -1538,9 +1322,9 @@ xfce_setup_apps_and_defaults() {
             
             # Dynamická detekce podle koncovky souboru
             if [[ "$APP" == *.py ]]; then
-                EXEC_CMD="python3 $USER_HOME/.local/bin/$APP"
+                EXEC_CMD="python3 $APP"
             elif [[ "$APP" == *.sh ]]; then
-                EXEC_CMD="bash $USER_HOME/.local/bin/$APP"
+                EXEC_CMD="bash $APP"
             fi
             
             # Formátování názvu: První písmeno velké, zbytek malé (bez přípony .py/.sh)
@@ -1616,8 +1400,231 @@ xfce_setup_apps_and_defaults() {
     fi
 }
 
-keyboard_shortcuts() {
+xfce_albert_peazip_config() {
+        # --- KONFIGURACE ALBERT A PEAZIP ---
+    log "Nasazuji konfigurace pro Albert a PeaZip..."
+    
+    local ALBERT_SRC="$CONTENTS_DIR/lxqt/config/albert.conf"
+    local ALBERT_DEST="$USER_HOME/.config/albert/config"
+    if [ -f "$ALBERT_SRC" ]; then
+        mkdir -p "$(dirname "$ALBERT_DEST")"
+        cp "$ALBERT_SRC" "$ALBERT_DEST"
+        sed -i "s|/home/david|$USER_HOME|g" "$ALBERT_DEST"
+        sed -i "s|home\\\\david|home\\\\$REAL_USER|g" "$ALBERT_DEST"
+    fi
+
+    local ALBERT_DISKS="$USER_HOME/.local/share/albert_disks"
+    mkdir -p "$ALBERT_DISKS"
+    ln -sfn /media "$ALBERT_DISKS/media"
+    ln -sfn /mnt "$ALBERT_DISKS/mnt"
+
+    # Zabití "first run" dialogu
+    local ALBERT_STATE_DIR="$USER_HOME/.local/share/albert"
+    mkdir -p "$ALBERT_STATE_DIR"
+    echo -e "[General]\nlast_used_version=34.0.10" > "$ALBERT_STATE_DIR/state"
+
+    # Fix autostartu Alberta (zabití staré instance při přihlášení)
+    cp /usr/share/applications/albert.desktop "$AUTOSTART_DIR/" 2>/dev/null || true
+    if [ -f "$AUTOSTART_DIR/albert.desktop" ]; then
+        sed -i 's/^Exec=.*/Exec=sh -c "killall -9 albert 2>\/dev\/null; sleep 1 \&\& albert"/' "$AUTOSTART_DIR/albert.desktop"
+    fi
+
+    # PeaZip
+    # local PEAZIP_SRC="$CONTENTS_DIR/lxqt/config/peazip.conf"
+    # local PEAZIP_DEST="$USER_HOME/.config/peazip/conf.txt"
+    # if [ -f "$PEAZIP_SRC" ]; then
+    #     mkdir -p "$(dirname "$PEAZIP_DEST")"
+    #     cp "$PEAZIP_SRC" "$PEAZIP_DEST"
+    #     sed -i "s|/home/david|$USER_HOME|g" "$PEAZIP_DEST"
+        
+    #     # Dynamický jazyk PeaZipu
+    #     local PEAZIP_LANG="en.txt"
+    #     case "${SYS_LANG_CODE,,}" in
+    #         cs*) PEAZIP_LANG="cz.txt" ;;
+    #         sk*) PEAZIP_LANG="sk.txt" ;;
+    #         de*) PEAZIP_LANG="de.txt" ;;
+    #         fr*) PEAZIP_LANG="fr.txt" ;;
+    #         es*) PEAZIP_LANG="es.txt" ;;
+    #         pl*) PEAZIP_LANG="pl.txt" ;;
+    #     esac
+        
+    #     awk -v lang="$PEAZIP_LANG" '
+    #         /^\[language\]\r?$/ { print; getline; print lang; next }
+    #         { print }
+    #     ' "$PEAZIP_DEST" > "${PEAZIP_DEST}.tmp" && mv "${PEAZIP_DEST}.tmp" "$PEAZIP_DEST"
+
+    #     # Odstranění nativní komprimace a nasazení PeaZip akce
+    #     log "Odstraňuji nativní nefunkční komprimaci a nasazuji PeaZip akci..."
+    #     rm -f /usr/share/libfm-qt/archivers.list 2>/dev/null || true
+    #     rm -f /usr/share/libfm-qt6/archivers.list 2>/dev/null || true
+    #     rm -f /usr/share/libfm/archivers.list 2>/dev/null || true
+    #     rm -f /etc/xdg/libfm/archivers.list 2>/dev/null || true
+        
+    #     local PCMANFM_CONF="$USER_HOME/.config/pcmanfm-qt/lxqt/settings.conf"
+    #     if [ -f "$PCMANFM_CONF" ]; then
+    #         sed -i '/^Archiver=/d' "$PCMANFM_CONF" || true
+    #     fi
+        
+    #     local ACTIONS_DIR="$USER_HOME/.local/share/file-manager/actions"
+    #     mkdir -p "$ACTIONS_DIR"
+        
+    #     local PEAZIP_ACTION="$ACTIONS_DIR/peazip.desktop"
+    #     echo '[Desktop Entry]' > "$PEAZIP_ACTION"
+    #     echo 'Type=Action' >> "$PEAZIP_ACTION"
+    #     echo 'Name=Komprimovat (PeaZip)...' >> "$PEAZIP_ACTION"
+    #     echo 'Icon=peazip' >> "$PEAZIP_ACTION"
+    #     echo 'Profiles=profile-zero;' >> "$PEAZIP_ACTION"
+    #     echo '[X-Action-Profile profile-zero]' >> "$PEAZIP_ACTION"
+    #     echo 'MimeTypes=all/allfiles;inode/directory;' >> "$PEAZIP_ACTION"
+    #     echo 'Exec=peazip -add %F' >> "$PEAZIP_ACTION"
+    # fi
+}
+
+xfce_app_names() {
+    # Změna názvu u aplikací pro uživatelskou intuitivnost
+
+    local LOCAL_APPS="$USER_HOME/.local/share/applications"
+    
+    if [ "$DESKTOP_ENV" == "XFCE" ]; then
+        local APP_NAMES_CONF="$CONTENTS_DIR/xfce/config/app-names.conf"
+    else
+        local APP_NAMES_CONF="$CONTENTS_DIR/lxqt/config/app-names.conf"
+    fi
+    
+    if [ -f "$APP_NAMES_CONF" ]; then
+        log "Aplikuji české a intuitivní názvy aplikací z app-names.conf..."
+        local CURRENT_DESKTOP=""
+        
+        while IFS= read -r line || [ -n "$line" ]; do
+            # Vyčištění řádku od bílých znaků a \r (Windows formátování)
+            line=$(echo "$line" | tr -d '\r' | xargs)
+            
+            # Přeskočení prázdných řádků a komentářů
+            [[ -z "$line" || "$line" =~ ^# ]] && continue
+            
+            # Detekce sekce [neco.desktop]
+            if [[ "$line" =~ ^\[(.*\.desktop)\]$ ]]; then
+                CURRENT_DESKTOP="${BASH_REMATCH[1]}"
+                
+                # Pokud spouštěč v lokální složce ještě není, zkusíme ho stáhnout ze systému
+                if [ ! -f "$LOCAL_APPS/$CURRENT_DESKTOP" ] && [ -f "/usr/share/applications/$CURRENT_DESKTOP" ]; then
+                    cp "/usr/share/applications/$CURRENT_DESKTOP" "$LOCAL_APPS/" || true
+                fi
+                
+            # Zpracování klíč=hodnota, pokud máme aktivní a existující desktop soubor
+            elif [ -n "$CURRENT_DESKTOP" ] && [ -f "$LOCAL_APPS/$CURRENT_DESKTOP" ] && [[ "$line" == *"="* ]]; then
+            KEY="${line%%=*}"
+            VALUE="${line#*=}"
+            
+            # OPRAVA: Převede Name[cs] na Name\[cs\], aby to sed pochopil doslovně
+            SAFE_KEY=$(echo "$KEY" | sed 's/\[/\\[/g; s/\]/\\]/g')
+            
+            # 1. Odstraní z cílového souboru původní řádek (aby se to netlouklo)
+            sed -i "/^${SAFE_KEY}=/d" "$LOCAL_APPS/$CURRENT_DESKTOP"
+            
+            # 2. Vloží nový řádek z tvého conf souboru hned pod [Desktop Entry]
+            sed -i "/^\[Desktop Entry\]/a ${KEY}=${VALUE}" "$LOCAL_APPS/$CURRENT_DESKTOP"
+            
+            echo "  -> Nastaveno: $KEY=$VALUE"
+        fi
+        done < "$APP_NAMES_CONF"
+        
+        # Oprava vlastnictví pro jistotu a vynucený update databáze spouštěčů
+        chown -R "$REAL_USER:$REAL_USER" "$LOCAL_APPS" 2>/dev/null || true
+        su - "$REAL_USER" -c "update-desktop-database ~/.local/share/applications" || true
+    else
+        log "UPOZORNĚNÍ: Soubor $APP_NAMES_CONF nebyl nalezen."
+    fi
+}
+
+xfce_actions_config() {
+    # Zástupci z actions.conf - OPRAVENÁ VERZE (Custom Filenames)
+    local LOCAL_APPS_DIR="$USER_HOME/.local/share/applications"
+    mkdir -p "$LOCAL_APPS_DIR"
+
+    if [ "$DESKTOP_ENV" == "XFCE" ]; then
+        local SRC_ACTIONS="$CONTENTS_DIR/xfce/config/actions.conf"
+    else
+        local SRC_ACTIONS="$CONTENTS_DIR/lxqt/config/actions.conf"
+    fi
+    
+    
+    if [ -f "$SRC_ACTIONS" ]; then
+        local BLOCK=""
+        local APP_NAME=""
+        local CUSTOM_FILENAME=""
+        
+        # Načítáme soubor řádek po řádku
+        while IFS= read -r line || [ -n "$line" ]; do
+            # Oříznutí bílých znaků (včetně neviditelných \r z Windows)
+            trimmed=$(echo "$line" | tr -d '\r' | xargs)
+            
+            # 1. Zachycení našeho vlastního jména souboru
+            if [[ "$trimmed" == \[FileName=*\] ]]; then
+                # Pokud už máme uložený předchozí blok, zapíšeme ho
+                if [ -n "$BLOCK" ]; then
+                    local TARGET_FILE="${CUSTOM_FILENAME:-$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed -e 's/ /-/g' -e 's/[^a-z0-9-]//g')}"
+                    [ -z "$TARGET_FILE" ] && TARGET_FILE="unknown-app-$(date +%s%N)"
+                    
+                    echo -e "$BLOCK" > "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
+                    chmod +x "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
+                fi
+                
+                # Vytažení samotného jména (odstranění [FileName= a ])
+                CUSTOM_FILENAME="${trimmed#\[FileName=}"
+                CUSTOM_FILENAME="${CUSTOM_FILENAME%\]}"
+                
+                # Resetujeme buffer, protože hned po tomhle by mělo následovat [Desktop Entry]
+                BLOCK=""
+                APP_NAME=""
+                continue
+            fi
+            
+            # 2. Zachycení začátku bloku zástupce (Pokud tam není FileName)
+            if [[ "$trimmed" == "[Desktop Entry]" ]]; then
+                # Zápis předchozího bloku (pojistka, pokud někdo vynechal [FileName=])
+                if [ -n "$BLOCK" ]; then
+                    local TARGET_FILE="${CUSTOM_FILENAME:-$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed -e 's/ /-/g' -e 's/[^a-z0-9-]//g')}"
+                    [ -z "$TARGET_FILE" ] && TARGET_FILE="unknown-app-$(date +%s%N)"
+                    
+                    echo -e "$BLOCK" > "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
+                    chmod +x "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
+                    CUSTOM_FILENAME=""
+                fi
+                BLOCK="[Desktop Entry]"
+                APP_NAME=""
+                
+            # 3. Zpracování vnitřku bloku
+            elif [ -n "$BLOCK" ] && [ -n "$trimmed" ]; then
+                local processed_line="${line//~\/.local/$USER_HOME\/.local}"
+                BLOCK="${BLOCK}\n${processed_line}"
+                
+                if [[ "$processed_line" == Name=* ]]; then
+                    APP_NAME="${processed_line#Name=}"
+                fi
+            fi
+        done < "$SRC_ACTIONS"
+        
+        # Nezapomenout uložit úplně poslední blok ze souboru!
+        if [ -n "$BLOCK" ]; then
+            local TARGET_FILE="${CUSTOM_FILENAME:-$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed -e 's/ /-/g' -e 's/[^a-z0-9-]//g')}"
+            [ -z "$TARGET_FILE" ] && TARGET_FILE="unknown-app-$(date +%s%N)"
+            
+            echo -e "$BLOCK" > "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
+            chmod +x "$LOCAL_APPS_DIR/${TARGET_FILE}.desktop"
+        fi
+    fi
+}
+
+xfce_keyboard_shortcuts() {
     local conf_file="$XFCE_CONF_SRC/shortcuts.conf"
+
+    # 1. Vyčistíme kompletně starý bordel pouze v sekci zkratek aplikací
+    xfconf-query -c xfce4-keyboard-shortcuts -p /commands/custom -r -R 2>/dev/null || true
+
+    # 2. Zapneme ten magický "override", který zablokuje načítání XFCE defaultů pro aplikace
+    xfconf-query -c xfce4-keyboard-shortcuts -p /commands/custom/override -n -t bool -s true
+
     
     # Pojistka, zda soubor vůbec existuje
     if [ ! -f "$conf_file" ]; then
@@ -1625,13 +1632,16 @@ keyboard_shortcuts() {
         return
     fi
 
-    while IFS='|' read -r label shortcut command; do
+    # Zpracování i posledního řádku bez prázdného konce (EOF)
+    while IFS='|' read -r label shortcut command || [ -n "$label" ]; do
+        
+        # Bezpečné odstranění mezer (nerozbije mezery v samotném příkazu)
+        label=$(echo "$label" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        shortcut=$(echo "$shortcut" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        command=$(echo "$command" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        
         # Přeskočit prázdné řádky a komentáře
         [[ -z "$label" || "$label" =~ ^# ]] && continue
-        
-        # Vyčištění mezer
-        shortcut=$(echo "$shortcut" | xargs)
-        command=$(echo "$command" | xargs)
         
         # Rozsekání zkratky podle '+' a sestavení bez plusek
         IFS='+' read -ra PARTS <<< "$shortcut"
@@ -1664,10 +1674,9 @@ keyboard_shortcuts() {
         xfconf-query -c xfce4-keyboard-shortcuts -p "/commands/custom/$xfce_shortcut" -n -t string -s "$command"
     done < "$conf_file"
 
-    # Restartování démona nastavení, aby se zkratky okamžitě aktivovaly
-    xfsettingsd --replace &
+    # Restartování démona nastavení, aby se zkratky okamžitě aktivovaly potichu na pozadí
+    xfsettingsd --replace >/dev/null 2>&1 &
 }
-
 
 configure_xfce() {
     log "=== ZAHAJUJI KONFIGURACI ČISTÉHO XFCE ==="
@@ -1700,18 +1709,25 @@ configure_xfce() {
     fi
 
     local SCRIPTS_SRC="$CONTENTS_DIR/xfce/scripts"
-    mkdir -p "$USER_HOME/.local/bin"
+    local TARGET_DIR="/usr/local/bin"
+    
+    # Systémový adresář standardně existuje, ale pro jistotu
+    mkdir -p "$TARGET_DIR"
+    
     if [ -d "$SCRIPTS_SRC" ]; then
-        cp -u "$SCRIPTS_SRC/"* "$USER_HOME/.local/bin/" 2>/dev/null || true
-        chmod +x "$USER_HOME/.local/bin/"* 2>/dev/null || true
+        # Kopírování do globální cesty
+        cp -u "$SCRIPTS_SRC/"* "$TARGET_DIR/" 2>/dev/null || true
+        
+        # Zabezpečení skriptů: vlastník root, všichni ostatní mohou číst a spouštět (755)
+        chown root:root "$TARGET_DIR/"* 2>/dev/null || true
+        chmod 755 "$TARGET_DIR/"* 2>/dev/null || true
     fi
 
     xfce_setup_apps_and_defaults
-    albert_peazip_config
-    app_names
-    actions_config
-    keyboard_shortcuts
-
+    xfce_albert_peazip_config
+    xfce_app_names
+    xfce_actions_config
+    xfce_keyboard_shortcuts
 
     # 4. KRITICKÉ: Kobercový nálet na práva. 
     # Vrací uživateli celou .config, .cache a .local složku zpět, jinak XFCE a GTK padají při zápisu!

@@ -102,7 +102,7 @@ class LightDMWallpaperSetter(QWidget):
         
         # Výchozí hodnoty stavu
         self.selected_color = "#2a7fca"
-        self.draw_user_state = True
+        self.draw_user_state = False
         self.saved_path = DEFAULT_WALLPAPER
 
         self.load_app_state() # Načtení předchozího stavu ze souboru
@@ -184,7 +184,7 @@ class LightDMWallpaperSetter(QWidget):
                 config = configparser.ConfigParser()
                 config.read(CONFIG_FILE)
                 if 'State' in config:
-                    self.draw_user_state = config['State'].getboolean('DrawUser', True)
+                    self.draw_user_state = config['State'].getboolean('DrawUser', False)
                     self.selected_color = config['State'].get('BgColor', "#2a7fca")
                     # Pokud si minule uložil vlastní cestu, načte ji. Jinak použije default.
                     self.saved_path = config['State'].get('WallpaperPath', DEFAULT_WALLPAPER)
@@ -227,7 +227,7 @@ class LightDMWallpaperSetter(QWidget):
 
         # 3. Otevřeme dialog se správnou počáteční cestou (start_dir)
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Vybrat tapetu pro LightDM", start_dir, "Obrázky (*.png *.jpg *.jpeg)"
+            self, "Vybrat tapetu pro LightDM", start_dir, "Obrázky (*.png *.jpg *.jpeg *.svg)"
         )
         
         if file_path:
