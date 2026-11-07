@@ -54,7 +54,7 @@
       <property name="position-categories-alternate" type="bool" value="true"/>
       <property name="show-button-title" type="bool" value="true"/>
       <property name="button-title" type="string" value="Start  "/>
-      <property name="button-icon" type="string" value="/home/david/.config/xfce4/desktop/linux.png"/>
+      <property name="button-icon" type="string" value="/etc/skel/.config/xfce4/desktop/linux.png"/>
       <property name="favorites" type="array">
       </property>
       <property name="command-lockscreen" type="string" value="dm-tool lock"/>

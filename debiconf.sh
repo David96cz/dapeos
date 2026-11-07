@@ -1728,6 +1728,29 @@ configure_xfce() {
     xfce_actions_config
     xfce_keyboard_shortcuts
 
+    log "=== ZÁLOHOVÁNÍ .local/share PRO NOVÉ UŽIVATELE ==="
+
+    # 1. Pojistka: Vytvoříme skrytou strukturu ve skel, pokud neexistuje
+    mkdir -p /etc/skel/.local
+
+    # 2. Smažeme případný starý balast ve skel, ať je záloha dokonale čistá
+    rm -rf /etc/skel/.local/share 2>/dev/null || true
+
+    # 3. Zkopírujeme kompletní naformátovanou složku od uživatele
+    if [ -d "$USER_HOME/.local/share" ]; then
+        cp -r "$USER_HOME/.local/share" /etc/skel/.local/
+        
+        # 4. KLÍČOVÝ KROK: Všechno v /etc/skel musí vlastnit root:root s právy pro čtení!
+        # Příkaz useradd -m to pak při kopírování k novému uživateli sám automaticky 
+        # přeregistruje na jméno toho nového uživatele.
+        chown -R root:root /etc/skel/.local/share
+        chmod -R u+rwX,go+rX /etc/skel/.local/share
+        
+        log "Složka .local/share byla úspěšně uložena do /etc/skel/."
+    else
+        log "VAROVÁNÍ: Zdrojová složka $USER_HOME/.local/share nebyla nalezena, přeskakuji."
+    fi
+
     # 4. KRITICKÉ: Kobercový nálet na práva. 
     # Vrací uživateli celou .config, .cache a .local složku zpět, jinak XFCE a GTK padají při zápisu!
     chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local" 2>/dev/null || true
