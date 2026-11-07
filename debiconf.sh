@@ -1717,12 +1717,6 @@ configure_xfce() {
     XFCE_CONF_SRC="$CONTENTS_DIR/xfce/config/xfce4"
     local TARGET_CONF_DIR="$USER_HOME/.config/xfce4"
 
-    # 1. Vytvoříme strukturu v systémové kostře
-    mkdir -p /etc/skel/.config/xfce4
-
-    # 2. Nakopírujeme tam tvou kompletní vyladěnou konfiguraci z projektu
-    cp -r "$CONTENTS_DIR/xfce/config/xfce4/"* /etc/skel/.config/xfce4/
-
     # 1. Pojistka: vytvoření základních složek (bohužel je vytvoří root)
     mkdir -p "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local"
 
@@ -1769,6 +1763,12 @@ configure_xfce() {
     xfce_keyboard_shortcuts
 
     log "=== ZÁLOHOVÁNÍ .local/share a .config/autostart PRO NOVÉ UŽIVATELE ==="
+
+    # 1. Vytvoříme strukturu v systémové kostře
+    mkdir -p /etc/skel/.config/xfce4
+
+    # 2. Nakopírujeme tam tvou kompletní vyladěnou konfiguraci z projektu
+    cp -r "$CONTENTS_DIR/xfce/config/xfce4/"* /etc/skel/.config/xfce4/
 
     # 1. Pojistka: Vytvoříme skrytou strukturu ve skel, pokud neexistuje
     mkdir -p /etc/skel/.local
