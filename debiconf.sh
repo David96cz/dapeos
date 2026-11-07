@@ -1316,17 +1316,17 @@ xfce_setup_apps_and_defaults() {
     # 2. Skrytí aplikací definovaných v sekci [APPS_TO_HIDE] v xfce/config.txt
     local APPS_TO_HIDE_STR
     APPS_TO_HIDE_STR=$(get_section "$LOCAL_CONFIG" "APPS_TO_HIDE" | tr -d '\r')
-    
+
     for app in $APPS_TO_HIDE_STR; do
         local target_desktop="$LOCAL_APPS/$app"
         # Pokud soubor není v lokální složce, zkusíme ho vzít ze systémové
         if [ ! -f "$target_desktop" ] && [ -f "/usr/share/applications/$app" ]; then
             cp "/usr/share/applications/$app" "$target_desktop"
         fi
-        
+
         if [ -f "$target_desktop" ]; then
-            sed -i '/^Hidden=/d' "$target_desktop"
-            echo "Hidden=true" >> "$target_desktop"
+            # NoDisplay hned pod [Desktop Entry]; starý Hidden/NoDisplay se smaže
+            sed -i '/^Hidden=/d; /^NoDisplay=/d; /^\[Desktop Entry\]/a NoDisplay=true' "$target_desktop"
             log "Skryta aplikace: $app"
         else
             log "UPOZORNĚNÍ: Aplikace $app k zacištění nebyla nalezena."
@@ -1722,7 +1722,7 @@ xfce_keyboard_shortcuts() {
             break
         fi
     done
-    
+
     rm -f "$tmp"
 }
 
