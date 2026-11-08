@@ -13,6 +13,7 @@
       <property name="size" type="uint" value="36"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="1"/>
+        <value type="int" value="11"/>
         <value type="int" value="3"/>
         <value type="int" value="6"/>
         <value type="int" value="7"/>
@@ -39,16 +40,6 @@
       <property name="menu-width" type="int" value="450"/>
       <property name="menu-height" type="int" value="450"/>
       <property name="recent" type="array">
-        <value type="string" value="lightdm-settings.desktop"/>
-        <value type="string" value="xfce4-notifyd-config.desktop"/>
-        <value type="string" value="galculator.desktop"/>
-        <value type="string" value="org.bluesabre.Mugshot.desktop"/>
-        <value type="string" value="app-uninstaller.desktop"/>
-        <value type="string" value="org.flameshot.Flameshot.desktop"/>
-        <value type="string" value="xfce4-terminal.desktop"/>
-        <value type="string" value="com.github.hluk.copyq.desktop"/>
-        <value type="string" value="xfce4-power-manager-settings.desktop"/>
-        <value type="string" value="org.pulseaudio.pavucontrol.desktop"/>
       </property>
       <property name="view-mode" type="int" value="1"/>
       <property name="position-categories-alternate" type="bool" value="true"/>
@@ -112,5 +103,10 @@
       <property name="enable-keyboard-shortcuts" type="bool" value="true"/>
     </property>
     <property name="plugin-10" type="string" value="power-manager-plugin"/>
+    <property name="plugin-11" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="17941466042.desktop"/>
+      </property>
+    </property>
   </property>
 </channel>
