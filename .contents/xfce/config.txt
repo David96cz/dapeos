@@ -48,6 +48,6 @@ atril.desktop
 
 [AUTORUN]
 copyq
-albert
+albert-sync.sh
 win-titles.py
 desktop-shortcuts-allower.py
