@@ -1832,7 +1832,6 @@ configure_xfce() {
     xfce_appearance          # xfce4 konfigurace + xfce_panel_icons
     xfce_deploy_scripts      # skripty + wrappery xfce4-panel / nm-applet
     xfce_setup_apps_and_defaults
-    xfce_albert_peazip_config
     xfce_app_names
     xfce_actions_config
     xfce_keyboard_shortcuts
