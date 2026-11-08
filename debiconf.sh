@@ -1841,6 +1841,41 @@ xfce_fix_ownership() {
         "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local" 2>/dev/null || true
 }
 
+update_manager_setup() {
+    log "Nasazuji správce aktualizací (prakdesk-update)..."
+
+    local HELPER_SRC="$CONTENTS_DIR/xfce/scripts/prakdesk-update-helper"
+    local POLICY_SRC="$CONTENTS_DIR/xfce/config/polkit/cz.prakdesk.update.policy"
+    local RULES_SRC="$CONTENTS_DIR/xfce/config/polkit/49-prakdesk-update.rules"
+    local DESKTOP_SRC="$CONTENTS_DIR/xfce/config/prakdesk-update.desktop"
+
+    # závislosti
+    DEBIAN_FRONTEND=noninteractive apt-get install -y python3-pyqt5 pkexec 2>/dev/null \
+        || DEBIAN_FRONTEND=noninteractive apt-get install -y python3-pyqt5 policykit-1
+
+    if [ -f "$HELPER_SRC" ]; then
+        install -d -m 755 /usr/local/lib/prakdesk
+        install -m 755 -o root -g root "$HELPER_SRC" /usr/local/lib/prakdesk/prakdesk-update-helper
+    else
+        log "UPOZORNĚNÍ: $HELPER_SRC nenalezeno."
+    fi
+
+    if [ -f "$POLICY_SRC" ]; then
+        install -d -m 755 /usr/share/polkit-1/actions
+        install -m 644 -o root -g root "$POLICY_SRC" /usr/share/polkit-1/actions/
+    fi
+    if [ -f "$RULES_SRC" ]; then
+        install -d -m 755 /etc/polkit-1/rules.d
+        install -m 644 -o root -g root "$RULES_SRC" /etc/polkit-1/rules.d/
+    fi
+    if [ -f "$DESKTOP_SRC" ]; then
+        install -m 644 -o root -g root "$DESKTOP_SRC" /usr/share/applications/
+        update-desktop-database /usr/share/applications 2>/dev/null || true
+    fi
+
+    log "Správce aktualizací nainstalován."
+}
+
 configure_xfce() {
     log "=== ZAHAJUJI KONFIGURACI ČISTÉHO XFCE ==="
     mkdir -p "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local"
@@ -1852,6 +1887,7 @@ configure_xfce() {
     xfce_app_names
     xfce_actions_config
     xfce_keyboard_shortcuts
+    update_manager_setup
     xfce_skel_snapshot
     xfce_fix_ownership
 

@@ -1,0 +1,7 @@
+/* PrakDesk: členové skupiny sudo mohou instalovat aktualizace bez dotazu */
+polkit.addRule(function(action, subject) {
+    if (action.id === "cz.prakdesk.update" &&
+        (subject.isInGroup("sudo") || subject.isInGroup("wheel"))) {
+        return polkit.Result.YES;
+    }
+});

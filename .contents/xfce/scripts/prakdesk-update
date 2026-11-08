@@ -1,0 +1,469 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+prakdesk-update - správce aktualizací pro Debian + XFCE
+Windows-Update styl: seznam aktualizací, tiché kontroly, žádný terminál.
+
+Spouštění:
+  prakdesk-update          # okno
+  prakdesk-update --tray   # jen tray (pro autostart)
+"""
+
+import json
+import os
+import subprocess
+import sys
+import time
+
+from PyQt5.QtCore import QProcess, QSize, Qt, QThread, pyqtSignal
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (
+    QAction, QApplication, QComboBox, QHBoxLayout, QLabel, QListWidget,
+    QListWidgetItem, QMenu, QMessageBox, QProgressBar, QPushButton,
+    QSystemTrayIcon, QVBoxLayout, QWidget,
+)
+
+HELPER = "/usr/local/lib/prakdesk/prakdesk-update-helper"
+PKEXEC = "/usr/bin/pkexec"
+PKG_ICON = "system-software-update"
+
+CONF_DIR = os.path.expanduser("~/.config/prakdesk")
+CONF_FILE = os.path.join(CONF_DIR, "update.json")
+AUTOSTART = os.path.expanduser("~/.config/autostart/prakdesk-update.desktop")
+
+FILTERS = [
+    ("Vše", lambda p: True),
+    ("Zabezpečení", lambda p: p["security"]),
+    ("Aplikace", lambda p: p["app"]),
+    ("Systém", lambda p: not p["app"]),
+]
+
+
+def load_conf():
+    try:
+        with open(CONF_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_conf(conf):
+    os.makedirs(CONF_DIR, exist_ok=True)
+    with open(CONF_FILE, "w", encoding="utf-8") as f:
+        json.dump(conf, f, indent=2)
+
+
+class Lister(QThread):
+    """Načte seznam aktualizací bez roota (apt list --upgradable)."""
+
+    done = pyqtSignal(list)
+    failed = pyqtSignal(str)
+
+    def run(self):
+        env = dict(os.environ, LANG="C", LC_ALL="C")
+        try:
+            res = subprocess.run(
+                ["apt", "list", "--upgradable"],
+                capture_output=True, text=True, env=env, timeout=90,
+            )
+        except Exception as exc:  # noqa: BLE001
+            self.failed.emit(str(exc))
+            return
+
+        packages = []
+        for line in res.stdout.splitlines():
+            line = line.strip()
+            if not line or line.startswith("Listing") or line.startswith("WARNING"):
+                continue
+            head = line.split(" ", 1)[0]
+            if "/" not in head:
+                continue
+            name, suite = head.split("/", 1)
+            is_security = "security" in suite.lower()
+            is_app = False
+            try:
+                files = subprocess.run(
+                    ["dpkg-query", "-L", name],
+                    capture_output=True, text=True, timeout=10,
+                ).stdout
+                is_app = ".desktop" in files and "/usr/share/applications/" in files
+            except Exception:  # noqa: BLE001
+                pass
+            packages.append({
+                "name": name,
+                "suite": suite,
+                "security": is_security,
+                "app": is_app,
+            })
+
+        packages.sort(key=lambda p: p["name"])
+        self.done.emit(packages)
+
+
+class Updater(QWidget):
+    def __init__(self, tray_mode=False):
+        super().__init__()
+        self.conf = load_conf()
+        self.packages = []
+        self.busy = False
+        self.proc = None
+        self.progress = {}
+        self.tray_mode = tray_mode
+        self.lister = None
+        self.refresh_proc = None
+        self.tray = None
+        self.init_ui()
+        self.init_tray()
+        self.ensure_autostart()
+        self.reload()
+
+    # ------------------------------------------------------------------ UI
+    def init_ui(self):
+        self.setWindowTitle("Aktualizace")
+        self.setFixedSize(660, 620)
+        self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+        self.setWindowIcon(QIcon.fromTheme(PKG_ICON))
+
+        self.setStyleSheet("""
+            QWidget { background-color: #f5f5f5; font-family: sans-serif; }
+            QLabel#title { font-size: 16pt; font-weight: bold; color: #222; }
+            QLabel#sub { color: #555; }
+            QComboBox { padding: 6px; border: 1px solid #ccc; border-radius: 5px; background: white; }
+            QListWidget { background: white; border: 1px solid #ccc; border-radius: 5px; outline: 0; font-size: 11pt; }
+            QListWidget::item { padding: 8px; border-bottom: 1px solid #eee; color: #222; }
+            QListWidget::item:selected { background: #2a7fca; color: white; }
+            QPushButton { padding: 10px; border-radius: 5px; border: 1px solid #ccc; background: white; font-size: 10pt; }
+            QPushButton:hover { background: #eef4fb; }
+            QPushButton#primary { background: #2a7fca; color: white; border: none; font-weight: bold; font-size: 11pt; }
+            QPushButton#primary:hover { background: #1f6aa8; }
+            QPushButton#primary:disabled { background: #9e9e9e; }
+            QProgressBar { border: 1px solid #ccc; border-radius: 5px; text-align: center; height: 22px; }
+            QProgressBar::chunk { background-color: #2a7fca; border-radius: 4px; }
+        """)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(10)
+
+        title = QLabel("Aktualizace systému")
+        title.setObjectName("title")
+        layout.addWidget(title)
+
+        self.sub = QLabel("Zjišťuji dostupné aktualizace…")
+        self.sub.setObjectName("sub")
+        layout.addWidget(self.sub)
+
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Zobrazit:"))
+        self.filter = QComboBox()
+        for label, _ in FILTERS:
+            self.filter.addItem(label)
+        self.filter.currentIndexChanged.connect(self.populate)
+        row.addWidget(self.filter)
+        row.addStretch(1)
+        layout.addLayout(row)
+
+        self.list = QListWidget()
+        self.list.setIconSize(QSize(26, 26))
+        layout.addWidget(self.list, 1)
+
+        self.status = QLabel("")
+        self.status.setObjectName("sub")
+        layout.addWidget(self.status)
+
+        self.bar = QProgressBar()
+        self.bar.setVisible(False)
+        layout.addWidget(self.bar)
+
+        buttons = QHBoxLayout()
+        self.btn_all = QPushButton("Aktualizovat vše")
+        self.btn_all.setObjectName("primary")
+        self.btn_all.clicked.connect(self.install_all)
+        self.btn_sel = QPushButton("Aktualizovat vybrané")
+        self.btn_sel.clicked.connect(self.install_selected)
+        self.btn_reload = QPushButton("Obnovit seznam")
+        self.btn_reload.clicked.connect(lambda: self.reload(force=True))
+        self.btn_later = QPushButton("Připomenout zítra")
+        self.btn_later.clicked.connect(self.snooze)
+        for b in (self.btn_all, self.btn_sel, self.btn_reload, self.btn_later):
+            buttons.addWidget(b)
+        layout.addLayout(buttons)
+
+    def init_tray(self):
+        self.tray = QSystemTrayIcon(QIcon.fromTheme(PKG_ICON), self)
+        menu = QMenu()
+        act_open = QAction("Otevřít", self)
+        act_open.triggered.connect(self.show_window)
+        act_check = QAction("Zkontrolovat aktualizace", self)
+        act_check.triggered.connect(self.reload)
+        act_quit = QAction("Ukončit", self)
+        act_quit.triggered.connect(QApplication.instance().quit)
+        menu.addAction(act_open)
+        menu.addAction(act_check)
+        menu.addSeparator()
+        menu.addAction(act_quit)
+        self.tray.setContextMenu(menu)
+        self.tray.activated.connect(self.on_tray_activated)
+        self.tray.setToolTip("Aktualizace")
+        self.tray.show()
+
+    def ensure_autostart(self):
+        if os.path.exists(AUTOSTART):
+            return
+        try:
+            os.makedirs(os.path.dirname(AUTOSTART), exist_ok=True)
+            with open(AUTOSTART, "w", encoding="utf-8") as f:
+                f.write(
+                    "[Desktop Entry]\n"
+                    "Type=Application\n"
+                    "Name=Aktualizace\n"
+                    "Exec=prakdesk-update --tray\n"
+                    "Icon=system-software-update\n"
+                    "Terminal=false\n"
+                    "Hidden=false\n"
+                )
+        except Exception:  # noqa: BLE001
+            pass
+
+    # ------------------------------------------------------------- seznam
+    def should_refresh(self):
+        try:
+            last = float(self.conf.get("last_refresh", 0))
+        except Exception:  # noqa: BLE001
+            last = 0
+        return (time.time() - last) > 24 * 3600
+
+    def reload(self, force=False):
+        if self.busy:
+            return
+        if force or self.should_refresh():
+            self.run_refresh()
+        else:
+            self.list_updates()
+
+    def run_refresh(self):
+        self.sub.setText("Obnovuji seznam balíčků…")
+        if not os.path.exists(HELPER):
+            self.list_updates()
+            return
+        self.refresh_proc = QProcess(self)
+        self.refresh_proc.setProcessChannelMode(QProcess.MergedChannels)
+        self.refresh_proc.finished.connect(self.refresh_done)
+        self.refresh_proc.start(PKEXEC, [HELPER, "refresh"])
+
+    def refresh_done(self, code, _status):
+        if code == 0:
+            self.conf["last_refresh"] = time.time()
+            save_conf(self.conf)
+        self.refresh_proc = None
+        self.list_updates()
+
+    def list_updates(self):
+        self.sub.setText("Zjišťuji dostupné aktualizace…")
+        self.lister = Lister()
+        self.lister.done.connect(self.on_listed)
+        self.lister.failed.connect(self.on_list_failed)
+        self.lister.start()
+
+    def on_list_failed(self, message):
+        self.sub.setText("Seznam se nepodařilo načíst.")
+        self.status.setText(message)
+        self.update_tray()
+
+    def on_listed(self, packages):
+        self.packages = packages
+        self.populate()
+        self.update_tray()
+        if self.tray_mode and packages:
+            self.notify(packages)
+
+    def populate(self):
+        self.list.clear()
+        predicate = FILTERS[self.filter.currentIndex()][1]
+        shown = 0
+        for pkg in self.packages:
+            if not predicate(pkg):
+                continue
+            item = QListWidgetItem(pkg["name"])
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            item.setCheckState(Qt.Unchecked)
+            item.setData(Qt.UserRole, pkg["name"])
+            if pkg["security"]:
+                item.setIcon(QIcon.fromTheme("security-high"))
+                item.setToolTip("Zabezpečovací aktualizace")
+            elif pkg["app"]:
+                item.setIcon(QIcon.fromTheme("applications-other"))
+                item.setToolTip("Aplikace")
+            else:
+                item.setIcon(QIcon.fromTheme("applications-system"))
+                item.setToolTip("Systémový balíček")
+            self.list.addItem(item)
+            shown += 1
+
+        total = len(self.packages)
+        if total == 0:
+            self.sub.setText("Systém je aktuální.")
+        else:
+            sec = sum(1 for p in self.packages if p["security"])
+            self.sub.setText(
+                f"Dostupné aktualizace: {total}"
+                + (f" (z toho {sec} zabezpečovacích)" if sec else "")
+            )
+        self.btn_all.setEnabled(total > 0 and not self.busy)
+        self.btn_sel.setEnabled(total > 0 and not self.busy)
+        self.status.setText("")
+
+    def update_tray(self):
+        count = len(self.packages)
+        if count:
+            self.tray.setToolTip(f"Aktualizace: {count}")
+            self.tray.setIcon(QIcon.fromTheme("software-update-available"))
+        else:
+            self.tray.setToolTip("Aktualizace: systém je aktuální")
+            self.tray.setIcon(QIcon.fromTheme(PKG_ICON))
+
+    def notify(self, packages):
+        try:
+            snooze_until = float(self.conf.get("snooze_until", 0))
+        except Exception:  # noqa: BLE001
+            snooze_until = 0
+        if time.time() < snooze_until:
+            return
+        self.tray.showMessage(
+            "Aktualizace",
+            f"Je k dispozici {len(packages)} aktualizací.",
+            QSystemTrayIcon.Information,
+            8000,
+        )
+
+    # ------------------------------------------------------------- akce
+    def show_window(self):
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+
+    def on_tray_activated(self, reason):
+        if reason == QSystemTrayIcon.Trigger:
+            if self.isVisible():
+                self.hide()
+            else:
+                self.show_window()
+
+    def snooze(self):
+        self.conf["snooze_until"] = time.time() + 24 * 3600
+        save_conf(self.conf)
+        self.status.setText("Připomenu zítra.")
+        if self.tray_mode:
+            self.hide()
+
+    def install_all(self):
+        self.start_install([p["name"] for p in self.packages])
+
+    def install_selected(self):
+        names = []
+        for i in range(self.list.count()):
+            item = self.list.item(i)
+            if item.checkState() == Qt.Checked:
+                names.append(item.data(Qt.UserRole))
+        if not names:
+            QMessageBox.information(self, "Aktualizace", "Vyber zaškrtnutím balíčky, které chceš aktualizovat.")
+            return
+        self.start_install(names)
+
+    def start_install(self, names):
+        if self.busy:
+            return
+        if not os.path.exists(HELPER):
+            QMessageBox.critical(self, "Chyba", f"Chybí {HELPER}.")
+            return
+
+        self.busy = True
+        self.progress = {}
+        self.btn_all.setEnabled(False)
+        self.btn_sel.setEnabled(False)
+        self.btn_reload.setEnabled(False)
+        self.bar.setVisible(True)
+        self.bar.setRange(0, 0)
+        self.status.setText("Spouštím aktualizaci…")
+
+        self.proc = QProcess(self)
+        self.proc.setProcessChannelMode(QProcess.MergedChannels)
+        self.proc.readyReadStandardOutput.connect(self.read_output)
+        self.proc.finished.connect(self.install_finished)
+        self.proc.errorOccurred.connect(self.install_error)
+        self.proc.start(PKEXEC, [HELPER, "install"] + names)
+
+    def read_output(self):
+        if not self.proc:
+            return
+        data = bytes(self.proc.readAllStandardOutput()).decode("utf-8", "replace")
+        for line in data.splitlines():
+            if line.startswith("pmstatus:"):
+                parts = line.split(":", 3)
+                if len(parts) < 3:
+                    continue
+                pkg = parts[1]
+                try:
+                    pct = float(parts[2])
+                except ValueError:
+                    continue
+                self.progress[pkg] = pct
+                if self.progress:
+                    overall = sum(self.progress.values()) / len(self.progress)
+                    self.bar.setRange(0, 100)
+                    self.bar.setValue(int(overall))
+                self.status.setText(f"Instaluji: {pkg}")
+
+    def install_error(self, _error):
+        self.finish_common(1, "Aktualizaci se nepodařilo spustit (pkexec?).")
+
+    def install_finished(self, code, _status):
+        self.finish_common(code, None)
+
+    def finish_common(self, code, message):
+        self.busy = False
+        self.bar.setRange(0, 100)
+        self.bar.setValue(0)
+        self.bar.setVisible(False)
+        self.btn_all.setEnabled(True)
+        self.btn_sel.setEnabled(True)
+        self.btn_reload.setEnabled(True)
+        self.proc = None
+
+        if code == 0:
+            self.status.setText("Hotovo.")
+            reboot = os.path.exists("/var/run/reboot-required") or os.path.exists("/run/reboot-required")
+            if reboot:
+                self.status.setText("Hotovo – je potřeba restartovat počítač.")
+                QMessageBox.information(
+                    self, "Aktualizace",
+                    "Aktualizace proběhla. Pro dokončení je potřeba restartovat počítač.",
+                )
+            else:
+                QMessageBox.information(self, "Aktualizace", "Aktualizace byly úspěšně nainstalovány.")
+            self.reload()
+        else:
+            self.status.setText("Aktualizace selhala.")
+            QMessageBox.warning(
+                self, "Chyba",
+                message or "Aktualizace se nepodařila dokončit. Zkontroluj připojení a zkus to znovu.",
+            )
+
+    def closeEvent(self, event):
+        event.ignore()
+        self.hide()
+
+
+def main():
+    app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)
+    app.setApplicationName("prakdesk-update")
+    tray_mode = "--tray" in sys.argv
+    window = Updater(tray_mode=tray_mode)
+    if not tray_mode:
+        window.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()

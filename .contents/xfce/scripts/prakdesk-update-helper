@@ -1,0 +1,32 @@
+#!/bin/sh
+# prakdesk-update-helper - root cast pro PrakDesk Update
+# Spouští se přes pkexec:  pkexec /usr/local/lib/prakdesk/prakdesk-update-helper install [balíčky...]
+set -eu
+
+export LANG=C
+export LC_ALL=C
+export DEBIAN_FRONTEND=noninteractive
+
+APT=/usr/bin/apt-get
+OPTS="-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold -o DPkg::Lock::Timeout=120 -o APT::Status-Fd=3"
+
+case "${1:-}" in
+    refresh)
+        # obnovení seznamu balíčků (apt update)
+        exec 3>&1
+        exec "$APT" $OPTS update
+        ;;
+    install)
+        shift
+        exec 3>&1
+        if [ "$#" -gt 0 ]; then
+            exec "$APT" $OPTS -y install --only-upgrade "$@"
+        else
+            exec "$APT" $OPTS -y --with-new-pkgs upgrade
+        fi
+        ;;
+    *)
+        echo "Použití: $0 refresh|install [balíčky...]" >&2
+        exit 2
+        ;;
+esac
