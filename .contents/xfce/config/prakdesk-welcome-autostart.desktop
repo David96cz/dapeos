@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Uvítání
+Exec=prakdesk-welcome --first-run
+Icon=prakdesk-logo
+Terminal=false
+Hidden=false

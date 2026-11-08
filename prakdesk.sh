@@ -1876,6 +1876,32 @@ update_manager_setup() {
     log "Správce aktualizací nainstalován."
 }
 
+welcome_setup() {
+    log "Nasazuji uvítací okno (prakdesk-welcome)..."
+
+    local LOGO_SRC="$CONTENTS_DIR/xfce/icons/prakdesk-logo.svg"
+    local DESKTOP_SRC="$CONTENTS_DIR/xfce/config/prakdesk-welcome.desktop"
+    local AUTOSTART_SRC="$CONTENTS_DIR/xfce/config/prakdesk-welcome-autostart.desktop"
+
+    if [ -f "$LOGO_SRC" ]; then
+        install -d -m 755 /usr/share/icons/hicolor/scalable/apps
+        install -m 644 -o root -g root "$LOGO_SRC" \
+            /usr/share/icons/hicolor/scalable/apps/prakdesk-logo.svg
+        gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+    fi
+
+    if [ -f "$DESKTOP_SRC" ]; then
+        install -m 644 -o root -g root "$DESKTOP_SRC" /usr/share/applications/
+        update-desktop-database /usr/share/applications 2>/dev/null || true
+    fi
+
+    if [ -f "$AUTOSTART_SRC" ]; then
+        install -d -m 755 "$USER_HOME/.config/autostart"
+        install -m 644 -o "$REAL_USER" -g "$REAL_USER" \
+            "$AUTOSTART_SRC" "$USER_HOME/.config/autostart/prakdesk-welcome.desktop"
+    fi
+}
+
 configure_xfce() {
     log "=== ZAHAJUJI KONFIGURACI ČISTÉHO XFCE ==="
     mkdir -p "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local"
@@ -1888,6 +1914,7 @@ configure_xfce() {
     xfce_actions_config
     xfce_keyboard_shortcuts
     update_manager_setup
+    welcome_setup
     xfce_skel_snapshot
     xfce_fix_ownership
 

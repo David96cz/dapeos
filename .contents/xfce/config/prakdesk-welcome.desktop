@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Uvítání
+Name[cs]=Uvítání
+Comment=Průvodce prvními kroky v PrakDesk
+Comment[cs]=Průvodce prvními kroky v PrakDesk
+Exec=prakdesk-welcome
+Icon=prakdesk-logo
+Terminal=false
+Categories=System;
+Keywords=welcome;uvitani;napoveda;pomoc;
