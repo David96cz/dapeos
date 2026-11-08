@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Search
+Name[cs]=Hledat
+Comment=Searching across whole operating system
+Comment[cs]=Hledání napříč systémem
+Exec=albert toggle
+Icon=search
+Terminal=false
+Categories=System;Utility;
+Keywords=Spotlight;finder
+Keywords[cs]=vyhledat;průzkumník;hledání
+X-XFCE-Source=file:///home/david/.local/share/applications/albert-search.desktop

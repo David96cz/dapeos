@@ -1347,6 +1347,10 @@ xfce_deploy_scripts() {
 xfce_appearance() {
     log "Nasazuji vzhled XFCE (konfigurace + ikony panelu)..."
 
+    pkill -x xfce4-panel 2>/dev/null || true
+    pkill -x xfconfd    2>/dev/null || true
+    sleep 1
+
     local XFCE_CONF_SRC="$CONTENTS_DIR/xfce/config/xfce4"
     local TARGET_CONF_DIR="$USER_HOME/.config/xfce4"
 
