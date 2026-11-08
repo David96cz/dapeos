@@ -1,0 +1,65 @@
+#!/bin/sh
+# papirus-panel-theme <slozka-s-barevnymi-svg>
+# Postaví /usr/share/icons/Papirus-Panel = Papirus-Dark + barevné tray ikony.
+set -eu
+
+CUSTOM="${1:-}"
+if [ -z "$CUSTOM" ] || [ ! -d "$CUSTOM" ]; then
+    echo "Použití: $0 <slozka-s-barevnymi-svg>" >&2
+    exit 1
+fi
+
+BASE="/usr/share/icons/Papirus-Dark"
+DST="/usr/share/icons/Papirus-Panel"
+
+if [ ! -d "$BASE" ]; then
+    echo "CHYBA: chybí $BASE (nainstaluj papirus-icon-theme)" >&2
+    exit 1
+fi
+
+rm -rf "$DST"
+mkdir -p "$DST/16x16/status" "$DST/16x16/actions"
+
+cp "$CUSTOM"/*.svg "$DST/16x16/status/"
+
+# hledání patří do actions
+if [ -f "$DST/16x16/status/edit-find.svg" ]; then
+    mv "$DST/16x16/status/edit-find.svg" "$DST/16x16/actions/edit-find.svg"
+fi
+
+# aliasy, které panel reálně používá
+cd "$DST/16x16/status"
+for n in high medium low muted; do
+    [ -f "audio-volume-$n.svg" ] && ln -sf "audio-volume-$n.svg" "audio-volume-$n-panel.svg"
+done
+
+cat > "$DST/index.theme" <<THEME
+[Icon Theme]
+Name=Papirus-Panel
+Comment=Papirus-Dark with colorful panel icons
+Inherits=Papirus-Dark
+Directories=16x16/status,16x16/actions
+
+[16x16/status]
+Size=16
+MinSize=8
+MaxSize=512
+Context=Status
+Type=Scalable
+
+[16x16/actions]
+Size=16
+MinSize=8
+MaxSize=512
+Context=Actions
+Type=Scalable
+THEME
+
+chown -R root:root "$DST"
+chmod -R go+rX "$DST"
+
+printf 'PANEL_ICON_THEME=Papirus-Panel\n' > /etc/debiconf/panel-icons.conf
+chmod 644 /etc/debiconf/panel-icons.conf
+
+echo "Hotovo: $DST"
+echo "Restart panelu: pkill -x xfce4-panel; sleep 1; setsid xfce4-panel >/dev/null 2>&1 < /dev/null &"

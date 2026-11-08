@@ -1457,6 +1457,16 @@ xfce_setup_apps_and_defaults() {
             log "Přidáno do autostartu: $APP (Exec: $EXEC_CMD)"
         done
     fi
+
+    # 3.5 Doplnění StartupNotify=true (pokud v souboru chybí)
+    local f
+    for f in "$LOCAL_APPS"/*.desktop; do
+        [ -f "$f" ] || continue
+        grep -q '^\[Desktop Entry\]' "$f" || continue
+        grep -q '^StartupNotify=' "$f" && continue
+        sed -i '/^\[Desktop Entry\]/a StartupNotify=true' "$f"
+    done
+    log "Doplněno StartupNotify=true tam, kde chybělo."
     
     # 4. Aktualizace desktopové databáze, aby menu (Whisker) okamžitě reflektovalo změny
     chown -R "$REAL_USER:$REAL_USER" "$LOCAL_APPS" 2>/dev/null || true
