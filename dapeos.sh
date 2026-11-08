@@ -49,7 +49,7 @@ init_setup() {
     while true; do
         clear
         echo -e "\033[1;36m==================================================\033[0m"
-        echo -e "\033[1;36m                 DEBIAN SETUP                     \033[0m"
+        echo -e "\033[1;36m                 DapeOS SETUP                     \033[0m"
         echo -e "\033[1;36m==================================================\033[0m"
         echo -e " \033[1;33m(Kdykoliv zadej 'R' pro reset a návrat na začátek)\033[0m"
         echo -e "\033[1;36m--------------------------------------------------\033[0m"
