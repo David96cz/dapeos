@@ -1296,6 +1296,83 @@ lxqt_drive_automount() {
     done
 }
 
+xfce_panel_icons() {
+    log "Nasazuji systémovou knihovnu ikon pro panel (Papirus-Dark)..."
+
+    local SRC_CONF="$CONTENTS_DIR/xfce/config/panel-icons.conf"
+    local SRC_SO
+
+    # zdrojový .so podle architektury (cílové jméno je vždy panel-icons.so)
+    case "$(uname -m)" in
+        x86_64)  SRC_SO="$CONTENTS_DIR/xfce/bin/panel-icons-amd64.so" ;;
+        aarch64) SRC_SO="$CONTENTS_DIR/xfce/bin/panel-icons-arm64.so" ;;
+        *)
+            log "UPOZORNĚNÍ: nepodporovaná architektura $(uname -m) – přeskakuji."
+            return 0
+            ;;
+    esac
+
+    if [ ! -d /usr/share/icons/Papirus-Dark ]; then
+        log "UPOZORNĚNÍ: Papirus-Dark chybí – přeskakuji."
+        return 0
+    fi
+    if [ ! -f "$SRC_SO" ]; then
+        log "UPOZORNĚNÍ: $SRC_SO chybí – přeskakuji."
+        return 0
+    fi
+    if [ ! -f "$SRC_CONF" ]; then
+        log "UPOZORNĚNÍ: $SRC_CONF chybí – přeskakuji."
+        return 0
+    fi
+
+    install -d -m 755 /usr/local/lib/debiconf /etc/debiconf
+    install -m 644 -o root -g root "$SRC_SO" /usr/local/lib/debiconf/panel-icons.so
+    install -m 644 -o root -g root "$SRC_CONF" /etc/debiconf/panel-icons.conf
+
+    log "Knihovna ikon panelu nainstalována."
+}
+
+xfce_deploy_scripts() {
+    local SCRIPTS_SRC="$CONTENTS_DIR/xfce/scripts"
+    local f
+
+    [ -d "$SCRIPTS_SRC" ] || { log "VAROVÁNÍ: $SCRIPTS_SRC nenalezeno"; return 0; }
+
+    for f in "$SCRIPTS_SRC"/*; do
+        [ -f "$f" ] || continue
+        install -m 755 -o root -g root "$f" /usr/local/bin/
+    done
+}
+
+xfce_appearance() {
+    log "Nasazuji vzhled XFCE (konfigurace + ikony panelu)..."
+
+    local XFCE_CONF_SRC="$CONTENTS_DIR/xfce/config/xfce4"
+    local TARGET_CONF_DIR="$USER_HOME/.config/xfce4"
+
+    # 1. Uklidit běžícího démona, ať nepřepíše XML
+    killall xfconfd 2>/dev/null || true
+
+    # 2. Čistý start konfigurace
+    rm -rf "$TARGET_CONF_DIR" 2>/dev/null || true
+    mkdir -p "$USER_HOME/.config"
+
+    if [ -d "$XFCE_CONF_SRC" ]; then
+        [ -d "$XFCE_CONF_SRC/xfwm4" ] || mkdir -p "$XFCE_CONF_SRC/xfwm4"
+        cp -f "$CONTENTS_DIR/xfce/config/window-titles.conf" "$XFCE_CONF_SRC/xfwm4/" 2>/dev/null || true
+        cp -r "$XFCE_CONF_SRC" "$USER_HOME/.config/"
+        log "XFCE konfigurace nasazena do $TARGET_CONF_DIR"
+    else
+        log "CHYBA: $XFCE_CONF_SRC nenalezeno!"
+    fi
+
+    # 3. Ikony pro panel (systémově, ne do profilu)
+    xfce_panel_icons
+
+    # 4. Vlastnictví
+    chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" 2>/dev/null || true
+}
+
 xfce_setup_apps_and_defaults() {
     log "Nastavuji chování aplikací, skrytí bloatware a ikony pro XFCE..."
     
@@ -1432,6 +1509,8 @@ xfce_setup_apps_and_defaults() {
 xfce_albert_peazip_config() {
         # --- KONFIGURACE ALBERT A PEAZIP ---
     log "Nasazuji konfigurace pro Albert a PeaZip..."
+    local AUTOSTART_DIR="$USER_HOME/.config/autostart"
+    mkdir -p "$AUTOSTART_DIR"
     
     local ALBERT_SRC="$CONTENTS_DIR/lxqt/config/albert.conf"
     local ALBERT_DEST="$USER_HOME/.config/albert/config"
@@ -1726,87 +1805,52 @@ xfce_keyboard_shortcuts() {
     rm -f "$tmp"
 }
 
+xfce_skel_snapshot() {
+    log "Aktualizuji /etc/skel podle hotového profilu..."
+    local d
+
+    for d in .config .local; do
+        if [ ! -d "$USER_HOME/$d" ]; then
+            log "VAROVÁNÍ: $USER_HOME/$d neexistuje, přeskakuji."
+            continue
+        fi
+
+        rm -rf "/etc/skel/$d"
+        mkdir -p "/etc/skel/$d"
+
+        # "/." = včetně skrytých souborů; -a = práva, časy, symlinky
+        cp -a "$USER_HOME/$d/." "/etc/skel/$d/" 2>/dev/null || true
+
+        # co do kostry nepatří
+        rm -rf "/etc/skel/$d/share/Trash" \
+               "/etc/skel/$d/share/recently-used.xbel" \
+               "/etc/skel/$d/lib/panel-icons.so" 2>/dev/null || true
+    done
+
+    chown -R root:root /etc/skel
+    chmod -R u+rwX,go+rX /etc/skel
+    log "Skeleton aktualizován."
+}
+
+xfce_fix_ownership() {
+    chown -R "$REAL_USER:$REAL_USER" \
+        "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local" 2>/dev/null || true
+}
+
 configure_xfce() {
     log "=== ZAHAJUJI KONFIGURACI ČISTÉHO XFCE ==="
-    
-    XFCE_CONF_SRC="$CONTENTS_DIR/xfce/config/xfce4"
-    local TARGET_CONF_DIR="$USER_HOME/.config/xfce4"
-
-    # 1. Pojistka: vytvoření základních složek (bohužel je vytvoří root)
     mkdir -p "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local"
 
-    if [ -d "$XFCE_CONF_SRC" ]; then
-        log "Kopíruji vyklikanou XFCE konfiguraci (panel, whiskermenu, klávesnice, plocha)..."
-        
-        # 1.5 Odstřelíme démona nastavení (pojistka, kdybys to testoval v zapnutém GUI)
-        killall xfconfd 2>/dev/null || true
-
-        # 2. Nemilosrdné smazání staré složky
-        rm -rf "$TARGET_CONF_DIR" 2>/dev/null || true
-
-        mkdir -p "$XFCE_CONF_SRC/xfwm4"
-
-        cp -r "$CONTENTS_DIR/xfce/config/window-titles.conf" "$XFCE_CONF_SRC/xfwm4/"
-        
-        # 3. Zkopírování tvé čisté složky z projektu k uživateli
-        cp -r "$XFCE_CONF_SRC" "$USER_HOME/.config/"
-        
-        log "XFCE konfigurace úspěšně nasazena."
-    else
-        log "CHYBA: Zdrojová složka $XFCE_CONF_SRC nebyla nalezena!"
-    fi
-
-    local SCRIPTS_SRC="$CONTENTS_DIR/xfce/scripts"
-    local TARGET_DIR="/usr/local/bin"
-    
-    # Systémový adresář standardně existuje, ale pro jistotu
-    mkdir -p "$TARGET_DIR"
-    
-    if [ -d "$SCRIPTS_SRC" ]; then
-        # Kopírování do globální cesty
-        cp -u "$SCRIPTS_SRC/"* "$TARGET_DIR/" 2>/dev/null || true
-        
-        # Zabezpečení skriptů: vlastník root, všichni ostatní mohou číst a spouštět (755)
-        chown root:root "$TARGET_DIR/"* 2>/dev/null || true
-        chmod 755 "$TARGET_DIR/"* 2>/dev/null || true
-    fi
-
+    xfce_appearance          # xfce4 konfigurace + xfce_panel_icons
+    xfce_deploy_scripts      # skripty + wrappery xfce4-panel / nm-applet
     xfce_setup_apps_and_defaults
     xfce_albert_peazip_config
     xfce_app_names
     xfce_actions_config
     xfce_keyboard_shortcuts
+    xfce_skel_snapshot
+    xfce_fix_ownership
 
-    log "=== JEDNOTNÉ ZÁLOHOVÁNÍ PROFILE CONFIGS PRO NOVÉ UŽIVATELE ==="
-
-    # Projdeme obě hlavní složky a přeneseme jejich kompletní vnitřek do /etc/skel/
-    for dir_name in ".config" ".local"; do
-        if [ -d "$USER_HOME/$dir_name" ]; then
-            log "Přenáším kompletní složku $dir_name do záchranné kostry..."
-            
-            # Vytvoříme cílový adresář v kostře a předem ho vyčistíme
-            mkdir -p "/etc/skel/$dir_name"
-            rm -rf "/etc/skel/$dir_name"/* 2>/dev/null || true
-            
-            # Zkopírujeme vnitřní obsah složky (včetně skrytých souborů)
-            cp -r "$USER_HOME/$dir_name/"* "/etc/skel/$dir_name/" 2>/dev/null || true
-        else
-            log "VAROVÁNÍ: Zdrojová složka $USER_HOME/$dir_name nebyla nalezena."
-        fi
-    done
-
-    # Hromadná oprava práv a vlastníků pro CELÝ /etc/skel najednou
-    # Nemusíme to dělat po složkách, proženeme to rekurzivně pro celou kostru
-    log "Aplikuji systémová práva pro /etc/skel..."
-    chown -R root:root /etc/skel/
-    chmod -R u+rwX,go+rX /etc/skel/
-
-    log "Zálohování uživatelského profilu kompletně dokončeno."
-
-    # 4. KRITICKÉ: Kobercový nálet na práva. 
-    # Vrací uživateli celou .config, .cache a .local složku zpět, jinak XFCE a GTK padají při zápisu!
-    chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local" 2>/dev/null || true
-    
     log "=== KONFIGURACE XFCE BYLA ÚSPĚŠNĚ DOKONČENA ==="
 }
 

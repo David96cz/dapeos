@@ -58,6 +58,7 @@
       <property name="favorites" type="array">
       </property>
       <property name="command-lockscreen" type="string" value="dm-tool lock"/>
+      <property name="search-actions" type="int" value="0"/>
     </property>
     <property name="plugin-2" type="string" value="clock">
       <property name="digital-date-format" type="string" value=" %a, %d.%m.%Y "/>

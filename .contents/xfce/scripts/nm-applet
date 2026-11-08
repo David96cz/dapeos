@@ -1,0 +1,5 @@
+#!/bin/sh
+lib=/usr/local/lib/debiconf/panel-icons.so
+[ -f "$lib" ] && export LD_PRELOAD="$lib${LD_PRELOAD:+:$LD_PRELOAD}"
+[ -f /etc/debiconf/panel-icons.conf ] && . /etc/debiconf/panel-icons.conf
+exec /usr/bin/nm-applet "$@"
