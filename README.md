@@ -1,4 +1,4 @@
-# Debiconf
+# PrakDesk
 Zprovoznění desktopového prostředí bez bloatwaru na čistém Debianu
 
 Odkaz ke stažení Debianu
