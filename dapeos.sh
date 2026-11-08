@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# dapeos - ČISTÝ DEBIAN S DESKTOPOVÝM PROSTŘEDÍM
+# DapeOS - ČISTÝ DEBIAN S DESKTOPOVÝM PROSTŘEDÍM
 # ==============================================================================
 
 # === INIT FUNKCE ===
