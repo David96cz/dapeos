@@ -191,6 +191,7 @@ class Updater(QWidget):
 
     def init_tray(self):
         self.tray = QSystemTrayIcon(QIcon.fromTheme(PKG_ICON), self)
+
         menu = QMenu()
         act_open = QAction("Otevřít", self)
         act_open.triggered.connect(self.show_window)
@@ -202,10 +203,24 @@ class Updater(QWidget):
         menu.addAction(act_check)
         menu.addSeparator()
         menu.addAction(act_quit)
+
         self.tray.setContextMenu(menu)
         self.tray.activated.connect(self.on_tray_activated)
         self.tray.setToolTip("Aktualizace")
-        self.tray.show()
+
+        # ikona se ukáže, až když nějaké aktualizace existují
+        self.tray.setVisible(False)
+
+        # kdyby panel ještě neběžel, zkus to za 3 s znovu
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            QTimer.singleShot(3000, self.retry_tray)
+
+    def retry_tray(self):
+        if QSystemTrayIcon.isSystemTrayAvailable():
+            if self.packages:
+                self.tray.setVisible(True)
+        else:
+            QTimer.singleShot(3000, self.retry_tray)
 
     def ensure_autostart(self):
         if os.path.exists(AUTOSTART):
@@ -274,6 +289,7 @@ class Updater(QWidget):
         self.packages = packages
         self.populate()
         self.update_tray()
+        self.tray.setVisible(bool(packages))
         if self.tray_mode and packages:
             self.notify(packages)
 
@@ -456,6 +472,8 @@ class Updater(QWidget):
 
 def main():
     app = QApplication(sys.argv)
+    QIcon.setThemeName("Papirus-Light")
+    QIcon.setFallbackThemeName("hicolor")
     app.setQuitOnLastWindowClosed(False)
     app.setApplicationName("prakdesk-update")
     tray_mode = "--tray" in sys.argv

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# DEBICONF - ČISTÝ DEBIAN S DESKTOPOVÝM PROSTŘEDÍM (PROFI REFACTOR - FIXED)
+# PRAKDESK - ČISTÝ DEBIAN S DESKTOPOVÝM PROSTŘEDÍM
 # ==============================================================================
 
 # === INIT FUNKCE ===
