@@ -1506,86 +1506,73 @@ xfce_setup_apps_and_defaults() {
     fi
 }
 
-xfce_albert_peazip_config() {
-        # --- KONFIGURACE ALBERT A PEAZIP ---
-    log "Nasazuji konfigurace pro Albert a PeaZip..."
-    local AUTOSTART_DIR="$USER_HOME/.config/autostart"
-    mkdir -p "$AUTOSTART_DIR"
-    
+albert_setup() {
+    log "Instaluji a konfiguruji Albert..."
+
+    # --- 1) instalace: balíček (amd64) nebo přiložená binárka (ARM64) ---
+    if apt-cache policy albert 2>/dev/null | grep -q 'Candidate: [0-9]'; then
+        log "Používám balíček albert z repozitáře."
+        DEBIAN_FRONTEND=noninteractive apt-get install -y albert \
+            || log "VAROVÁNÍ: instalace balíčku albert selhala."
+    else
+        local SRC="$CONTENTS_DIR/xfce/albert"
+
+        if [ "$(uname -m)" != "aarch64" ]; then
+            log "UPOZORNĚNÍ: albert není v aptu a přiložená binárka je jen pro ARM64."
+        elif [ ! -x "$SRC/bin/albert" ]; then
+            log "UPOZORNĚNÍ: $SRC/bin/albert nenalezeno – přeskakuji."
+        else
+            install -d -m 755 /usr/local/bin /usr/local/lib/albert
+            install -m 755 -o root -g root "$SRC/bin/albert" /usr/local/bin/albert
+
+            if [ -d "$SRC/lib/albert" ]; then
+                cp -a "$SRC/lib/albert/." /usr/local/lib/albert/
+                chown -R root:root /usr/local/lib/albert
+                find /usr/local/lib/albert -type f -name '*.so*' -exec chmod 755 {} +
+            fi
+
+            ldconfig
+
+            if ldd /usr/local/bin/albert 2>/dev/null | grep -q 'not found'; then
+                log "VAROVÁNÍ: Albertu chybí knihovny:"
+                ldd /usr/local/bin/albert 2>/dev/null | grep 'not found' | while read -r l; do
+                    log "  $l"
+                done
+            fi
+        fi
+    fi
+
+    # --- 2) Albert nemá být v menu Start ---
+    rm -f /usr/share/applications/albert.desktop
+    rm -f "$USER_HOME/.local/share/applications/albert.desktop"
+    update-desktop-database /usr/share/applications 2>/dev/null || true
+
+    # --- 3) konfigurace ---
     local ALBERT_SRC="$CONTENTS_DIR/lxqt/config/albert.conf"
     local ALBERT_DEST="$USER_HOME/.config/albert/config"
+
     if [ -f "$ALBERT_SRC" ]; then
-        mkdir -p "$(dirname "$ALBERT_DEST")"
-        cp "$ALBERT_SRC" "$ALBERT_DEST"
+        install -d -m 755 "$(dirname "$ALBERT_DEST")"
+        install -m 600 "$ALBERT_SRC" "$ALBERT_DEST"
         sed -i "s|/home/david|$USER_HOME|g" "$ALBERT_DEST"
         sed -i "s|home\\\\david|home\\\\$REAL_USER|g" "$ALBERT_DEST"
+        chown "$REAL_USER:$REAL_USER" "$ALBERT_DEST"
+    else
+        log "UPOZORNĚNÍ: $ALBERT_SRC nenalezeno."
     fi
 
+    # --- 4) disky pro Alberta ---
     local ALBERT_DISKS="$USER_HOME/.local/share/albert_disks"
-    mkdir -p "$ALBERT_DISKS"
+    install -d -m 755 "$ALBERT_DISKS"
     ln -sfn /media "$ALBERT_DISKS/media"
-    ln -sfn /mnt "$ALBERT_DISKS/mnt"
+    ln -sfn /mnt   "$ALBERT_DISKS/mnt"
+    chown -R "$REAL_USER:$REAL_USER" "$ALBERT_DISKS" 2>/dev/null || true
 
-    # Zabití "first run" dialogu
+    # --- 5) potlačení first-run dialogu ---
     local ALBERT_STATE_DIR="$USER_HOME/.local/share/albert"
-    mkdir -p "$ALBERT_STATE_DIR"
-    echo -e "[General]\nlast_used_version=34.0.10" > "$ALBERT_STATE_DIR/state"
-
-    # Fix autostartu Alberta (zabití staré instance při přihlášení)
-    cp /usr/share/applications/albert.desktop "$AUTOSTART_DIR/" 2>/dev/null || true
-    if [ -f "$AUTOSTART_DIR/albert.desktop" ]; then
-        sed -i 's/^Exec=.*/Exec=sh -c "killall -9 albert 2>\/dev\/null; sleep 1 \&\& albert"/' "$AUTOSTART_DIR/albert.desktop"
-    fi
-
-    # PeaZip
-    # local PEAZIP_SRC="$CONTENTS_DIR/lxqt/config/peazip.conf"
-    # local PEAZIP_DEST="$USER_HOME/.config/peazip/conf.txt"
-    # if [ -f "$PEAZIP_SRC" ]; then
-    #     mkdir -p "$(dirname "$PEAZIP_DEST")"
-    #     cp "$PEAZIP_SRC" "$PEAZIP_DEST"
-    #     sed -i "s|/home/david|$USER_HOME|g" "$PEAZIP_DEST"
-        
-    #     # Dynamický jazyk PeaZipu
-    #     local PEAZIP_LANG="en.txt"
-    #     case "${SYS_LANG_CODE,,}" in
-    #         cs*) PEAZIP_LANG="cz.txt" ;;
-    #         sk*) PEAZIP_LANG="sk.txt" ;;
-    #         de*) PEAZIP_LANG="de.txt" ;;
-    #         fr*) PEAZIP_LANG="fr.txt" ;;
-    #         es*) PEAZIP_LANG="es.txt" ;;
-    #         pl*) PEAZIP_LANG="pl.txt" ;;
-    #     esac
-        
-    #     awk -v lang="$PEAZIP_LANG" '
-    #         /^\[language\]\r?$/ { print; getline; print lang; next }
-    #         { print }
-    #     ' "$PEAZIP_DEST" > "${PEAZIP_DEST}.tmp" && mv "${PEAZIP_DEST}.tmp" "$PEAZIP_DEST"
-
-    #     # Odstranění nativní komprimace a nasazení PeaZip akce
-    #     log "Odstraňuji nativní nefunkční komprimaci a nasazuji PeaZip akci..."
-    #     rm -f /usr/share/libfm-qt/archivers.list 2>/dev/null || true
-    #     rm -f /usr/share/libfm-qt6/archivers.list 2>/dev/null || true
-    #     rm -f /usr/share/libfm/archivers.list 2>/dev/null || true
-    #     rm -f /etc/xdg/libfm/archivers.list 2>/dev/null || true
-        
-    #     local PCMANFM_CONF="$USER_HOME/.config/pcmanfm-qt/lxqt/settings.conf"
-    #     if [ -f "$PCMANFM_CONF" ]; then
-    #         sed -i '/^Archiver=/d' "$PCMANFM_CONF" || true
-    #     fi
-        
-    #     local ACTIONS_DIR="$USER_HOME/.local/share/file-manager/actions"
-    #     mkdir -p "$ACTIONS_DIR"
-        
-    #     local PEAZIP_ACTION="$ACTIONS_DIR/peazip.desktop"
-    #     echo '[Desktop Entry]' > "$PEAZIP_ACTION"
-    #     echo 'Type=Action' >> "$PEAZIP_ACTION"
-    #     echo 'Name=Komprimovat (PeaZip)...' >> "$PEAZIP_ACTION"
-    #     echo 'Icon=peazip' >> "$PEAZIP_ACTION"
-    #     echo 'Profiles=profile-zero;' >> "$PEAZIP_ACTION"
-    #     echo '[X-Action-Profile profile-zero]' >> "$PEAZIP_ACTION"
-    #     echo 'MimeTypes=all/allfiles;inode/directory;' >> "$PEAZIP_ACTION"
-    #     echo 'Exec=peazip -add %F' >> "$PEAZIP_ACTION"
-    # fi
+    install -d -m 755 "$ALBERT_STATE_DIR"
+    printf '[General]\nlast_used_version=%s\n' "${ALBERT_VERSION:-34.0.10}" > "$ALBERT_STATE_DIR/state"
+    chown -R "$REAL_USER:$REAL_USER" "$ALBERT_STATE_DIR" 2>/dev/null || true
 }
 
 xfce_app_names() {
@@ -1841,6 +1828,7 @@ configure_xfce() {
     log "=== ZAHAJUJI KONFIGURACI ČISTÉHO XFCE ==="
     mkdir -p "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local"
 
+    albert_setup
     xfce_appearance          # xfce4 konfigurace + xfce_panel_icons
     xfce_deploy_scripts      # skripty + wrappery xfce4-panel / nm-applet
     xfce_setup_apps_and_defaults
