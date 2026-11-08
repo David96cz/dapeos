@@ -24,7 +24,7 @@ Po dokončení čisté netinst instalace bez prostředí:
   
   4) cd debiconf
   
-  5) bash debiconf.sh
+  5) bash prakdesk.sh
 
 
 *V případě VYNECHÁNÍ root hesla během instalace Debianu* 
@@ -35,7 +35,7 @@ Po dokončení čisté netinst instalace bez prostředí:
   
   3) cd debiconf
   
-  4) sudo bash debiconf.sh
+  4) sudo bash prakdesk.sh
 
 ---------------------------------------------------
 
