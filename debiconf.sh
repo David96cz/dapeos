@@ -1531,7 +1531,9 @@ albert_setup() {
                 find /usr/local/lib/albert -type f -name '*.so*' -exec chmod 755 {} +
             fi
 
-            ldconfig
+            # cesta pro dynamický linker + obnova cache
+            printf '/usr/local/lib/albert\n' > /etc/ld.so.conf.d/albert.conf
+            /sbin/ldconfig 2>/dev/null || ldconfig
 
             if ldd /usr/local/bin/albert 2>/dev/null | grep -q 'not found'; then
                 log "VAROVÁNÍ: Albertu chybí knihovny:"
@@ -1568,11 +1570,16 @@ albert_setup() {
     ln -sfn /mnt   "$ALBERT_DISKS/mnt"
     chown -R "$REAL_USER:$REAL_USER" "$ALBERT_DISKS" 2>/dev/null || true
 
-    # --- 5) potlačení first-run dialogu ---
+    # --- 5) potlačení first-run / version-change hlášky ---
     local ALBERT_STATE_DIR="$USER_HOME/.local/share/albert"
-    install -d -m 755 "$ALBERT_STATE_DIR"
-    printf '[General]\nlast_used_version=%s\n' "${ALBERT_VERSION:-34.0.10}" > "$ALBERT_STATE_DIR/state"
-    chown -R "$REAL_USER:$REAL_USER" "$ALBERT_STATE_DIR" 2>/dev/null || true
+    install -d -m 700 "$ALBERT_STATE_DIR"
+
+    local AV=""
+    AV="$(su - "$REAL_USER" -c 'albert --version 2>/dev/null' | awk '{print $NF}')"
+    [ -n "$AV" ] || AV="35.0.0"
+
+    printf '[General]\nlast_used_version=%s\n' "$AV" > "$ALBERT_STATE_DIR/state"
+    chown -R "$REAL_USER:$REAL_USER" "$ALBERT_STATE_DIR"
 }
 
 xfce_app_names() {
