@@ -1,0 +1,43 @@
+
+#ifndef QNOTIFICATIONS_EXPORT_H
+#define QNOTIFICATIONS_EXPORT_H
+
+#ifdef QNOTIFICATIONS_STATIC_DEFINE
+#  define QNOTIFICATIONS_EXPORT
+#  define QNOTIFICATIONS_NO_EXPORT
+#else
+#  ifndef QNOTIFICATIONS_EXPORT
+#    ifdef qnotifications_EXPORTS
+        /* We are building this library */
+#      define QNOTIFICATIONS_EXPORT 
+#    else
+        /* We are using this library */
+#      define QNOTIFICATIONS_EXPORT 
+#    endif
+#  endif
+
+#  ifndef QNOTIFICATIONS_NO_EXPORT
+#    define QNOTIFICATIONS_NO_EXPORT 
+#  endif
+#endif
+
+#ifndef QNOTIFICATIONS_DEPRECATED
+#  define QNOTIFICATIONS_DEPRECATED __attribute__ ((__deprecated__))
+#endif
+
+#ifndef QNOTIFICATIONS_DEPRECATED_EXPORT
+#  define QNOTIFICATIONS_DEPRECATED_EXPORT QNOTIFICATIONS_EXPORT QNOTIFICATIONS_DEPRECATED
+#endif
+
+#ifndef QNOTIFICATIONS_DEPRECATED_NO_EXPORT
+#  define QNOTIFICATIONS_DEPRECATED_NO_EXPORT QNOTIFICATIONS_NO_EXPORT QNOTIFICATIONS_DEPRECATED
+#endif
+
+/* NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if) */
+#if 0 /* DEFINE_NO_DEPRECATED */
+#  ifndef QNOTIFICATIONS_NO_DEPRECATED
+#    define QNOTIFICATIONS_NO_DEPRECATED
+#  endif
+#endif
+
+#endif /* QNOTIFICATIONS_EXPORT_H */

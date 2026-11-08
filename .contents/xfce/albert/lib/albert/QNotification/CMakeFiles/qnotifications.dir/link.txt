@@ -1,0 +1,2 @@
+/usr/bin/ar qc libqnotifications.a CMakeFiles/qnotifications.dir/qnotifications_autogen/mocs_compilation.cpp.o CMakeFiles/qnotifications.dir/src/qnotification.cpp.o CMakeFiles/qnotifications.dir/src/qnotificationmanager_xdg.cpp.o CMakeFiles/qnotifications.dir/xdgnotificationsinterface.cpp.o
+/usr/bin/ranlib libqnotifications.a
