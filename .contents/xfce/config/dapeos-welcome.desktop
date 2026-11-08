@@ -2,10 +2,10 @@
 Type=Application
 Name=Uvítání
 Name[cs]=Uvítání
-Comment=Průvodce prvními kroky v PrakDesk
-Comment[cs]=Průvodce prvními kroky v PrakDesk
-Exec=prakdesk-welcome
-Icon=prakdesk-logo
+Comment=Průvodce prvními kroky v dapeos
+Comment[cs]=Průvodce prvními kroky v dapeos
+Exec=dapeos-welcome
+Icon=dapeos-logo
 Terminal=false
 Categories=System;
 Keywords=welcome;uvitani;napoveda;pomoc;

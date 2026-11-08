@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-prakdesk-welcome - uvítací okno pro první přihlášení (styl Linux Mint).
+dapeos-welcome - uvítací okno pro první přihlášení (styl Linux Mint).
 Spuštění:
-  prakdesk-welcome              # ručně z menu
-  prakdesk-welcome --first-run  # z autostartu; podruhé už nic neudělá
+  dapeos-welcome              # ručně z menu
+  dapeos-welcome --first-run  # z autostartu; podruhé už nic neudělá
 """
 
 import os
@@ -21,9 +21,9 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-APP_NAME = "PrakDesk"
-LOGO = "/usr/share/icons/hicolor/scalable/apps/prakdesk-logo.svg"
-CONF_DIR = os.path.expanduser("~/.config/prakdesk")
+APP_NAME = "dapeos"
+LOGO = "/usr/share/icons/hicolor/scalable/apps/dapeos-logo.svg"
+CONF_DIR = os.path.expanduser("~/.config/dapeos")
 FLAG = os.path.join(CONF_DIR, "welcome-done")
 
 
@@ -266,7 +266,7 @@ class Welcome(QWidget):
         ).exec_()
 
     def open_updates(self):
-        subprocess.Popen(["prakdesk-update"])
+        subprocess.Popen(["dapeos-update"])
 
     def open_appearance(self):
         subprocess.Popen(["xfce4-appearance-settings"])

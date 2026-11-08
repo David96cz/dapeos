@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-prakdesk-update - správce aktualizací pro Debian + XFCE
+dapeos-update - správce aktualizací pro Debian + XFCE
 Windows-Update styl: seznam aktualizací, tiché kontroly, žádný terminál.
 
 Spouštění:
-  prakdesk-update          # okno
-  prakdesk-update --tray   # jen tray (pro autostart)
+  dapeos-update          # okno
+  dapeos-update --tray   # jen tray (pro autostart)
 """
 
 import json
@@ -23,13 +23,13 @@ from PyQt5.QtWidgets import (
     QSystemTrayIcon, QVBoxLayout, QWidget,
 )
 
-HELPER = "/usr/local/lib/prakdesk/prakdesk-update-helper"
+HELPER = "/usr/local/lib/dapeos/dapeos-update-helper"
 PKEXEC = "/usr/bin/pkexec"
 PKG_ICON = "system-software-update"
 
-CONF_DIR = os.path.expanduser("~/.config/prakdesk")
+CONF_DIR = os.path.expanduser("~/.config/dapeos")
 CONF_FILE = os.path.join(CONF_DIR, "update.json")
-AUTOSTART = os.path.expanduser("~/.config/autostart/prakdesk-update.desktop")
+AUTOSTART = os.path.expanduser("~/.config/autostart/dapeos-update.desktop")
 
 FILTERS = [
     ("Vše", lambda p: True),
@@ -232,7 +232,7 @@ class Updater(QWidget):
                     "[Desktop Entry]\n"
                     "Type=Application\n"
                     "Name=Aktualizace\n"
-                    "Exec=prakdesk-update --tray\n"
+                    "Exec=dapeos-update --tray\n"
                     "Icon=system-software-update\n"
                     "Terminal=false\n"
                     "Hidden=false\n"
@@ -475,7 +475,7 @@ def main():
     QIcon.setThemeName("Papirus-Light")
     QIcon.setFallbackThemeName("hicolor")
     app.setQuitOnLastWindowClosed(False)
-    app.setApplicationName("prakdesk-update")
+    app.setApplicationName("dapeos-update")
     tray_mode = "--tray" in sys.argv
     window = Updater(tray_mode=tray_mode)
     if not tray_mode:

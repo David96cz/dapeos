@@ -1,6 +1,6 @@
 #!/bin/sh
-# prakdesk-update-helper - root cast pro PrakDesk Update
-# Spouští se přes pkexec:  pkexec /usr/local/lib/prakdesk/prakdesk-update-helper install [balíčky...]
+# dapeos-update-helper - root cast pro dapeos Update
+# Spouští se přes pkexec:  pkexec /usr/local/lib/dapeos/dapeos-update-helper install [balíčky...]
 set -eu
 
 export LANG=C

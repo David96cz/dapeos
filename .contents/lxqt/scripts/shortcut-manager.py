@@ -48,7 +48,7 @@ def parse_desktop_file(filepath):
             for line in f:
                 if line.startswith("Name="): name = line.split("=", 1)[1].strip()
                 elif line.startswith("Icon="): icon = line.split("=", 1)[1].strip()
-                elif "X-Debiconf-Custom=true" in line: custom = True
+                elif "X-dapeos-Custom=true" in line: custom = True
     except: pass
     return name, icon, custom
 
@@ -274,7 +274,7 @@ class ShortcutApp(QMainWindow):
             if not os.path.exists(APPS_DIR): os.makedirs(APPS_DIR)
             with open(output_file, 'w') as f:
                 f.write("[Desktop Entry]\n")
-                f.write("X-Debiconf-Custom=true\n")
+                f.write("X-dapeos-Custom=true\n")
                 f.write("Type=Application\n")
                 f.write(f"Name={name}\n")
                 f.write(f"Exec={final_exec}\n")

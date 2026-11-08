@@ -110,7 +110,7 @@ class UninstallWorker(QThread):
 class AppUninstaller(QWidget):
     def __init__(self):
         super().__init__()
-        self.unremovable_file = "/etc/debiconf-unremovable.txt"
+        self.unremovable_file = "/etc/dapeos-unremovable.txt"
         self.unremovable_list = self.load_blacklist()
         self.worker = None
         self.initUI()
@@ -180,7 +180,7 @@ class AppUninstaller(QWidget):
                 filepath = os.path.join(sys_dir, filename)
                 try:
                     with open(filepath, 'r', errors='ignore') as f: content = f.read()
-                    if "NoDisplay=true" in content or "X-Debiconf-Custom=true" in content: continue
+                    if "NoDisplay=true" in content or "X-dapeos-Custom=true" in content: continue
                     
                     temp_name, temp_name_cs, icon_name, categories, in_main = "", "", "application-x-executable", "", False
                     for line in content.splitlines():
@@ -207,7 +207,7 @@ class AppUninstaller(QWidget):
                 filepath = os.path.join(local_dir, filename)
                 try:
                     with open(filepath, 'r', errors='ignore') as f: content = f.read()
-                    if "NoDisplay=true" in content or "X-Debiconf-Custom=true" in content: continue
+                    if "NoDisplay=true" in content or "X-dapeos-Custom=true" in content: continue
                     
                     temp_name, temp_name_cs, icon_name, categories, in_main = "", "", "application-x-executable", "", False
                     for line in content.splitlines():

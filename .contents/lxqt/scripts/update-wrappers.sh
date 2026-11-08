@@ -24,7 +24,7 @@ for local_app in "$LOCAL_APPS"/*.desktop; do
     [ -e "$local_app" ] || continue
     
     # NOVÁ POJISTKA: Pokud je tam naše značka, nesahat!
-    if grep -q "X-Debiconf-Custom=true" "$local_app"; then
+    if grep -q "X-dapeos-Custom=true" "$local_app"; then
         continue
     fi
 
@@ -87,8 +87,8 @@ for app in "$SYSTEM_APPS"/*.desktop; do
     fi
 done
 
-# --- ZOBRAZENÉ APLIKACE (seznam uložený instalátorem debiconf) ---
-SHOW_LIST="$HOME/.config/debiconf/apps-show.list"
+# --- ZOBRAZENÉ APLIKACE (seznam uložený instalátorem dapeos) ---
+SHOW_LIST="$HOME/.config/dapeos/apps-show.list"
 if [ -f "$SHOW_LIST" ]; then
     while IFS= read -r show_app; do
         show_app="${show_app%$'\r'}"

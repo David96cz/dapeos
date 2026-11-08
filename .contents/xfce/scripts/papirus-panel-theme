@@ -58,8 +58,8 @@ THEME
 chown -R root:root "$DST"
 chmod -R go+rX "$DST"
 
-printf 'PANEL_ICON_THEME=Papirus-Panel\n' > /etc/debiconf/panel-icons.conf
-chmod 644 /etc/debiconf/panel-icons.conf
+printf 'PANEL_ICON_THEME=Papirus-Panel\n' > /etc/dapeos/panel-icons.conf
+chmod 644 /etc/dapeos/panel-icons.conf
 
 echo "Hotovo: $DST"
 echo "Restart panelu: pkill -x xfce4-panel; sleep 1; setsid xfce4-panel >/dev/null 2>&1 < /dev/null &"

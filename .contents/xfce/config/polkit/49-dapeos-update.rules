@@ -1,6 +1,6 @@
-/* PrakDesk: členové skupiny sudo mohou instalovat aktualizace bez dotazu */
+/* dapeos: členové skupiny sudo mohou instalovat aktualizace bez dotazu */
 polkit.addRule(function(action, subject) {
-    if (action.id === "cz.prakdesk.update" &&
+    if (action.id === "cz.dapeos.update" &&
         (subject.isInGroup("sudo") || subject.isInGroup("wheel"))) {
         return polkit.Result.YES;
     }

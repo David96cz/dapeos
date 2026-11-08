@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Uvítání
-Exec=prakdesk-welcome --first-run
-Icon=prakdesk-logo
+Exec=dapeos-welcome --first-run
+Icon=dapeos-logo
 Terminal=false
 Hidden=false

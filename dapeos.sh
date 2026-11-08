@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# PRAKDESK - ČISTÝ DEBIAN S DESKTOPOVÝM PROSTŘEDÍM
+# dapeos - ČISTÝ DEBIAN S DESKTOPOVÝM PROSTŘEDÍM
 # ==============================================================================
 
 # === INIT FUNKCE ===
@@ -320,9 +320,9 @@ lxqt_setup_apps_and_defaults() {
         fi
     done
 
-    mkdir -p "$USER_HOME/.config/debiconf"
-    printf '%s\n' $APPS_TO_SHOW_STR > "$USER_HOME/.config/debiconf/apps-show.list"
-    chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config/debiconf"
+    mkdir -p "$USER_HOME/.config/dapeos"
+    printf '%s\n' $APPS_TO_SHOW_STR > "$USER_HOME/.config/dapeos/apps-show.list"
+    chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config/dapeos"
 
     # Aktualizace MIME mezipaměti (až po všech úpravách .desktop souborů)
     log "Aktualizuji lokální MIME databázi pro zástupce s wrappery..."
@@ -782,16 +782,16 @@ lxqt_prepare_base_configs() {
     
     if [ -n "$LOCAL_UNREMOVABLE" ]; then
         # Vezmeme výstup, smažeme Windows znaky (\r) a nahradíme mezery novým řádkem (\n)
-        echo "$LOCAL_UNREMOVABLE" | tr -d '\r' | tr ' ' '\n' > /etc/debiconf-unremovable.txt
+        echo "$LOCAL_UNREMOVABLE" | tr -d '\r' | tr ' ' '\n' > /etc/dapeos-unremovable.txt
         
-        chmod 644 /etc/debiconf-unremovable.txt
+        chmod 644 /etc/dapeos-unremovable.txt
         echo ">> Obsah uloženého blacklistu:"
-        cat /etc/debiconf-unremovable.txt
+        cat /etc/dapeos-unremovable.txt
     else
         echo ">> Seznam [UNREMOVABLE] je prázdný, soubor nebyl vytvořen."
         # Vytvoření prázdného souboru pro jistotu, aby systém neřval, že chybí
-        touch /etc/debiconf-unremovable.txt
-        chmod 644 /etc/debiconf-unremovable.txt
+        touch /etc/dapeos-unremovable.txt
+        chmod 644 /etc/dapeos-unremovable.txt
     fi
 
     # QTerminal nenápadně stranou
@@ -1226,24 +1226,24 @@ lxqt_config_backup() {
     log "8/8 Vytvářím 1:1 TAR snapshot .config pro případ, že by si uživatel smazal .config z domovského adresáře..."
     
     # 0. Nasazení kanárka (tajný soubor)
-    touch "$USER_HOME/.config/lxqt/.debiconf_ok"
+    touch "$USER_HOME/.config/lxqt/.dapeos_ok"
     
     # 1. Čistá záloha do archivu (Zaručí zachování struktury a zamezí slučování zmetků)
-    mkdir -p /opt/debiconf-backup
-    tar -czf /opt/debiconf-backup/config.tar.gz -C "$USER_HOME" .config
+    mkdir -p /opt/dapeos-backup
+    tar -czf /opt/dapeos-backup/config.tar.gz -C "$USER_HOME" .config
     
     # Zabezpečíme, aby si to uživatel mohl po přihlášení sám rozbalit
-    chmod 644 /opt/debiconf-backup/config.tar.gz
+    chmod 644 /opt/dapeos-backup/config.tar.gz
     
     # 2. Záchranný skript (Běží při KAŽDÉM přihlášení)
-    local RESTORE_SCRIPT="/etc/X11/Xsession.d/90debiconf-restore"
+    local RESTORE_SCRIPT="/etc/X11/Xsession.d/90dapeos-restore"
     
     echo '# Kontrola na základě chybějícího kanárka' > "$RESTORE_SCRIPT"
-    echo 'if [ ! -f "$HOME/.config/lxqt/.debiconf_ok" ]; then' >> "$RESTORE_SCRIPT"
+    echo 'if [ ! -f "$HOME/.config/lxqt/.dapeos_ok" ]; then' >> "$RESTORE_SCRIPT"
     echo '    # 1. Nemilosrdně smazat zmetka, kterého LXQt vytvořilo při odhlášení' >> "$RESTORE_SCRIPT"
     echo '    rm -rf "$HOME/.config/lxqt"' >> "$RESTORE_SCRIPT"
     echo '    # 2. Rozbalit čistý 1:1 snapshot přesně tak, jak byl nastaven při instalaci' >> "$RESTORE_SCRIPT"
-    echo '    tar -xzf /opt/debiconf-backup/config.tar.gz -C "$HOME"' >> "$RESTORE_SCRIPT"
+    echo '    tar -xzf /opt/dapeos-backup/config.tar.gz -C "$HOME"' >> "$RESTORE_SCRIPT"
     echo 'fi' >> "$RESTORE_SCRIPT"
     
     chmod 644 "$RESTORE_SCRIPT"
@@ -1325,9 +1325,9 @@ xfce_panel_icons() {
         return 0
     fi
 
-    install -d -m 755 /usr/local/lib/debiconf /etc/debiconf
-    install -m 644 -o root -g root "$SRC_SO" /usr/local/lib/debiconf/panel-icons.so
-    install -m 644 -o root -g root "$SRC_CONF" /etc/debiconf/panel-icons.conf
+    install -d -m 755 /usr/local/lib/dapeos /etc/dapeos
+    install -m 644 -o root -g root "$SRC_SO" /usr/local/lib/dapeos/panel-icons.so
+    install -m 644 -o root -g root "$SRC_CONF" /etc/dapeos/panel-icons.conf
 
     log "Knihovna ikon panelu nainstalována."
 }
@@ -1480,16 +1480,16 @@ xfce_setup_apps_and_defaults() {
     
     if [ -n "$LOCAL_UNREMOVABLE" ]; then
         # Vezmeme výstup, smažeme Windows znaky (\r) a nahradíme mezery novým řádkem (\n)
-        echo "$LOCAL_UNREMOVABLE" | tr -d '\r' | tr ' ' '\n' > /etc/debiconf-unremovable.txt
+        echo "$LOCAL_UNREMOVABLE" | tr -d '\r' | tr ' ' '\n' > /etc/dapeos-unremovable.txt
         
-        chmod 644 /etc/debiconf-unremovable.txt
+        chmod 644 /etc/dapeos-unremovable.txt
         echo ">> Obsah uloženého blacklistu:"
-        cat /etc/debiconf-unremovable.txt
+        cat /etc/dapeos-unremovable.txt
     else
         echo ">> Seznam [UNREMOVABLE] je prázdný, soubor nebyl vytvořen."
         # Vytvoření prázdného souboru pro jistotu, aby systém neřval, že chybí
-        touch /etc/debiconf-unremovable.txt
-        chmod 644 /etc/debiconf-unremovable.txt
+        touch /etc/dapeos-unremovable.txt
+        chmod 644 /etc/dapeos-unremovable.txt
     fi
 
     # Vložení správných kategorií do nastavení tisku, aby se zobrazoval v nastavení
@@ -1852,20 +1852,20 @@ xfce_fix_ownership() {
 }
 
 update_manager_setup() {
-    log "Nasazuji správce aktualizací (prakdesk-update)..."
+    log "Nasazuji správce aktualizací (dapeos-update)..."
 
-    local HELPER_SRC="$CONTENTS_DIR/xfce/scripts/prakdesk-update-helper"
-    local POLICY_SRC="$CONTENTS_DIR/xfce/config/polkit/cz.prakdesk.update.policy"
-    local RULES_SRC="$CONTENTS_DIR/xfce/config/polkit/49-prakdesk-update.rules"
-    local DESKTOP_SRC="$CONTENTS_DIR/xfce/config/prakdesk-update.desktop"
+    local HELPER_SRC="$CONTENTS_DIR/xfce/scripts/dapeos-update-helper"
+    local POLICY_SRC="$CONTENTS_DIR/xfce/config/polkit/cz.dapeos.update.policy"
+    local RULES_SRC="$CONTENTS_DIR/xfce/config/polkit/49-dapeos-update.rules"
+    local DESKTOP_SRC="$CONTENTS_DIR/xfce/config/dapeos-update.desktop"
 
     # závislosti
     DEBIAN_FRONTEND=noninteractive apt-get install -y python3-pyqt5 pkexec 2>/dev/null \
         || DEBIAN_FRONTEND=noninteractive apt-get install -y python3-pyqt5 policykit-1
 
     if [ -f "$HELPER_SRC" ]; then
-        install -d -m 755 /usr/local/lib/prakdesk
-        install -m 755 -o root -g root "$HELPER_SRC" /usr/local/lib/prakdesk/prakdesk-update-helper
+        install -d -m 755 /usr/local/lib/dapeos
+        install -m 755 -o root -g root "$HELPER_SRC" /usr/local/lib/dapeos/dapeos-update-helper
     else
         log "UPOZORNĚNÍ: $HELPER_SRC nenalezeno."
     fi
@@ -1887,16 +1887,16 @@ update_manager_setup() {
 }
 
 welcome_setup() {
-    log "Nasazuji uvítací okno (prakdesk-welcome)..."
+    log "Nasazuji uvítací okno (dapeos-welcome)..."
 
-    local LOGO_SRC="$CONTENTS_DIR/xfce/icons/prakdesk-logo.svg"
-    local DESKTOP_SRC="$CONTENTS_DIR/xfce/config/prakdesk-welcome.desktop"
-    local AUTOSTART_SRC="$CONTENTS_DIR/xfce/config/prakdesk-welcome-autostart.desktop"
+    local LOGO_SRC="$CONTENTS_DIR/xfce/icons/dapeos-logo.svg"
+    local DESKTOP_SRC="$CONTENTS_DIR/xfce/config/dapeos-welcome.desktop"
+    local AUTOSTART_SRC="$CONTENTS_DIR/xfce/config/dapeos-welcome-autostart.desktop"
 
     if [ -f "$LOGO_SRC" ]; then
         install -d -m 755 /usr/share/icons/hicolor/scalable/apps
         install -m 644 -o root -g root "$LOGO_SRC" \
-            /usr/share/icons/hicolor/scalable/apps/prakdesk-logo.svg
+            /usr/share/icons/hicolor/scalable/apps/dapeos-logo.svg
         gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
     fi
 
@@ -1908,7 +1908,7 @@ welcome_setup() {
     if [ -f "$AUTOSTART_SRC" ]; then
         install -d -m 755 "$USER_HOME/.config/autostart"
         install -m 644 -o "$REAL_USER" -g "$REAL_USER" \
-            "$AUTOSTART_SRC" "$USER_HOME/.config/autostart/prakdesk-welcome.desktop"
+            "$AUTOSTART_SRC" "$USER_HOME/.config/autostart/dapeos-welcome.desktop"
     fi
 }
 
@@ -2380,7 +2380,7 @@ setup_display_manager() {
     fi
 }
 
-PLYMOUTH_MARKER="/var/lib/prakdesk/plymouth.done"
+PLYMOUTH_MARKER="/var/lib/dapeos/plymouth.done"
 
 plymouth_current_theme() {
     sed -n 's/^Theme=//p' /etc/plymouth/plymouthd.conf 2>/dev/null | head -1
