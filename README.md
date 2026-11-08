@@ -1,4 +1,4 @@
-# PrakDesk
+# DaveOS
 Zprovoznění desktopového prostředí bez bloatwaru na čistém Debianu
 
 Odkaz ke stažení Debianu
@@ -20,22 +20,22 @@ Po dokončení čisté netinst instalace bez prostředí:
   
   2) apt install git -y
   
-  3) git clone https://github.com/David96cz/prakdesk
+  3) git clone https://github.com/David96cz/daveos
   
   4) cd debiconf
   
-  5) bash prakdesk.sh
+  5) bash daveos.sh
 
 
 *V případě VYNECHÁNÍ root hesla během instalace Debianu* 
   
   1) sudo apt install git -y
   
-  2) git clone https://github.com/David96cz/prakdesk
+  2) git clone https://github.com/David96cz/daveos
   
   3) cd debiconf
   
-  4) sudo bash prakdesk.sh
+  4) sudo bash daveos.sh
 
 ---------------------------------------------------
 
