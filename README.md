@@ -1,4 +1,4 @@
-# DaveOS
+# DapeOS
 Zprovoznění desktopového prostředí bez bloatwaru na čistém Debianu
 
 Odkaz ke stažení Debianu
@@ -20,22 +20,22 @@ Po dokončení čisté netinst instalace bez prostředí:
   
   2) apt install git -y
   
-  3) git clone https://github.com/David96cz/daveos
+  3) git clone https://github.com/David96cz/dapeos
   
   4) cd debiconf
   
-  5) bash daveos.sh
+  5) bash dapeos.sh
 
 
 *V případě VYNECHÁNÍ root hesla během instalace Debianu* 
   
   1) sudo apt install git -y
   
-  2) git clone https://github.com/David96cz/daveos
+  2) git clone https://github.com/David96cz/dapeos
   
   3) cd debiconf
   
-  4) sudo bash daveos.sh
+  4) sudo bash dapeos.sh
 
 ---------------------------------------------------
 
