@@ -1375,6 +1375,12 @@ xfce_appearance() {
 
     # 4. Vlastnictví
     chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/.config" 2>/dev/null || true
+
+    # Odstranění Open Terminal Here
+    install -d -m 755 "$USER_HOME/.config/Thunar"
+    install -m 644 "$CONTENTS_DIR/xfce/config/Thunar/uca.xml" \
+                "$USER_HOME/.config/Thunar/uca.xml"
+    chown "$REAL_USER:$REAL_USER" "$USER_HOME/.config/Thunar/uca.xml"
 }
 
 xfce_setup_apps_and_defaults() {
