@@ -20,7 +20,7 @@ Po dokončení čisté netinst instalace bez prostředí:
   
   2) apt install git -y
   
-  3) git clone https://github.com/David96cz/debiconf
+  3) git clone https://github.com/David96cz/prakdesk
   
   4) cd debiconf
   
@@ -31,7 +31,7 @@ Po dokončení čisté netinst instalace bez prostředí:
   
   1) sudo apt install git -y
   
-  2) git clone https://github.com/David96cz/debiconf
+  2) git clone https://github.com/David96cz/prakdesk
   
   3) cd debiconf
   
