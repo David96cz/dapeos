@@ -2343,36 +2343,74 @@ setup_display_manager() {
     fi
 }
 
+PLYMOUTH_MARKER="/var/lib/prakdesk/plymouth.done"
+
+plymouth_current_theme() {
+    sed -n 's/^Theme=//p' /etc/plymouth/plymouthd.conf 2>/dev/null | head -1
+}
+
+plymouth_ready() {
+    local want="$1" cur
+
+    command -v plymouth-set-default-theme >/dev/null 2>&1 || return 1
+    grep -qE '^GRUB_CMDLINE_LINUX_DEFAULT=.*(^|[" ])splash([ " ]|$)' /etc/default/grub || return 1
+
+    cur="$(plymouth_current_theme)"
+    [ "$cur" = "$want" ] || return 1
+
+    [ -f "$PLYMOUTH_MARKER" ] || return 1
+    [ "$(cat "$PLYMOUTH_MARKER")" = "$want" ] || return 1
+}
+
 setup_boot() {
     log "Nastavuji GRUB a Boot Logo..."
-    sed -i "s/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=$TIMEOUT/" /etc/default/grub || true
 
-    # Odstranění pozadí
-    sudo sed -i '/GRUB_BACKGROUND/d' /etc/default/grub
-    
-    # Nastavení absolutního ticha (bez menu a prodlevy)
-    sudo sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub
-    if ! grep -q "GRUB_TIMEOUT_STYLE=hidden" /etc/default/grub; then
-        echo "GRUB_TIMEOUT_STYLE=hidden" | sudo tee -a /etc/default/grub
-    fi
-    sudo sed -i 's/#GRUB_TERMINAL=console/GRUB_TERMINAL=console/' /etc/default/grub
+    # --- 1) základní GRUB ---
+    sed -i '/^GRUB_BACKGROUND/d' /etc/default/grub
+    sed -i "s/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=$TIMEOUT/" /etc/default/grub
 
-    # BEZPEČNÉ PŘIDÁNÍ PARAMETRŮ (Zanechá Bay Trail i AMD fixy netknuté!)
-    for param in quiet splash loglevel=3 rd.systemd.show_status=false vga=current; do
-        sudo sed -i -e "/^GRUB_CMDLINE_LINUX_DEFAULT=/ { /$param/! s/\"$/ $param\"/ }" /etc/default/grub
-    done
-
-    if [ "$BOOT_LOGO" == "TRUE" ]; then
-        log "Aplikuji grafický start (Plymouth)..."
-        sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub || true
-        plymouth-set-default-theme -R bgrt 2>/dev/null || plymouth-set-default-theme -R spinner 2>/dev/null || true
+    if grep -q '^GRUB_TIMEOUT_STYLE=' /etc/default/grub; then
+        sed -i 's/^GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=hidden/' /etc/default/grub
     else
-        log "Ponechávám textový start..."
-        sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/' /etc/default/grub || true
+        echo 'GRUB_TIMEOUT_STYLE=hidden' >> /etc/default/grub
+    fi
+
+    sed -i 's/^#GRUB_TERMINAL=console/GRUB_TERMINAL=console/' /etc/default/grub
+
+    # --- 2) cmdline: jeden zápis, existující parametry zůstanou ---
+    local cur
+    cur="$(sed -n 's/^GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"/\1/p' /etc/default/grub | head -1)"
+
+    if [ "$BOOT_LOGO" = "TRUE" ]; then
+        for p in quiet splash loglevel=3 rd.systemd.show_status=false vga=current; do
+            case " $cur " in *" $p "*) ;; *) cur="${cur:+$cur }$p" ;; esac
+        done
+    else
+        cur="$(printf '%s\n' $cur | grep -vx 'splash' | tr '\n' ' ')"
+        cur="${cur% }"
+        case " $cur " in *" quiet "*) ;; *) cur="${cur:+$cur }quiet" ;; esac
+    fi
+
+    sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"$cur\"|" /etc/default/grub
+
+    # --- 3) Plymouth: jen když ještě není hotový ---
+    if [ "$BOOT_LOGO" = "TRUE" ]; then
+        local theme="bgrt"
+
+        if plymouth_ready "$theme"; then
+            log "Plymouth je už nastavený ($theme) – initramfs nepřegenerovávám."
+        elif command -v plymouth-set-default-theme >/dev/null 2>&1; then
+            log "Nastavuji Plymouth ($theme) a přegenerovávám initramfs…"
+            plymouth-set-default-theme -R "$theme" 2>/dev/null \
+                || plymouth-set-default-theme -R spinner 2>/dev/null || true
+            install -d -m 755 "$(dirname "$PLYMOUTH_MARKER")"
+            printf '%s\n' "$theme" > "$PLYMOUTH_MARKER"
+        else
+            log "UPOZORNĚNÍ: Plymouth není nainstalovaný, přeskakuji."
+        fi
     fi
 
     hardware_detection
-
     update-grub || true
     systemctl set-default graphical.target || true
 }
