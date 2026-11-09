@@ -172,6 +172,12 @@ class Welcome(QWidget):
         super().__init__()
         self.setWindowTitle(f"Vítejte v {APP_NAME}")
         self.setFixedSize(760, 640)
+        # Vystředění okna na aktuální obrazovku
+        screen = QApplication.primaryScreen().geometry()
+        x = (screen.width() - self.width()) // 2
+        y = (screen.height() - self.height()) // 2
+        self.move(x, y)
+
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon(LOGO) if os.path.exists(LOGO) else QIcon.fromTheme("distributor-logo"))
 
