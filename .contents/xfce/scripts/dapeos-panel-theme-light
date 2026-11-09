@@ -1,0 +1,45 @@
+#!/bin/sh
+# dapeos-panel-theme-light <slozka-s-barevnymi-svg>
+# Světlý panel: scalable téma z Papirus-Light (tmavé ikony),
+# modrá lupa pro launcher "search" a tmavý Bluetooth pro "blueman".
+set -eu
+CUSTOM="${1:-}"
+[ -n "$CUSTOM" ] && [ -d "$CUSTOM" ] || { echo "Použití: $0 <slozka-svg>" >&2; exit 1; }
+BASE="/usr/share/icons/Papirus-Light"
+DST="/usr/share/icons/Papirus-Panel-Light"
+[ -d "$BASE" ] || { echo "CHYBÍ $BASE" >&2; exit 1; }
+
+rm -rf "$DST"; mkdir -p "$DST/scalable"
+
+for ctx in panel status apps places devices mimetypes actions categories emblems emotes; do
+    d="$BASE/22x22/$ctx"; [ -d "$d" ] || continue
+    for f in "$d"/*; do
+        [ -e "$f" ] || continue
+        n=$(basename "$f")
+        [ -e "$DST/scalable/$n" ] && continue
+        ln -s "$f" "$DST/scalable/$n"
+    done
+done
+
+[ -f "$CUSTOM/edit-find.svg" ] && cp "$CUSTOM/edit-find.svg" "$DST/scalable/search.svg"
+if [ -f "$CUSTOM/blueman-dark.svg" ]; then
+    cp "$CUSTOM/blueman-dark.svg" "$DST/scalable/blueman.svg"
+    cp "$CUSTOM/blueman-dark.svg" "$DST/scalable/bluetooth.svg"
+fi
+
+cat > "$DST/index.theme" <<'T'
+[Icon Theme]
+Name=Papirus-Panel-Light
+Inherits=Papirus-Light
+Directories=scalable
+
+[scalable]
+Size=64
+MinSize=8
+MaxSize=512
+Type=Scalable
+Context=Applications
+T
+
+chmod -R go+rX "$DST"
+echo "Hotovo: $DST"

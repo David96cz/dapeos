@@ -1,60 +1,52 @@
 #!/bin/sh
-# papirus-panel-theme <slozka-s-barevnymi-svg>
-#
-# Postaví /usr/share/icons/Papirus-Panel jako JEDNO scalable téma:
-#  - všechny ikony Papirus-Dark jsou odkazované (symlink) do scalable/
-#  - díky Type=Scalable GTK škáluje na přesný počet pixelů (žádné skoky)
-#  - barevné SVG z <slozka> přepíšou vybrané ikony
+# dapeos-panel-theme <slozka-s-barevnymi-svg>
+# Tmavý panel: scalable téma z Papirus-Dark + barevné ikony.
 set -eu
-
 CUSTOM="${1:-}"
-if [ -z "$CUSTOM" ] || [ ! -d "$CUSTOM" ]; then
-    echo "Použití: $0 <slozka-s-barevnymi-svg>" >&2
-    exit 1
-fi
-
+[ -n "$CUSTOM" ] && [ -d "$CUSTOM" ] || { echo "Použití: $0 <slozka-svg>" >&2; exit 1; }
 BASE="/usr/share/icons/Papirus-Dark"
 DST="/usr/share/icons/Papirus-Panel"
+[ -d "$BASE" ] || { echo "CHYBÍ $BASE" >&2; exit 1; }
 
-if [ ! -d "$BASE" ]; then
-    echo "CHYBA: chybí $BASE (nainstaluj papirus-icon-theme)" >&2
-    exit 1
-fi
+rm -rf "$DST"; mkdir -p "$DST/scalable"
 
-rm -rf "$DST"
-mkdir -p "$DST/scalable"
-
-# 1) všechny ikony z Papirus-Dark jako scalable (priorita kontextů)
 for ctx in panel status apps places devices mimetypes actions categories emblems emotes; do
-    d="$BASE/22x22/$ctx"
-    [ -d "$d" ] || continue
+    d="$BASE/22x22/$ctx"; [ -d "$d" ] || continue
     for f in "$d"/*; do
         [ -e "$f" ] || continue
-        n="$(basename "$f")"
+        n=$(basename "$f")
         [ -e "$DST/scalable/$n" ] && continue
         ln -s "$f" "$DST/scalable/$n"
     done
 done
 
-# 2) barevné ikony přepíšou symlinky
+d="$BASE/22x22/symbolic"
+if [ -d "$d" ]; then
+    for sub in "$d"/*; do
+        [ -d "$sub" ] || continue
+        for f in "$sub"/*; do
+            [ -e "$f" ] || continue
+            n=$(basename "$f")
+            [ -e "$DST/scalable/$n" ] && continue
+            ln -s "$f" "$DST/scalable/$n"
+        done
+    done
+fi
+
 for f in "$CUSTOM"/*.svg; do
     [ -e "$f" ] || continue
-    n="$(basename "$f")"
+    n=$(basename "$f")
     rm -f "$DST/scalable/$n"
     cp "$f" "$DST/scalable/$n"
 done
 
-# 3) aliasy jmen, která používají launchery
 for n in search system-search; do
-    if [ -f "$DST/scalable/edit-find.svg" ]; then
-        ln -sf edit-find.svg "$DST/scalable/$n.svg"
-    fi
+    [ -f "$DST/scalable/edit-find.svg" ] && ln -sf edit-find.svg "$DST/scalable/$n.svg"
 done
 
-cat > "$DST/index.theme" <<THEME
+cat > "$DST/index.theme" <<'T'
 [Icon Theme]
 Name=Papirus-Panel
-Comment=Papirus-Dark as a scalable theme with colorful panel icons
 Inherits=Papirus-Dark
 Directories=scalable
 
@@ -64,9 +56,7 @@ MinSize=8
 MaxSize=512
 Type=Scalable
 Context=Applications
-THEME
+T
 
-chown -R root:root "$DST" 2>/dev/null || true
-chmod -R go+rX "$DST" 2>/dev/null || true
-
-echo "Hotovo: $DST ($(find "$DST/scalable" -type l | wc -l) odkazů, $(find "$DST/scalable" -type f | wc -l) souborů)"
+chmod -R go+rX "$DST"
+echo "Hotovo: $DST"

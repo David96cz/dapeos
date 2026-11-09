@@ -1,0 +1,25 @@
+#!/bin/sh
+# Restartuje panel po změně tmavého režimu (ikony se přepnou hned).
+exec 9>/tmp/dapeos-panel-watch.lock
+flock -n 9 || exit 0
+
+restart_panel() {
+    pkill -x xfce4-panel 2>/dev/null
+    pkill -x nm-applet 2>/dev/null
+    sleep 0.5
+    setsid /usr/local/bin/xfce4-panel >/dev/null 2>&1 < /dev/null &
+    sleep 0.5
+    setsid /usr/local/bin/nm-applet >/dev/null 2>&1 < /dev/null &
+}
+
+while true; do
+    xfconf-query -c xfce4-panel -m 2>/dev/null | while IFS= read -r line; do
+        case "$line" in
+            *dark-mode*)
+                sleep 0.4
+                restart_panel
+                ;;
+        esac
+    done
+    sleep 2
+done

@@ -20,10 +20,11 @@
         <value type="int" value="8"/>
         <value type="int" value="10"/>
         <value type="int" value="4"/>
+        <value type="int" value="5"/>
         <value type="int" value="9"/>
         <value type="int" value="2"/>
       </property>
-      <property name="icon-size" type="uint" value="28"/>
+      <property name="icon-size" type="uint" value="32"/>
       <property name="enable-struts" type="bool" value="false"/>
       <property name="length-adjust" type="bool" value="true"/>
       <property name="background-style" type="uint" value="0"/>
@@ -40,6 +41,7 @@
       <property name="menu-width" type="int" value="450"/>
       <property name="menu-height" type="int" value="450"/>
       <property name="recent" type="array">
+        <value type="string" value="xfce4-terminal.desktop"/>
       </property>
       <property name="view-mode" type="int" value="1"/>
       <property name="position-categories-alternate" type="bool" value="true"/>
@@ -71,17 +73,14 @@
     </property>
     <property name="plugin-8" type="string" value="systray">
       <property name="known-legacy-items" type="array">
-        <value type="string" value="připojení k drátové síti „drátové připojení 1“ je aktivní"/>
         <value type="string" value="applet networkmanager"/>
-        <value type="string" value="xfce4-power-manager"/>
       </property>
       <property name="hidden-legacy-items" type="array">
       </property>
-      <property name="icon-size" type="int" value="32"/>
+      <property name="icon-size" type="int" value="0"/>
       <property name="square-icons" type="bool" value="true"/>
       <property name="single-row" type="bool" value="true"/>
       <property name="known-items" type="array">
-        <value type="string" value="CopyQ_copyq"/>
       </property>
       <property name="symbolic-icons" type="bool" value="false"/>
       <property name="hide-new-items" type="bool" value="false"/>
@@ -108,5 +107,6 @@
         <value type="string" value="17941494651.desktop"/>
       </property>
     </property>
+    <property name="plugin-5" type="string" value="xfce4-clipman-plugin"/>
   </property>
 </channel>

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=DapeOS panel watch
+Exec=dapeos-panel-watch
+Terminal=false
+Hidden=false

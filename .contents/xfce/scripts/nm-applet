@@ -1,5 +1,25 @@
 #!/bin/sh
 lib=/usr/local/lib/dapeos/panel-icons.so
+[ -f "$lib" ] || lib=/usr/local/lib/debiconf/panel-icons.so
 [ -f "$lib" ] && export LD_PRELOAD="$lib${LD_PRELOAD:+:$LD_PRELOAD}"
-[ -f /etc/dapeos/panel-icons.conf ] && . /etc/dapeos/panel-icons.conf
+
+dark=false
+for prop in $(xfconf-query -c xfce4-panel -l 2>/dev/null | grep '/dark-mode$'); do
+    [ "$(xfconf-query -c xfce4-panel -p "$prop" 2>/dev/null)" = "true" ] && dark=true
+done
+
+if [ "$dark" = "true" ]; then
+    if [ -d /usr/share/icons/Papirus-Panel ]; then
+        export PANEL_ICON_THEME=Papirus-Panel
+    else
+        export PANEL_ICON_THEME=Papirus-Dark
+    fi
+else
+    if [ -d /usr/share/icons/Papirus-Panel-Light ]; then
+        export PANEL_ICON_THEME=Papirus-Panel-Light
+    else
+        export PANEL_ICON_THEME=Papirus-Light
+    fi
+fi
+
 exec /usr/bin/nm-applet "$@"

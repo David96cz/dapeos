@@ -1297,39 +1297,29 @@ lxqt_drive_automount() {
 }
 
 xfce_panel_icons() {
-    log "Nasazuji systémovou knihovnu ikon pro panel (Papirus-Dark)..."
+    log "Nasazuji panelové ikony (DapeOS)..."
 
-    local SRC_CONF="$CONTENTS_DIR/xfce/config/panel-icons.conf"
-    local SRC_SO
-
-    # zdrojový .so podle architektury (cílové jméno je vždy panel-icons.so)
     case "$(uname -m)" in
         x86_64)  SRC_SO="$CONTENTS_DIR/xfce/bin/panel-icons-amd64.so" ;;
         aarch64) SRC_SO="$CONTENTS_DIR/xfce/bin/panel-icons-arm64.so" ;;
-        *)
-            log "UPOZORNĚNÍ: nepodporovaná architektura $(uname -m) – přeskakuji."
-            return 0
-            ;;
+        *) log "nepodporovaná arch"; return 0 ;;
     esac
 
-    if [ ! -d /usr/share/icons/Papirus-Dark ]; then
-        log "UPOZORNĚNÍ: Papirus-Dark chybí – přeskakuji."
-        return 0
-    fi
-    if [ ! -f "$SRC_SO" ]; then
-        log "UPOZORNĚNÍ: $SRC_SO chybí – přeskakuji."
-        return 0
-    fi
-    if [ ! -f "$SRC_CONF" ]; then
-        log "UPOZORNĚNÍ: $SRC_CONF chybí – přeskakuji."
-        return 0
-    fi
-
-    install -d -m 755 /usr/local/lib/dapeos /etc/dapeos
+    install -d -m 755 /usr/local/lib/dapeos /usr/local/sbin /usr/local/share/dapeos/panel
     install -m 644 -o root -g root "$SRC_SO" /usr/local/lib/dapeos/panel-icons.so
-    install -m 644 -o root -g root "$SRC_CONF" /etc/dapeos/panel-icons.conf
+    install -m 644 "$CONTENTS_DIR"/xfce/icons/panel/*.svg /usr/local/share/dapeos/panel/
 
-    log "Knihovna ikon panelu nainstalována."
+    install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-theme" /usr/local/sbin/
+    install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-theme-light" /usr/local/sbin/
+    install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-watch" /usr/local/bin/
+
+    /usr/local/sbin/dapeos-panel-theme /usr/local/share/dapeos/panel
+    /usr/local/sbin/dapeos-panel-theme-light /usr/local/share/dapeos/panel
+
+    install -d -m 755 "$USER_HOME/.config/autostart"
+    install -m 644 -o "$REAL_USER" -g "$REAL_USER" \
+        "$CONTENTS_DIR/xfce/config/autostart/dapeos-panel-watch.desktop" \
+        "$USER_HOME/.config/autostart/dapeos-panel-watch.desktop"
 }
 
 xfce_deploy_scripts() {
