@@ -198,7 +198,7 @@ class Welcome(QWidget):
             logo.setPixmap(QIcon(LOGO).pixmap(QSize(64, 64)))
         header.addWidget(logo)
         titles = QVBoxLayout()
-        title = QLabel(f"Vítejte v {APP_NAME}")
+        title = QLabel(f"Vítejte v DapeOS")
         title.setObjectName("title")
         sub = QLabel("Systém, který se chová jako Windows – bez překvapení.")
         sub.setObjectName("sub")

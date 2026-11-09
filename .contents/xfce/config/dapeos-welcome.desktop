@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Uvítání
-Name[cs]=Uvítání
-Comment=Průvodce prvními kroky v dapeos
-Comment[cs]=Průvodce prvními kroky v dapeos
+Name=Welcome in DapeOS
+Name[cs]=Vítejte v DapeOS
+Comment=First steps in the DapeOS
+Comment[cs]=Průvodce prvními kroky v DapeOS
 Exec=dapeos-welcome
 Icon=dapeos-logo
 Terminal=false
