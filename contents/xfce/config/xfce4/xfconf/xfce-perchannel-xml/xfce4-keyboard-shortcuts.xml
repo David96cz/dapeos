@@ -36,7 +36,7 @@
       <property name="&lt;Super&gt;&lt;Shift&gt;s" type="string" value="flameshot gui"/>
       <property name="&lt;Super&gt;v" type="string" value="copyq toggle"/>
       <property name="&lt;Super&gt;s" type="string" value="albert toggle"/>
-      <property name="&lt;Super&gt;d" type="string" value="toggle-desktop.sh"/>
+      <property name="&lt;Super&gt;d" type="string" value="toggle-desktop"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;Delete" type="string" value="cad-menu"/>
       <property name="&lt;Super&gt;l" type="string" value="dm-tool lock"/>
       <property name="&lt;Super&gt;i" type="string" value="xfce4-settings-manager"/>

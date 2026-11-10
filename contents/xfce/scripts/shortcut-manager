@@ -15,7 +15,7 @@ from PyQt5.QtGui import QIcon
 # --- KONFIGURACE ---
 USER_HOME = os.path.expanduser("~")
 APPS_DIR = os.path.join(USER_HOME, ".local/share/applications")
-BUSY_SCRIPT = os.path.join(USER_HOME, ".local/bin/busy-launch.py")
+BUSY_SCRIPT = "/usr/local/bin/busy-launch"
 
 XDG_CATEGORIES = [
     ("Hry", "Game", "applications-games"), 
