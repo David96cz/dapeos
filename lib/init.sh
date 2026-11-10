@@ -8,7 +8,7 @@ init_script() {
     # === GLOBÁLNÍ PROMĚNNÉ A CESTY ===
     BASE_DIR="$(dirname "$(realpath "$0")")"
     CONTENTS_DIR="$BASE_DIR/contents"
-    GLOBAL_CONFIG="$CONTENTS_DIR/setup-config.txt"
+    INSTALL_CONFIG="$CONTENTS_DIR/install.conf"
 
     # Bezpečnější detekce původního uživatele (hledá UID 1000+)
     REAL_USER=$(getent passwd | awk -F: '$3 >= 1000 && $3 < 60000 {print $1}' | head -n 1)
@@ -240,7 +240,9 @@ init_setup() {
     done
 
     # Definice lokálního konfiguráku
-    LOCAL_CONFIG="$CONTENTS_DIR/$(echo "$DESKTOP_ENV" | tr '[:upper:]' '[:lower:]')/config.txt"
+    local _de
+    _de="$(echo "$DESKTOP_ENV" | tr '[:upper:]' '[:lower:]')"
+    DESKTOP_CONFIG="$CONTENTS_DIR/$_de/$_de.conf"
 
     # Načtení zbytku globálních nastavení
     TIMEOUT=$(get_setting "GRUB_TIMEOUT")

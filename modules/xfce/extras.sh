@@ -2,51 +2,75 @@
 # shellcheck shell=bash
 # Doplňky: Albert, správce aktualizací, uvítací okno.
 
+albert_install_arm64_local() {
+    local SRC="$CONTENTS_DIR/xfce/albert"
+    install -d -m 755 /usr/local/bin /usr/local/lib/albert
+    install -m 755 -o root -g root "$SRC/bin/albert" /usr/local/bin/albert
+    if [ -d "$SRC/lib/albert" ]; then
+        cp -a "$SRC/lib/albert/." /usr/local/lib/albert/
+        chown -R root:root /usr/local/lib/albert
+        find /usr/local/lib/albert -type f -name '*.so*' -exec chmod 755 {} +
+    fi
+    printf '/usr/local/lib/albert\n' > /etc/ld.so.conf.d/albert.conf
+    /sbin/ldconfig 2>/dev/null || ldconfig
+}
+
+albert_install_arm64_release() {
+    local url="$1" sha="$2" tmp
+    command -v curl >/dev/null 2>&1 || {
+        DEBIAN_FRONTEND=noninteractive apt-get install -y curl ca-certificates xz-utils
+    }
+    tmp="$(mktemp -d)"
+    log "Stahuji Alberta (ARM64) z GitHub Releases…"
+    if ! curl -fsSL "$url" -o "$tmp/albert.tar.xz"; then
+        rm -rf "$tmp"
+        warn "Stažení Alberta selhalo: $url"
+        return 1
+    fi
+    if [ -n "$sha" ]; then
+        if ! printf '%s  %s\n' "$sha" "$tmp/albert.tar.xz" | sha256sum -c - >/dev/null 2>&1; then
+            rm -rf "$tmp"
+            warn "Kontrolní součet Alberta nesedí."
+            return 1
+        fi
+    fi
+    mkdir -p "$tmp/out"
+    tar -xJf "$tmp/albert.tar.xz" -C "$tmp/out"
+    install -d -m 755 /usr/local/bin /usr/local/lib/albert
+    install -m 755 "$tmp/out/bin/albert" /usr/local/bin/albert
+    if [ -d "$tmp/out/lib/albert" ]; then
+        cp -a "$tmp/out/lib/albert/." /usr/local/lib/albert/
+    fi
+    chown -R root:root /usr/local/lib/albert
+    find /usr/local/lib/albert -type f -name '*.so*' -exec chmod 755 {} +
+    printf '/usr/local/lib/albert\n' > /etc/ld.so.conf.d/albert.conf
+    /sbin/ldconfig 2>/dev/null || ldconfig
+    rm -rf "$tmp"
+}
+
 albert_setup() {
     log "Instaluji a konfiguruji Albert..."
 
-    # --- 1) instalace: balíček (amd64) nebo přiložená binárka (ARM64) ---
     if apt-cache policy albert 2>/dev/null | grep -q 'Candidate: [0-9]'; then
         log "Používám balíček albert z repozitáře."
         DEBIAN_FRONTEND=noninteractive apt-get install -y albert \
             || log "VAROVÁNÍ: instalace balíčku albert selhala."
+    elif [ "$(uname -m)" != "aarch64" ]; then
+        log "UPOZORNĚNÍ: albert není v aptu a binárka je jen pro ARM64."
+    elif [ -x "$CONTENTS_DIR/xfce/albert/bin/albert" ]; then
+        log "Používám přiloženou ARM64 binárku."
+        albert_install_arm64_local
     else
-        local SRC="$CONTENTS_DIR/xfce/albert"
-
-        if [ "$(uname -m)" != "aarch64" ]; then
-            log "UPOZORNĚNÍ: albert není v aptu a přiložená binárka je jen pro ARM64."
-        elif [ ! -x "$SRC/bin/albert" ]; then
-            log "UPOZORNĚNÍ: $SRC/bin/albert nenalezeno – přeskakuji."
-        else
-            install -d -m 755 /usr/local/bin /usr/local/lib/albert
-            install -m 755 -o root -g root "$SRC/bin/albert" /usr/local/bin/albert
-
-            if [ -d "$SRC/lib/albert" ]; then
-                cp -a "$SRC/lib/albert/." /usr/local/lib/albert/
-                chown -R root:root /usr/local/lib/albert
-                find /usr/local/lib/albert -type f -name '*.so*' -exec chmod 755 {} +
-            fi
-
-            # cesta pro dynamický linker + obnova cache
-            printf '/usr/local/lib/albert\n' > /etc/ld.so.conf.d/albert.conf
-            /sbin/ldconfig 2>/dev/null || ldconfig
-
-            if ldd /usr/local/bin/albert 2>/dev/null | grep -q 'not found'; then
-                log "VAROVÁNÍ: Albertu chybí knihovny:"
-                ldd /usr/local/bin/albert 2>/dev/null | grep 'not found' | while read -r l; do
-                    log "  $l"
-                done
-            fi
-        fi
+        albert_install_arm64_release \
+            "https://github.com/David96cz/dapeos/releases/download/albert-arm64/albert-arm64.tar.xz" \
+            "" || warn "Albert nebyl nainstalován."
     fi
 
-    # --- 2) Albert nemá být v menu Start ---
     rm -f /usr/share/applications/albert.desktop
     rm -f "$USER_HOME/.local/share/applications/albert.desktop"
     update-desktop-database /usr/share/applications 2>/dev/null || true
 
-    # --- 3) konfigurace ---
-    local ALBERT_SRC="$CONTENTS_DIR/lxqt/config/albert.conf"
+    local ALBERT_SRC="$CONTENTS_DIR/xfce/config/albert.conf"
     local ALBERT_DEST="$USER_HOME/.config/albert/config"
 
     if [ -f "$ALBERT_SRC" ]; then
@@ -59,14 +83,12 @@ albert_setup() {
         log "UPOZORNĚNÍ: $ALBERT_SRC nenalezeno."
     fi
 
-    # --- 4) disky pro Alberta ---
     local ALBERT_DISKS="$USER_HOME/.local/share/albert_disks"
     install -d -m 755 "$ALBERT_DISKS"
     ln -sfn /media "$ALBERT_DISKS/media"
     ln -sfn /mnt   "$ALBERT_DISKS/mnt"
     chown -R "$REAL_USER:$REAL_USER" "$ALBERT_DISKS" 2>/dev/null || true
 
-    # --- 5) potlačení first-run / version-change hlášky ---
     local ALBERT_STATE_DIR="$USER_HOME/.local/share/albert"
     install -d -m 700 "$ALBERT_STATE_DIR"
 

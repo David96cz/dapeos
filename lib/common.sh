@@ -31,8 +31,8 @@ run_as_user() {
 
 get_setting() {
     local key="$1"
-    if [ -f "$GLOBAL_CONFIG" ]; then
-        grep -i "^${key}=" "$GLOBAL_CONFIG" | cut -d'=' -f2 | cut -d'#' -f1 | tr -d '[:space:]' || true
+    if [ -f "$INSTALL_CONFIG" ]; then
+        grep -i "^${key}=" "$INSTALL_CONFIG" | cut -d'=' -f2 | cut -d'#' -f1 | tr -d '[:space:]' || true
     fi
 }
 

@@ -144,7 +144,7 @@ configure_plasma() {
     # ==========================================================
     # PARSOVÁNÍ CONFIGU A APLIKACE DYNAMICKÝCH PRAVIDEL
     # ==========================================================
-    local PLASMA_CONF="$CONTENTS_DIR/plasma/config.txt"
+    local PLASMA_CONF="$DESKTOP_CONFIG"
     
     if [ -f "$PLASMA_CONF" ]; then
         log "Čtu dodatečnou konfiguraci z $PLASMA_CONF..."

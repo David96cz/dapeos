@@ -281,8 +281,8 @@ class UserManagerApp(QWidget):
     def launch_password_script(self):
         if not self.current_user: return
         
-        script_path = os.path.expanduser("~/.local/share/bin/change-password.py")
-        fallback_path = os.path.expanduser("~/.local/bin/change-password.py")
+        script_path = os.path.expanduser("/usr/local/bin/change-password")
+        fallback_path = os.path.expanduser("/usr/local/bin/change-password")
         target_path = script_path if os.path.exists(script_path) else fallback_path
         
         if not os.path.exists(target_path):

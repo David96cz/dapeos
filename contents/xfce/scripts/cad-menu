@@ -114,7 +114,7 @@ class CADMenu(QWidget):
 
     def action_passwd(self):
         # Spustí izolovaný skript na změnu hesla a zavře toto CAD menu
-        script_path = os.path.expanduser('~/.local/bin/change-password.py')
+        script_path = os.path.expanduser('/usr/local/bin/change-password')
         subprocess.Popen(['python3', script_path])
         self.close()
 

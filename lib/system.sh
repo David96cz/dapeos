@@ -81,9 +81,9 @@ apt_retry() {
 install_packages() {
     log "Načítám konfigurace a instaluji balíčky pro architekturu: $SYS_ARCH..."
     
-    local ALL_PKGS=$(get_section "$GLOBAL_CONFIG" "INSTALL")
-    ALL_PKGS+=" $(get_section "$LOCAL_CONFIG" "CORE_PACKAGES")"
-    ALL_PKGS+=" $(get_section "$LOCAL_CONFIG" "EXTRA_PACKAGES")"
+    local ALL_PKGS=$(get_section "$INSTALL_CONFIG" "INSTALL")
+    ALL_PKGS+=" $(get_section "$DESKTOP_CONFIG" "CORE_PACKAGES")"
+    ALL_PKGS+=" $(get_section "$DESKTOP_CONFIG" "EXTRA_PACKAGES")"
     
     read -r -a PKG_ARRAY <<< "$ALL_PKGS"
     

@@ -1,73 +1,77 @@
-# dapeos
-Zprovoznění desktopového prostředí bez bloatwaru na čistém Debianu
+# DapeOS
 
-Odkaz ke stažení Debianu
+Post-instalační konfigurátor, který udělá z čistého Debianu (netinst) použitelný
+systém pro člověka přicházejícího z Windows – s XFCE, českým prostředím,
+přednastavenými aplikacemi a chováním, na které je zvyklý.
 
-https://ftp.linux.cz/pub/linux/debian-cd/
+![náhled](https://github.com/user-attachments/assets/64951e8f-3912-4ba0-9bc4-acdc5192d50c)
 
---------------------------------------------------
-**!! INSTALOVAT VÝHRADNĚ BEZ DESKTOPOVÉHO PROSTŘEDÍ BĚHEM INSTALACE SAMOTNÉHO SYSTÉMU - ZDE PONECHAT POUZE "STANDARDNÍ SYSTÉMOVÉ NÁSTROJE" !!**
+## Co to umí
 
-![instalace](https://github.com/user-attachments/assets/09b934ce-8d9a-4a8f-863c-f3655eda5185)
+- **XFCE jako Windows** – panel dole, Whisker menu, tmavý režim, tapeta, ikony
+- **Aplikace** – prohlížeč, kancelářský balík, multimédia, ZIP/RAR, tiskárny
+- **Windows zvyky** – klávesové zkratky (Win+E, Win+L, Ctrl+Alt+Del…), názvy aplikací
+- **Albert** – vyhledávač spuštění (obdoba Windows Search)
+- **Aktualizace** – správce aktualizací s tray ikonou a automatickou kontrolou
+- **Uvítání** – první přihlášení s průvodcem
+- **Boot** – tichý GRUB a grafický Plymouth (volitelně)
+- **Panel ikony** – barevné ikony ve tmavém i světlém režimu, plynulé škálování
 
---------------------------------------------------
+## Požadavky
 
-Po dokončení čisté netinst instalace bez prostředí:
+- Čerstvá instalace Debianu 13 (trixie), **bez desktopového prostředí**
+- Během instalace Debianu zvolte pouze „standardní systémové nástroje“
+- 64bitový procesor (amd64 nebo arm64), 2 GB RAM, připojení k internetu
 
-*V případě NASTAVENÍ root hesla během instalace Debianu* 
+## Instalace
 
-  1) su -
-  
-  2) apt install git -y
-  
-  3) git clone https://github.com/David96cz/dapeos
-  
-  4) cd dapeos
-  
-  5) bash dapeos.sh
+```bash
+sudo apt install git -y
+git clone https://github.com/David96cz/dapeos
+cd dapeos
+sudo bash dapeos.sh
+```
 
+Skript se zeptá na desktop, prohlížeč, kancelářský balík a automatické
+přihlášení. Poté nainstaluje a nakonfiguruje systém a restartuje počítač.
 
-*V případě VYNECHÁNÍ root hesla během instalace Debianu* 
-  
-  1) sudo apt install git -y
-  
-  2) git clone https://github.com/David96cz/dapeos
-  
-  3) cd dapeos
-  
-  4) sudo bash dapeos.sh
+Pro testování bez restartu:
 
----------------------------------------------------
+```bash
+sudo bash dapeos.sh --no-reboot
+```
 
-![ukazka](https://github.com/user-attachments/assets/64951e8f-3912-4ba0-9bc4-acdc5192d50c)
+Průběh se loguje do `/var/log/dapeos-install.log`.
 
----------------------------------------------------
+## Struktura projektu
 
-**LXQt** 
-- minimální HW požadavky (libovolný 64bitový procesor, 2GB RAM)
-- spotřeba RAM po startu cca *600-700MB*
-- ready out of the box pro běžného uživatele, customizace je však strohá, méně moderní vzhled, avšak extrémně svižné i na úplném šrotu
-- *Klávesové zkratky*
-  - Win + V = zobrazení historie schránky
-  - Win + E = spuštění průzkumníka
-  - Win + D = zobrazení plochy
-  - Win + L = uzamčení obrazovky
-  - Win + S = hledání nastavení, aplikací, souborů na interním či externím disku
-  - Win + Shift + S = pořízení screenshotu
-  - Ctrl + Shift + ESC = správce úloh
-  - Ctrl + Alt + Delete = kontextová nabídka pro uzamčení, odhlášení, změnu hesla, správce úloh.
-  - Alt + Tab = přepínání mezi okny apikací
-  - Ctrl + Alt + T = spuštění terminálu
-  
-![lxqt](https://github.com/user-attachments/assets/ba057bfa-8508-444f-af25-8de0b2706106)
+```
+dapeos.sh              vstupní bod, main(), argumenty
+lib/                   společné funkce
+  init.sh              globální proměnné, interaktivní setup
+  common.sh            log, chyby, konfigurace
+  system.sh            balíčky, služby, hardware
+  boot.sh              GRUB, Plymouth
+  desktop.sh           .desktop soubory, autostart
+modules/               desktopová prostředí
+  xfce/                XFCE (podporované)
+  lxqt.sh              LXQt (legacy)
+  plasma.sh            KDE Plasma (legacy)
+contents/              data instalace
+  install.conf     volby instalace a seznam balíčků
+  xfce/                konfigurace, skripty, ikony, binárky
+```
 
----------------------------------------------------
+Podrobnosti: [Architektura](docs/ARCHITECTURE.md) a [Konfigurace](docs/CONFIG.md).
 
-**KDE Plasma**
-- lehce vyšší HW požadavky, avšak díky skvělé optimalizaci stále vhodné i na starší PC (Intel 3. generace a vyšší ideálně, 4GB RAM)
-- spotřeba RAM po startu cca *800-1200MB*
-- ready out of the box pro běžného uživatele, obrovská možnost customizace, široké nastavení, skoro vše jde vyklikat GUI, moderní vzhled a funkce
-  
-![plasma](https://github.com/user-attachments/assets/9d313503-b97b-49d1-b5a1-0ae01faade75)
+## Vývoj
 
+```bash
+bash scripts/lint.sh
+```
 
+Kontroluje syntaxi shellu, shellcheck (pokud je nainstalovaný) a Python.
+
+## Licence
+
+Zatím bez licence – před zveřejněním doplnit.

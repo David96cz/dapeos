@@ -34,7 +34,7 @@ xfce_setup_apps_and_defaults() {
 
     # 2. Skrytí aplikací definovaných v sekci [APPS_TO_HIDE] v xfce/config.txt
     local APPS_TO_HIDE_STR
-    APPS_TO_HIDE_STR=$(get_section "$LOCAL_CONFIG" "APPS_TO_HIDE" | tr -d '\r')
+    APPS_TO_HIDE_STR=$(get_section "$DESKTOP_CONFIG" "APPS_TO_HIDE" | tr -d '\r')
 
     for app in $APPS_TO_HIDE_STR; do
         local target_desktop="$LOCAL_APPS/$app"
@@ -52,7 +52,7 @@ xfce_setup_apps_and_defaults() {
     done
 
     # 3. Autostart podle sekce [AUTORUN] v config.txt
-    autostart_sync "$LOCAL_CONFIG"
+    autostart_sync "$DESKTOP_CONFIG"
 
     # 3.5 Doplnění StartupNotify=true (pokud v souboru chybí)
     local f
@@ -70,8 +70,8 @@ xfce_setup_apps_and_defaults() {
         # Zamezení možnosti odinstalace
     echo ">> Ukládám seznam neodstranitelných aplikací..."
     
-    # Použití tvé elegantní funkce pro vytažení sekce (taháme z LOCAL_CONFIG pro LXQt!)
-    LOCAL_UNREMOVABLE=$(get_section "$LOCAL_CONFIG" "UNREMOVABLE")
+    # Použití tvé elegantní funkce pro vytažení sekce (taháme z DESKTOP_CONFIG pro LXQt!)
+    LOCAL_UNREMOVABLE=$(get_section "$DESKTOP_CONFIG" "UNREMOVABLE")
     
     if [ -n "$LOCAL_UNREMOVABLE" ]; then
         # Vezmeme výstup, smažeme Windows znaky (\r) a nahradíme mezery novým řádkem (\n)

@@ -19,14 +19,14 @@ lxqt_setup_apps_and_defaults() {
 
     # Skrytí aplikací
     local APPS_TO_HIDE_STR
-    APPS_TO_HIDE_STR=$(get_section "$LOCAL_CONFIG" "APPS_TO_HIDE" | tr -d '\r')
+    APPS_TO_HIDE_STR=$(get_section "$DESKTOP_CONFIG" "APPS_TO_HIDE" | tr -d '\r')
     for app in $APPS_TO_HIDE_STR; do
         [ -f "$LOCAL_APPS/$app" ] && sed -i '/^NoDisplay=/d; $ a NoDisplay=true' "$LOCAL_APPS/$app" || true
     done
 
     # Zobrazení aplikací: smazání OnlyShowIn / NotShowIn / NoDisplay
     local APPS_TO_SHOW_STR
-    APPS_TO_SHOW_STR=$(get_section "$LOCAL_CONFIG" "APPS_TO_SHOW" | tr -d '\r')
+    APPS_TO_SHOW_STR=$(get_section "$DESKTOP_CONFIG" "APPS_TO_SHOW" | tr -d '\r')
     for app in $APPS_TO_SHOW_STR; do
         if [ -f "$LOCAL_APPS/$app" ]; then
             sed -i '/^OnlyShowIn=/d; /^NotShowIn=/d; /^NoDisplay=/d; /^X-XfceSettingsManagerHidden=/d' "$LOCAL_APPS/$app"
@@ -128,7 +128,7 @@ lxqt_setup_apps_and_defaults() {
     # Autostart
     local AUTOSTART_DIR="$USER_HOME/.config/autostart"
     mkdir -p "$AUTOSTART_DIR"
-    AUTORUN_APPS=$(awk '/^\[AUTORUN\]/{flag=1; next} /^\[/{flag=0} flag && NF' "$CONTENTS_DIR/lxqt/config.txt" | tr -d '\r')
+    AUTORUN_APPS=$(awk '/^\[AUTORUN\]/{flag=1; next} /^\[/{flag=0} flag && NF' "$DESKTOP_CONFIG" | tr -d '\r')
 
     if [ -n "$AUTORUN_APPS" ]; then
         for APP in $AUTORUN_APPS; do
@@ -194,8 +194,8 @@ lxqt_prepare_base_configs() {
     # Zamezení možnosti odinstalace
     echo ">> Ukládám seznam neodstranitelných aplikací..."
     
-    # Použití tvé elegantní funkce pro vytažení sekce (taháme z LOCAL_CONFIG pro LXQt!)
-    LOCAL_UNREMOVABLE=$(get_section "$LOCAL_CONFIG" "UNREMOVABLE")
+    # Použití tvé elegantní funkce pro vytažení sekce (taháme z DESKTOP_CONFIG pro LXQt!)
+    LOCAL_UNREMOVABLE=$(get_section "$DESKTOP_CONFIG" "UNREMOVABLE")
     
     if [ -n "$LOCAL_UNREMOVABLE" ]; then
         # Vezmeme výstup, smažeme Windows znaky (\r) a nahradíme mezery novým řádkem (\n)

@@ -40,7 +40,7 @@ configs:
     "/home/david/Plocha/sample-1.rar":
       row: 1
       col: 2
-    "/home/david/Plocha/app-uninstaller.py":
+    "/home/david/Plocha/app-uninstaller":
       row: 5
       col: 4
     "/home/david/Plocha/tex\u0165\xE1k.txt":
