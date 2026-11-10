@@ -22,10 +22,6 @@ for ctx in panel status apps places devices mimetypes actions categories emblems
 done
 
 [ -f "$CUSTOM/edit-find.svg" ] && cp "$CUSTOM/edit-find.svg" "$DST/scalable/search.svg"
-if [ -f "$CUSTOM/blueman-dark.svg" ]; then
-    cp "$CUSTOM/blueman-dark.svg" "$DST/scalable/blueman.svg"
-    cp "$CUSTOM/blueman-dark.svg" "$DST/scalable/bluetooth.svg"
-fi
 
 cat > "$DST/index.theme" <<'T'
 [Icon Theme]
