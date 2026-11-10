@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-APP_NAME = "dapeos"
+APP_NAME = "DapeOS"
 LOGO = "/usr/share/icons/hicolor/scalable/apps/dapeos-logo.svg"
 CONF_DIR = os.path.expanduser("~/.config/dapeos")
 FLAG = os.path.join(CONF_DIR, "welcome-done")
@@ -185,10 +185,11 @@ class Welcome(QWidget):
             QWidget { background: #f5f5f5; font-family: sans-serif; }
             QLabel#title { font-size: 24pt; font-weight: bold; color: #1f4e79; }
             QLabel#sub { font-size: 11pt; color: #555; }
-            QFrame#card { background: white; border: 1px solid #ddd; border-radius: 10px; }
+            QFrame#card { background: white; border: 1px solid #e2e2e2; border-radius: 12px; }
+            QFrame#card QLabel { background: transparent; }
             QFrame#card:hover { background: #eef4fb; border-color: #2a7fca; }
             QLabel#cardTitle { font-size: 12pt; font-weight: bold; color: #222; }
-            QLabel#cardSub { color: #666; }
+            QLabel#cardSub { color: #6b7280; }
             QPushButton { padding: 10px 18px; border-radius: 6px; border: 1px solid #ccc; background: white; }
             QPushButton#primary { background: #2a7fca; color: white; border: none; font-weight: bold; }
             QPushButton#primary:hover { background: #1f6aa8; }
