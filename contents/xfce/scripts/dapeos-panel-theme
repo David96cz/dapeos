@@ -44,6 +44,11 @@ for n in search system-search; do
     [ -f "$DST/scalable/edit-find.svg" ] && ln -sf edit-find.svg "$DST/scalable/$n.svg"
 done
 
+for n in blueman blueman-tray bluetooth bluetooth-active; do
+    [ -f "$BASE/22x22/panel/bluetooth-active.svg" ] && \
+        ln -sfn "$BASE/22x22/panel/bluetooth-active.svg" "$DST/scalable/$n.svg"
+done
+
 cat > "$DST/index.theme" <<'T'
 [Icon Theme]
 Name=Papirus-Panel
