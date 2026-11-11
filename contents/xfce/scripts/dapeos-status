@@ -90,10 +90,13 @@ def svg(color, wifi_on, wifi_ssid, vol, mute, cap):
     x = 2 * (W + GAP)
     parts.append(f'<g transform="translate({x},0)" fill="{color}">')
     parts.append('<path d="M4 8.5h3l4.5-3.5v12L7 13.5H4z"/>')
-    if not mute:
-        parts.append(f'<path d="M14 8a4.2 4.2 0 0 1 0 6" fill="none" stroke="{color}" stroke-width="1.6" stroke-linecap="round"/>')
+    if mute or vol == 0:
+        parts.append(f'<path d="M13.5 8.5l5 5M18.5 8.5l-5 5" fill="none" stroke="#f44336" stroke-width="1.7" stroke-linecap="round"/>')
     else:
-        parts.append(f'<path d="M14 8.5l4 5M18 8.5l-4 5" fill="none" stroke="#f44336" stroke-width="1.6" stroke-linecap="round"/>')
+        if vol >= 34:
+            parts.append(f'<path d="M13.5 8a4.2 4.2 0 0 1 0 6" fill="none" stroke="{color}" stroke-width="1.6" stroke-linecap="round"/>')
+        if vol >= 67:
+            parts.append(f'<path d="M15.8 5.8a8 8 0 0 1 0 10.4" fill="none" stroke="{color}" stroke-width="1.6" stroke-linecap="round"/>')
     parts.append('</g>')
 
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{3*W+2*GAP}" height="{H}" '
