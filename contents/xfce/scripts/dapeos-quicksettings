@@ -31,6 +31,18 @@ def panel_dark():
     return True
 
 
+def panel_height():
+    props = sh(["xfconf-query", "-c", "xfce4-panel", "-l"])
+    best = 0
+    for prop in props.splitlines():
+        if prop.endswith("/size"):
+            try:
+                best = max(best, int(sh(["xfconf-query", "-c", "xfce4-panel", "-p", prop])))
+            except ValueError:
+                pass
+    return best or 44
+
+
 def gather():
     t0 = time.time()
     wifi_on = sh(["nmcli", "-t", "-f", "WIFI", "radio"]) == "enabled"
@@ -131,7 +143,7 @@ class Tile(QPushButton):
 class QuickSettings(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.state = {"vol": 0, "bri": 0, "bri_max": 0, "dark": None}
         self.worker = None
@@ -298,8 +310,12 @@ class QuickSettings(QWidget):
             self.bri.setEnabled(False)
             self.bri_lbl.setText("n/a")
 
+        status_map = {"Charging": "nabíjí se", "Discharging": "vybíjí se",
+                      "Full": "nabito", "Not charging": "nezapojeno",
+                      "Unknown": "neznámo"}
+        st = status_map.get(s["status"], s["status"])
         self.batt.setText("Bez baterie" if s["cap"] is None
-                          else f"Baterie {s['cap']}% ({s['status']})")
+                          else f"Baterie {s['cap']}% ({st})")
 
     def spawn(self, cmd):
         w = CmdWorker(cmd)
@@ -399,8 +415,9 @@ class QuickSettings(QWidget):
         self.refresh()
 
     def position(self):
-        scr = QApplication.primaryScreen().availableGeometry()
-        self.move(scr.right() - self.width() - 12, scr.bottom() - self.height() - 8)
+        scr = QApplication.primaryScreen().geometry()
+        y = scr.bottom() - panel_height() - self.height() - 8
+        self.move(scr.right() - self.width() - 12, max(scr.top() + 8, y))
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.MouseButtonPress and self.isVisible():
