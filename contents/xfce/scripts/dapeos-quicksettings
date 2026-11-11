@@ -4,8 +4,8 @@ import subprocess
 import sys
 import time
 
-from PyQt5.QtCore import Qt, QThread, QTimer, pyqtSignal
-from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QEvent, Qt, QThread, QTimer, pyqtSignal
+from PyQt5.QtGui import QCursor, QIcon
 from PyQt5.QtNetwork import QLocalServer, QLocalSocket
 from PyQt5.QtWidgets import (
     QApplication, QFrame, QGridLayout, QHBoxLayout, QInputDialog, QLabel,
@@ -21,6 +21,14 @@ def sh(cmd, timeout=4):
         return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout).stdout.strip()
     except Exception:
         return ""
+
+
+def panel_dark():
+    props = sh(["xfconf-query", "-c", "xfce4-panel", "-l"])
+    for prop in props.splitlines():
+        if prop.endswith("/dark-mode"):
+            return sh(["xfconf-query", "-c", "xfce4-panel", "-p", prop]) == "true"
+    return True
 
 
 def gather():
@@ -58,6 +66,7 @@ def gather():
                 pass
             break
     return {
+        "dark": panel_dark(),
         "wifi_on": wifi_on, "ssid": ssid, "bt": bt, "vol": vol, "mute": mute,
         "bri": cur, "bri_max": mx, "cap": cap, "status": status,
         "night": bool(sh(["pgrep", "-x", "redshift"])),
@@ -124,7 +133,7 @@ class QuickSettings(QWidget):
         super().__init__()
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.state = {"vol": 0, "bri": 0, "bri_max": 0}
+        self.state = {"vol": 0, "bri": 0, "bri_max": 0, "dark": None}
         self.worker = None
         self.scan = None
         self.cmd_workers = []
@@ -153,28 +162,36 @@ class QuickSettings(QWidget):
         self.wifi.hide()
         self.stack.addWidget(self.wifi)
 
-        self.setStyleSheet(f"""
-            QFrame#root {{ background: #1f1f1f; border-radius: 14px; }}
-            QLabel {{ color: #e8e8e8; }}
-            QPushButton#tile {{ background: #2b2b2b; border: 1px solid #3a3a3a; border-radius: 10px; text-align: left; }}
-            QPushButton#tile:hover {{ background: #333; }}
-            QPushButton#tile[active="true"] {{ background: {ACCENT}; border-color: {ACCENT}; }}
-            QPushButton#tile[active="true"] QLabel {{ color: white; }}
-            QLabel#tileTitle {{ font-size: 10pt; font-weight: bold; }}
-            QLabel#tileSub {{ font-size: 8.5pt; color: #9a9a9a; }}
-            QPushButton#tile[active="true"] QLabel#tileSub {{ color: #dbeafe; }}
-            QSlider::groove:horizontal {{ height: 6px; background: #3a3a3a; border-radius: 3px; }}
-            QSlider::handle:horizontal {{ width: 16px; margin: -6px 0; border-radius: 8px; background: {ACCENT}; }}
-            QSlider::sub-page:horizontal {{ background: {ACCENT}; border-radius: 3px; }}
-            QPushButton#flat {{ background: transparent; border: none; color: #e8e8e8; padding: 6px; }}
-            QPushButton#flat:hover {{ background: #2b2b2b; border-radius: 6px; }}
-            QPushButton#back {{ background: transparent; border: none; color: #9a9a9a; }}
-        """)
-
+        self.setFixedWidth(380)
+        self.apply_theme(True)
+        QApplication.instance().installEventFilter(self)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh)
         self.timer.start(2500)
         self.refresh()
+
+    def apply_theme(self, dark):
+        if dark:
+            bg, tile, border, text, sub = "#1f1f1f", "#2b2b2b", "#3a3a3a", "#e8e8e8", "#9a9a9a"
+        else:
+            bg, tile, border, text, sub = "#f5f5f5", "#ffffff", "#dcdcdc", "#1a1a1a", "#6b7280"
+        self.setStyleSheet(f"""
+            QFrame#root {{ background: {bg}; border-radius: 14px; }}
+            QLabel {{ color: {text}; }}
+            QPushButton#tile {{ background: {tile}; border: 1px solid {border}; border-radius: 10px; text-align: left; }}
+            QPushButton#tile:hover {{ background: {tile}; border-color: {ACCENT}; }}
+            QPushButton#tile[active="true"] {{ background: {ACCENT}; border-color: {ACCENT}; }}
+            QPushButton#tile[active="true"] QLabel {{ color: white; }}
+            QLabel#tileTitle {{ font-size: 10pt; font-weight: bold; }}
+            QLabel#tileSub {{ font-size: 8.5pt; color: {sub}; }}
+            QPushButton#tile[active="true"] QLabel#tileSub {{ color: #dbeafe; }}
+            QSlider::groove:horizontal {{ height: 6px; background: {border}; border-radius: 3px; }}
+            QSlider::handle:horizontal {{ width: 16px; margin: -6px 0; border-radius: 8px; background: {ACCENT}; }}
+            QSlider::sub-page:horizontal {{ background: {ACCENT}; border-radius: 3px; }}
+            QPushButton#flat {{ background: transparent; border: none; color: {text}; padding: 6px; }}
+            QPushButton#flat:hover {{ background: {tile}; border-radius: 6px; }}
+            QPushButton#back {{ background: transparent; border: none; color: {sub}; }}
+        """)
 
     def build_main(self):
         lay = QVBoxLayout(self.main)
@@ -254,6 +271,8 @@ class QuickSettings(QWidget):
         self.worker.start()
 
     def apply(self, s):
+        if s.get("dark") is not None and s["dark"] != self.state.get("dark"):
+            self.apply_theme(s["dark"])
         self.state = s
         if os.environ.get("DAPEOS_QS_DEBUG"):
             print(f"refresh {s.get('ms')} ms", file=sys.stderr)
@@ -359,7 +378,13 @@ class QuickSettings(QWidget):
         self.main.show()
         self.refresh()
 
+    def hide_auto(self):
+        self._hidden_at = time.time()
+        self.hide()
+
     def toggle(self):
+        if time.time() - getattr(self, "_hidden_at", 0) < 0.5:
+            return
         if self.isVisible():
             self.hide()
         else:
@@ -367,12 +392,21 @@ class QuickSettings(QWidget):
 
     def show_window(self):
         self.adjustSize()
-        scr = QApplication.primaryScreen().availableGeometry()
-        self.move(scr.right() - self.width() - 12, scr.bottom() - 48 - self.height())
         self.show()
         self.raise_()
         self.activateWindow()
+        QTimer.singleShot(0, self.position)
         self.refresh()
+
+    def position(self):
+        scr = QApplication.primaryScreen().availableGeometry()
+        self.move(scr.right() - self.width() - 12, scr.bottom() - self.height() - 8)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.MouseButtonPress and self.isVisible():
+            if not self.geometry().contains(QCursor.pos()):
+                self.hide_auto()
+        return False
 
     def focusOutEvent(self, event):
         super().focusOutEvent(event)
@@ -382,7 +416,7 @@ class QuickSettings(QWidget):
         if QApplication.activeModalWidget() is not None:
             return
         if not self.isActiveWindow():
-            self.hide()
+            self.hide_auto()
 
 
 def main():
