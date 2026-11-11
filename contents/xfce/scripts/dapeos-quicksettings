@@ -226,7 +226,7 @@ class QuickSettings(QWidget):
         row.addWidget(QLabel("Zvuk"))
         self.vol = QSlider(Qt.Horizontal)
         self.vol.setRange(0, 100)
-        self.vol.valueChanged.connect(lambda _: self.vol_timer.start(80))
+        self.vol.valueChanged.connect(self.on_volume_change)
         row.addWidget(self.vol, 1)
         self.vol_lbl = QLabel("")
         row.addWidget(self.vol_lbl)
@@ -236,7 +236,7 @@ class QuickSettings(QWidget):
         row.addWidget(QLabel("Jas"))
         self.bri = QSlider(Qt.Horizontal)
         self.bri.setRange(0, 100)
-        self.bri.valueChanged.connect(lambda _: self.bri_timer.start(80))
+        self.bri.valueChanged.connect(self.on_brightness_change)
         row.addWidget(self.bri, 1)
         self.bri_lbl = QLabel("")
         row.addWidget(self.bri_lbl)
@@ -295,20 +295,25 @@ class QuickSettings(QWidget):
         self.t_night.set_sub("Zapnuto" if s["night"] else "Vypnuto")
         self.t_night.set_active(s["night"])
 
-        self.vol.blockSignals(True)
-        self.vol.setValue(s["vol"])
-        self.vol.blockSignals(False)
-        self.vol_lbl.setText("ztlumeno" if s["mute"] else f"{s['vol']}%")
+        held_vol = time.time() - getattr(self, "_vol_hold", 0) < 1.5
+        held_bri = time.time() - getattr(self, "_bri_hold", 0) < 1.5
 
-        if s["bri_max"]:
-            pct = int(s["bri"] * 100 / s["bri_max"])
-            self.bri.blockSignals(True)
-            self.bri.setValue(pct)
-            self.bri.blockSignals(False)
-            self.bri_lbl.setText(f"{pct}%")
-        else:
-            self.bri.setEnabled(False)
-            self.bri_lbl.setText("n/a")
+        if not held_vol:
+            self.vol.blockSignals(True)
+            self.vol.setValue(s["vol"])
+            self.vol.blockSignals(False)
+            self.vol_lbl.setText("ztlumeno" if s["mute"] else f"{s['vol']}%")
+
+        if not held_bri:
+            if s["bri_max"]:
+                pct = int(s["bri"] * 100 / s["bri_max"])
+                self.bri.blockSignals(True)
+                self.bri.setValue(pct)
+                self.bri.blockSignals(False)
+                self.bri_lbl.setText(f"{pct}%")
+            else:
+                self.bri.setEnabled(False)
+                self.bri_lbl.setText("n/a")
 
         status_map = {"Charging": "nabíjí se", "Discharging": "vybíjí se",
                       "Full": "nabito", "Not charging": "nezapojeno",
@@ -322,6 +327,16 @@ class QuickSettings(QWidget):
         self.cmd_workers.append(w)
         w.finished.connect(lambda: self.cmd_workers.remove(w) if w in self.cmd_workers else None)
         w.start()
+
+    def on_volume_change(self, val):
+        self._vol_hold = time.time()
+        self.vol_lbl.setText(f"{val}%")
+        self.vol_timer.start(120)
+
+    def on_brightness_change(self, val):
+        self._bri_hold = time.time()
+        self.bri_lbl.setText(f"{val}%")
+        self.bri_timer.start(120)
 
     def push_volume(self):
         self.spawn(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{self.vol.value()}%"])
