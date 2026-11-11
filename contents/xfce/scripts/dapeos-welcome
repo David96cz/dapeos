@@ -218,7 +218,7 @@ class Welcome(QWidget):
         grid.setSpacing(12)
 
         cards = [
-            ("folder-download", "Přesunout data z Windows (nedostupné)",
+            ("folder-download", "Přesunout data z Windows",
              "Dokumenty, obrázky a hudbu z vašeho starého počítače.",
              self.migrate),
             ("system-software-update", "Aktualizace",
