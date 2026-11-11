@@ -18,7 +18,7 @@ from PyQt5.QtGui import QColor, QIcon, QPixmap
 from PyQt5.QtWidgets import (
     QApplication, QCheckBox, QDialog, QFrame, QGridLayout,
     QHBoxLayout, QLabel, QPushButton, QTextBrowser, QVBoxLayout,
-    QWidget,
+    QWidget, 
 )
 
 APP_NAME = "DapeOS"
@@ -158,11 +158,11 @@ na „Wine“ nebo použij instalátor podpory Windows aplikací.</p>
 SHORTCUTS_HTML = """
 <h2>Klávesové zkratky</h2>
 <table cellspacing='8'>
-<tr><td><b>Super (Win)</b></td><td>otevře menu Start</td></tr>
+<tr><td><b>Win</b></td><td>otevře menu Start</td></tr>
 <tr><td><b>Ctrl + Alt + Del</b></td><td>zámek, změna hesla, správce úloh</td></tr>
 <tr><td><b>PrintScreen</b></td><td>snímek obrazovky</td></tr>
 <tr><td><b>Alt + Tab</b></td><td>přepínání oken</td></tr>
-<tr><td><b>Super + E</b></td><td>souborový manažer (pokud je nastaven)</td></tr>
+<tr><td><b>Win + E</b></td><td>souborový manažer (pokud je nastaven)</td></tr>
 </table>
 """
 

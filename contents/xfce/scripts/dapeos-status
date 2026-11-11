@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+
+W, H = 22, 22
+GAP = 4
+
+
+def sh(cmd):
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=4).stdout.strip()
+    except Exception:
+        return ""
+
+
+def panel_dark():
+    props = sh(["xfconf-query", "-c", "xfce4-panel", "-l"])
+    for p in props.splitlines():
+        if p.endswith("/dark-mode"):
+            return sh(["xfconf-query", "-c", "xfce4-panel", "-p", p]) == "true"
+    return True
+
+
+def wifi_state():
+    if sh(["nmcli", "-t", "-f", "WIFI", "radio"]) != "enabled":
+        return False, None
+    out = sh(["nmcli", "-t", "-f", "ACTIVE,SSID", "dev", "wifi"])
+    for line in out.splitlines():
+        parts = line.split(":")
+        if parts and parts[0] == "yes":
+            return True, parts[1] if len(parts) > 1 else None
+    return True, None
+
+
+def volume_state():
+    out = sh(["pactl", "get-sink-volume", "@DEFAULT_SINK@"])
+    vol = 0
+    for tok in out.split():
+        if tok.endswith("%"):
+            try:
+                vol = int(tok[:-1])
+            except ValueError:
+                pass
+    mute = "yes" in sh(["pactl", "get-sink-mute", "@DEFAULT_SINK@"])
+    return vol, mute
+
+
+def battery_state():
+    for name in os.listdir("/sys/class/power_supply"):
+        if not name.startswith("BAT"):
+            continue
+        base = "/sys/class/power_supply/" + name
+        try:
+            cap = int(open(base + "/capacity").read().strip())
+        except Exception:
+            continue
+        try:
+            status = open(base + "/status").read().strip()
+        except Exception:
+            status = ""
+        return cap, status
+    return None, ""
+
+
+def svg(color, wifi_on, wifi_ssid, vol, mute, cap):
+    parts = []
+    opacity = "1" if wifi_on else "0.35"
+    x = 0
+    parts.append(f'<g transform="translate({x},0)" opacity="{opacity}" fill="none" stroke="{color}" stroke-width="1.7" stroke-linecap="round">')
+    parts.append(f'<circle cx="11" cy="16.5" r="1.3" fill="{color}" stroke="none"/>')
+    parts.append('<path d="M6.8 13.4a6.3 6.3 0 0 1 8.4 0"/>')
+    parts.append('<path d="M3.8 10.2a10.6 10.6 0 0 1 14.4 0"/>')
+    parts.append('</g>')
+
+    x = W + GAP
+    if cap is None:
+        parts.append(f'<g transform="translate({x},0)" fill="none" stroke="{color}" stroke-width="1.5" opacity="0.35">')
+        parts.append('<rect x="3" y="7" width="14" height="9" rx="2"/>')
+        parts.append('</g>')
+    else:
+        fillw = max(2, int(12 * cap / 100))
+        fill = "#4caf50" if cap > 30 else ("#ff9800" if cap > 15 else "#f44336")
+        parts.append(f'<g transform="translate({x},0)">')
+        parts.append(f'<rect x="3" y="7" width="14" height="9" rx="2" fill="none" stroke="{color}" stroke-width="1.5"/>')
+        parts.append(f'<rect x="5" y="9" width="{fillw}" height="5" rx="1" fill="{fill}"/>')
+        parts.append(f'<rect x="18" y="9.5" width="2" height="4" rx="1" fill="{color}"/>')
+        parts.append('</g>')
+
+    x = 2 * (W + GAP)
+    parts.append(f'<g transform="translate({x},0)" fill="{color}">')
+    parts.append('<path d="M4 8.5h3l4.5-3.5v12L7 13.5H4z"/>')
+    if not mute:
+        parts.append(f'<path d="M14 8a4.2 4.2 0 0 1 0 6" fill="none" stroke="{color}" stroke-width="1.6" stroke-linecap="round"/>')
+    else:
+        parts.append(f'<path d="M14 8.5l4 5M18 8.5l-4 5" fill="none" stroke="#f44336" stroke-width="1.6" stroke-linecap="round"/>')
+    parts.append('</g>')
+
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{3*W+2*GAP}" height="{H}" '
+            f'viewBox="0 0 {3*W+2*GAP} {H}">' + "".join(parts) + '</svg>')
+
+
+def main():
+    if "--svg" in sys.argv:
+        color = sys.argv[sys.argv.index("--svg") + 1]
+        wifi_on, wifi_ssid = wifi_state()
+        vol, mute = volume_state()
+        cap, _ = battery_state()
+        sys.stdout.write(svg(color, wifi_on, wifi_ssid, vol, mute, cap))
+        return
+
+    color = "#dfdfdf" if panel_dark() else "#444444"
+    wifi_on, ssid = wifi_state()
+    vol, mute = volume_state()
+    cap, status = battery_state()
+
+    out = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "dapeos-status.svg")
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(svg(color, wifi_on, ssid, vol, mute, cap))
+
+    wifi_txt = ("Wi-Fi: " + (ssid or "nepřipojeno")) if wifi_on else "Wi-Fi: vypnuto"
+    vol_txt = "zvuk: ztlumeno" if mute else f"zvuk: {vol}%"
+    bat_txt = f"baterie: {cap}% ({status})" if cap is not None else "bez baterie"
+
+    print(f"<img>{out}</img>")
+    print(f"<tool>{wifi_txt} | {vol_txt} | {bat_txt}</tool>")
+    print("<click>dapeos-quicksettings</click>")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,357 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+
+from PyQt5.QtCore import QSize, Qt, QTimer, pyqtSignal
+from PyQt5.QtGui import QIcon, QPainter, QColor, QPixmap
+from PyQt5.QtWidgets import (
+    QApplication, QDialog, QFrame, QGridLayout, QHBoxLayout, QInputDialog,
+    QLabel, QLineEdit, QPushButton, QSlider, QVBoxLayout, QWidget,
+)
+
+ACCENT = "#2a7fca"
+
+
+def sh(cmd):
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=5).stdout.strip()
+    except Exception:
+        return ""
+
+
+def wifi_enabled():
+    return sh(["nmcli", "-t", "-f", "WIFI", "radio"]) == "enabled"
+
+
+def wifi_ssid():
+    out = sh(["nmcli", "-t", "-f", "ACTIVE,SSID", "dev", "wifi"])
+    for line in out.splitlines():
+        parts = line.split(":")
+        if parts and parts[0] == "yes":
+            return parts[1] if len(parts) > 1 else "?"
+    return None
+
+
+def bt_enabled():
+    out = sh(["bluetoothctl", "show"])
+    return "Powered: yes" in out
+
+
+def volume():
+    out = sh(["pactl", "get-sink-volume", "@DEFAULT_SINK@"])
+    for tok in out.split():
+        if tok.endswith("%"):
+            return int(tok[:-1])
+    return 0
+
+
+def muted():
+    return "yes" in sh(["pactl", "get-sink-mute", "@DEFAULT_SINK@"])
+
+
+def battery():
+    for name in os.listdir("/sys/class/power_supply"):
+        if not name.startswith("BAT"):
+            continue
+        base = "/sys/class/power_supply/" + name
+        try:
+            cap = int(open(base + "/capacity").read().strip())
+        except Exception:
+            continue
+        try:
+            status = open(base + "/status").read().strip()
+        except Exception:
+            status = ""
+        return cap, status
+    return None, ""
+
+
+def brightness():
+    out = sh(["brightnessctl", "get"])
+    try:
+        cur = int(out)
+    except ValueError:
+        return 0, 0
+    try:
+        mx = int(sh(["brightnessctl", "max"]))
+    except ValueError:
+        mx = 0
+    return cur, mx
+
+
+def night_light_on():
+    return bool(sh(["pgrep", "-x", "redshift"]))
+
+
+class Tile(QPushButton):
+    def __init__(self, title, subtitle=""):
+        super().__init__()
+        self.setObjectName("tile")
+        self.setCursor(Qt.PointingHandCursor)
+        self.setMinimumHeight(74)
+        self.setLayout(QVBoxLayout())
+        self.layout().setContentsMargins(12, 10, 12, 10)
+        self.layout().setSpacing(2)
+        self.t = QLabel(title)
+        self.t.setObjectName("tileTitle")
+        self.s = QLabel(subtitle)
+        self.s.setObjectName("tileSub")
+        self.layout().addWidget(self.t)
+        self.layout().addWidget(self.s)
+
+    def set_sub(self, text):
+        self.s.setText(text)
+
+
+class QuickSettings(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.pages = {}
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        self.frame = QFrame()
+        self.frame.setObjectName("root")
+        outer.addWidget(self.frame)
+
+        self.stack = QVBoxLayout(self.frame)
+        self.stack.setContentsMargins(16, 16, 16, 14)
+        self.stack.setSpacing(12)
+
+        self.main_page = QWidget()
+        self.build_main(self.main_page)
+        self.stack.addWidget(self.main_page)
+
+        self.wifi_page = QWidget()
+        self.build_wifi(self.wifi_page)
+
+        self.setStyleSheet(f"""
+            QFrame#root {{ background: #1f1f1f; border-radius: 14px; }}
+            QLabel {{ color: #e8e8e8; }}
+            QLabel#title {{ font-size: 12pt; font-weight: bold; }}
+            QLabel#sub {{ color: #9a9a9a; }}
+            QPushButton#tile {{ background: #2b2b2b; border: 1px solid #3a3a3a; border-radius: 10px; text-align: left; }}
+            QPushButton#tile:hover {{ background: #333333; }}
+            QPushButton#tile[active="true"] {{ background: {ACCENT}; border-color: {ACCENT}; }}
+            QPushButton#tile[active="true"] QLabel {{ color: white; }}
+            QLabel#tileTitle {{ font-size: 10pt; font-weight: bold; }}
+            QLabel#tileSub {{ font-size: 8.5pt; color: #9a9a9a; }}
+            QPushButton#tile[active="true"] QLabel#tileSub {{ color: #dbeafe; }}
+            QSlider::groove:horizontal {{ height: 6px; background: #3a3a3a; border-radius: 3px; }}
+            QSlider::handle:horizontal {{ width: 16px; margin: -6px 0; border-radius: 8px; background: {ACCENT}; }}
+            QSlider::sub-page:horizontal {{ background: {ACCENT}; border-radius: 3px; }}
+            QPushButton#flat {{ background: transparent; border: none; color: #e8e8e8; padding: 6px; }}
+            QPushButton#flat:hover {{ background: #2b2b2b; border-radius: 6px; }}
+            QPushButton#back {{ background: transparent; border: none; color: #9a9a9a; text-align: left; }}
+        """)
+
+        self.refresh()
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.refresh)
+        self.timer.start(3000)
+
+    def build_main(self, page):
+        self.layout_main = QVBoxLayout(page)
+        self.layout_main.setContentsMargins(0, 0, 0, 0)
+        self.layout_main.setSpacing(12)
+
+        grid = QGridLayout()
+        grid.setSpacing(10)
+        self.tile_wifi = Tile("Wi-Fi", "")
+        self.tile_wifi.clicked.connect(self.open_wifi)
+        self.tile_bt = Tile("Bluetooth", "")
+        self.tile_bt.clicked.connect(self.toggle_bt)
+        self.tile_night = Tile("Noční světlo", "")
+        self.tile_night.clicked.connect(self.toggle_night)
+        grid.addWidget(self.tile_wifi, 0, 0)
+        grid.addWidget(self.tile_bt, 0, 1)
+        grid.addWidget(self.tile_night, 1, 0)
+        self.layout_main.addLayout(grid)
+
+        vol_row = QHBoxLayout()
+        vol_row.addWidget(QLabel("Zvuk"))
+        self.vol = QSlider(Qt.Horizontal)
+        self.vol.setRange(0, 100)
+        self.vol.valueChanged.connect(self.set_volume)
+        vol_row.addWidget(self.vol, 1)
+        self.vol_val = QLabel()
+        vol_row.addWidget(self.vol_val)
+        self.layout_main.addLayout(vol_row)
+
+        bri_row = QHBoxLayout()
+        bri_row.addWidget(QLabel("Jas"))
+        self.bri = QSlider(Qt.Horizontal)
+        self.bri.setRange(0, 100)
+        self.bri.valueChanged.connect(self.set_brightness)
+        bri_row.addWidget(self.bri, 1)
+        self.bri_val = QLabel()
+        bri_row.addWidget(self.bri_val)
+        self.layout_main.addLayout(bri_row)
+
+        footer = QHBoxLayout()
+        self.batt = QLabel()
+        footer.addWidget(self.batt)
+        footer.addStretch(1)
+        for text, cmd in (
+            ("Mixér", ["pavucontrol"]),
+            ("Sítě", ["nm-connection-editor"]),
+            ("Nastavení", ["xfce4-settings-manager"]),
+        ):
+            b = QPushButton(text)
+            b.setObjectName("flat")
+            b.clicked.connect(lambda _=False, c=cmd: subprocess.Popen(c))
+            footer.addWidget(b)
+        self.layout_main.addLayout(footer)
+
+    def build_wifi(self, page):
+        lay = QVBoxLayout(page)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(8)
+
+        top = QHBoxLayout()
+        back = QPushButton("< Zpět")
+        back.setObjectName("back")
+        back.clicked.connect(self.show_main)
+        top.addWidget(back)
+        top.addStretch(1)
+        self.wifi_radio = QPushButton("Vypnout Wi-Fi")
+        self.wifi_radio.setObjectName("flat")
+        self.wifi_radio.clicked.connect(self.toggle_wifi)
+        top.addWidget(self.wifi_radio)
+        lay.addLayout(top)
+
+        self.wifi_list = QVBoxLayout()
+        self.wifi_list.setSpacing(4)
+        lay.addLayout(self.wifi_list)
+        lay.addStretch(1)
+
+    def show_main(self):
+        self.stack.replaceWidget(self.wifi_page, self.main_page)
+        self.wifi_page.hide()
+        self.main_page.show()
+        self.refresh()
+
+    def open_wifi(self):
+        self.stack.replaceWidget(self.main_page, self.wifi_page)
+        self.main_page.hide()
+        self.wifi_page.show()
+        self.scan_wifi()
+
+    def scan_wifi(self):
+        while self.wifi_list.count():
+            item = self.wifi_list.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        out = sh(["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "dev", "wifi", "list"])
+        seen = set()
+        for line in out.splitlines():
+            parts = line.split(":")
+            if len(parts) < 3:
+                continue
+            ssid = parts[1]
+            if not ssid or ssid in seen:
+                continue
+            seen.add(ssid)
+            security = parts[3] if len(parts) > 3 else ""
+            b = QPushButton(("✓ " if parts[0] == "*" else "") + ssid)
+            b.setObjectName("flat")
+            b.setStyleSheet("text-align: left; padding: 8px;")
+            b.clicked.connect(lambda _=False, s=ssid, sec=security: self.connect_wifi(s, sec))
+            self.wifi_list.addWidget(b)
+
+        self.wifi_radio.setText("Vypnout Wi-Fi" if wifi_enabled() else "Zapnout Wi-Fi")
+
+    def connect_wifi(self, ssid, security):
+        password = None
+        if security:
+            password, ok = QInputDialog.getText(
+                self, "Připojení", f"Heslo pro {ssid}:", QLineEdit.Password)
+            if not ok:
+                return
+        cmd = ["nmcli", "dev", "wifi", "connect", ssid]
+        if password:
+            cmd += ["password", password]
+        subprocess.Popen(cmd)
+        QTimer.singleShot(1500, self.scan_wifi)
+
+    def toggle_wifi(self):
+        sh(["nmcli", "radio", "wifi", "on" if not wifi_enabled() else "off"])
+        self.scan_wifi()
+
+    def toggle_bt(self):
+        sh(["bluetoothctl", "power", "on" if not bt_enabled() else "off"])
+        self.refresh()
+
+    def toggle_night(self):
+        if night_light_on():
+            subprocess.Popen(["redshift", "-x"])
+        else:
+            subprocess.Popen(["redshift", "-O", "3500"])
+
+    def set_volume(self, val):
+        sh(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{val}%"])
+
+    def set_brightness(self, val):
+        sh(["brightnessctl", "set", f"{val}%"])
+
+    def refresh(self):
+        ssid = wifi_ssid()
+        on = wifi_enabled()
+        self.tile_wifi.set_sub(ssid if on and ssid else ("Vypnuto" if not on else "Nepřipojeno"))
+        self.set_active(self.tile_wifi, on)
+        self.tile_bt.set_sub("Zapnuto" if bt_enabled() else "Vypnuto")
+        self.set_active(self.tile_bt, bt_enabled())
+        self.tile_night.set_sub("Zapnuto" if night_light_on() else "Vypnuto")
+        self.set_active(self.tile_night, night_light_on())
+
+        v = volume()
+        self.vol.blockSignals(True)
+        self.vol.setValue(v)
+        self.vol.blockSignals(False)
+        self.vol_val.setText("ztlumeno" if muted() else f"{v}%")
+
+        cur, mx = brightness()
+        if mx:
+            pct = int(cur * 100 / mx)
+            self.bri.blockSignals(True)
+            self.bri.setValue(pct)
+            self.bri.blockSignals(False)
+            self.bri_val.setText(f"{pct}%")
+        else:
+            self.bri.setEnabled(False)
+            self.bri_val.setText("n/a")
+
+        cap, status = battery()
+        if cap is None:
+            self.batt.setText("Bez baterie")
+        else:
+            self.batt.setText(f"Baterie {cap}% ({status})")
+
+    @staticmethod
+    def set_active(widget, active):
+        widget.setProperty("active", "true" if active else "false")
+        widget.style().unpolish(widget)
+        widget.style().polish(widget)
+
+
+def main():
+    app = QApplication(sys.argv)
+    QIcon.setThemeName("Papirus-Light")
+    QIcon.setFallbackThemeName("hicolor")
+
+    w = QuickSettings()
+    screen = app.primaryScreen().availableGeometry()
+    w.adjustSize()
+    x = screen.right() - w.width() - 12
+    y = screen.bottom() - 48 - w.height()
+    w.move(x, y)
+    w.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()
