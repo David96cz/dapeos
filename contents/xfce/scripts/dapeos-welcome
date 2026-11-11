@@ -218,7 +218,7 @@ class Welcome(QWidget):
         grid.setSpacing(12)
 
         cards = [
-            ("folder-download", "Přesunout data z Windows",
+            ("folder-download", "Přesunout data z Windows (nedostupné)",
              "Dokumenty, obrázky a hudbu z vašeho starého počítače.",
              self.migrate),
             ("system-software-update", "Aktualizace",
@@ -231,10 +231,10 @@ class Welcome(QWidget):
              "Barevné téma, ikony a tapeta.",
              self.open_appearance),
             ("preferences-desktop-keyboard", "Klávesové zkratky",
-             "Co dělá Super, Ctrl+Alt+Del a další.",
+             "Co dělá Win, Ctrl+Alt+Del a další.",
              self.open_shortcuts),
             ("dialog-information", "O systému",
-             "Co je uvnitř a kam se obrátit o pomoc.",
+             "Co je uvnitř počítače.",
              self.open_about),
         ]
 

@@ -40,18 +40,18 @@ configs:
     "/home/david/Plocha/sample-1.rar":
       row: 1
       col: 2
-    "/home/david/Plocha/app-uninstaller":
-      row: 5
-      col: 4
+    "/":
+      row: 1
+      col: 0
     "/home/david/Plocha/tex\u0165\xE1k.txt":
       row: 3
       col: 3
     "/home/david/Plocha/negr.rar":
       row: 4
       col: 4
-    "/":
-      row: 1
-      col: 0
+    "/home/david/Plocha/app-uninstaller":
+      row: 5
+      col: 4
     "/home/david":
       row: 0
       col: 0
