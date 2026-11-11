@@ -2,6 +2,59 @@
 # shellcheck shell=bash
 # Systémové operace: balíčky, služby, správce přihlášení, hardware.
 
+wifi_iface() {
+    local d
+    for d in /sys/class/net/*; do
+        [ -d "$d/wireless" ] && basename "$d" && return 0
+    done
+    return 1
+}
+
+networkmanager_takeover() {
+    local iface_file=/etc/network/interfaces
+    local ssid="" psk="" iface=""
+
+    if [ -f "$iface_file" ]; then
+        ssid=$(awk '/wpa-ssid/ {print $2}' "$iface_file" | tr -d '"' | head -n1)
+        psk=$(awk '/wpa-psk/ {print $2}' "$iface_file" | tr -d '"' | head -n1)
+    fi
+    iface=$(wifi_iface || true)
+
+    log "Předávám správu Wi-Fi NetworkManageru..."
+    if [ -f /etc/NetworkManager/NetworkManager.conf ]; then
+        sed -i 's/^managed=false/managed=true/' /etc/NetworkManager/NetworkManager.conf
+    fi
+
+    if [ -n "$iface" ]; then
+        sed -i -E "s/^allow-hotplug ${iface}$/#allow-hotplug ${iface}/" "$iface_file" 2>/dev/null || true
+        sed -i -E "s/^auto ${iface}$/#auto ${iface}/" "$iface_file" 2>/dev/null || true
+        sed -i -E "s/^iface ${iface} /#iface ${iface} /" "$iface_file" 2>/dev/null || true
+        sed -i -E "s/^[[:space:]]+wpa-/# wpa-/" "$iface_file" 2>/dev/null || true
+    fi
+
+    systemctl restart networking 2>/dev/null || true
+    systemctl restart NetworkManager 2>/dev/null || true
+    sleep 3
+
+    if [ -n "$iface" ]; then
+        nmcli device set "$iface" managed yes >/dev/null 2>&1 || true
+        nmcli radio wifi on >/dev/null 2>&1 || true
+    fi
+
+    if [ -n "$ssid" ] && [ -n "$psk" ] && [ -n "$iface" ]; then
+        nmcli connection delete dapeos-wifi >/dev/null 2>&1 || true
+        nmcli connection add type wifi con-name dapeos-wifi ifname "$iface" ssid "$ssid" \
+            wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$psk" autoconnect yes >/dev/null 2>&1 || true
+        nmcli connection up dapeos-wifi >/dev/null 2>&1 || true
+    fi
+
+    local i
+    for i in {1..10}; do
+        ping -c1 -W1 1.1.1.1 >/dev/null 2>&1 && break
+        sleep 1
+    done
+}
+
 prepare_system() {
     log "Vypínám otravný systémový PC speaker (pípání)..."
     echo -e "blacklist pcspkr\nblacklist snd_pcsp" > /etc/modprobe.d/nobeep.conf
@@ -12,41 +65,11 @@ prepare_system() {
 
     log "Základní příprava systému..."
     
-    # Záchrana Wi-Fi z instalátoru
-    # local WIFI_SSID=""
-    # local WIFI_PSK=""
-    # if [ -f /etc/network/interfaces ]; then
-    #     WIFI_SSID=$(grep 'wpa-ssid' /etc/network/interfaces | cut -d' ' -f2- | tr -d '"' | xargs)
-    #     WIFI_PSK=$(grep 'wpa-psk' /etc/network/interfaces | cut -d' ' -f2- | tr -d '"' | xargs)
-    # fi
-
     apt-get update -qq || true
     apt-get install -y sudo curl wget dpkg-dev git dbus-x11 numlockx plymouth plymouth-themes network-manager ntfs-3g
+
+    networkmanager_takeover
     usermod -aG sudo,audio,video,plugdev "$REAL_USER" || true
-
-    # # Likvidace ifupdown
-    # apt-get purge -y ifupdown || true
-    # rm -rf /etc/network/interfaces.d/* || true
-    # printf "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
-
-    # # Předání NetworkManageru
-    # if [ -f /etc/NetworkManager/NetworkManager.conf ]; then
-    #     sed -i 's/managed=false/managed=true/g' /etc/NetworkManager/NetworkManager.conf
-    # fi
-    # systemctl restart NetworkManager || true
-
-    # # Obnovení připojení
-    # sleep 3
-    # if [ -n "$WIFI_SSID" ] && [ -n "$WIFI_PSK" ]; then
-    #     log "Předávám Wi-Fi síť do NetworkManageru..."
-    #     nmcli dev wifi connect "$WIFI_SSID" password "$WIFI_PSK" >/dev/null 2>&1 || true
-    # fi
-
-    # log "Čekám na stabilizaci sítě..."
-    # for i in {1..10}; do
-    #     if ping -c 1 8.8.8.8 &> /dev/null; then break; fi
-    #     sleep 2
-    # done
 
     # 2. Zakázání zabugovaného systémového ntfs3 ovladače
     echo "blacklist ntfs3" | sudo tee /etc/modprobe.d/disable-ntfs3.conf
