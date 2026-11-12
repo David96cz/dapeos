@@ -6,10 +6,10 @@ flock -n 9 || exit 0
 restart_panel() {
     pkill -x xfce4-panel 2>/dev/null
     pkill -x nm-applet 2>/dev/null
+    pkill -x blueman-applet 2>/dev/null
     sleep 0.5
     setsid /usr/local/bin/xfce4-panel >/dev/null 2>&1 < /dev/null &
-    sleep 0.5
-    setsid /usr/local/bin/nm-applet >/dev/null 2>&1 < /dev/null &
+    dapeos-touchpad >/dev/null 2>&1 &
 }
 
 while true; do
