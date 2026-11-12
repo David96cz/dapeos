@@ -20,19 +20,15 @@ done
 changed=0
 for prop in $props; do
     cur=$(xfconf-query -c xfce4-desktop -p "$prop" 2>/dev/null)
-    case "$cur" in
-        ""|*desktop-base*|*Default*|*default*)
-            xfconf-query -c xfce4-desktop -p "$prop" -s "$WALLPAPER" 2>/dev/null && changed=1
-            ;;
-    esac
+    if [ -z "$cur" ] || [ ! -f "$cur" ] || echo "$cur" | grep -qE 'desktop-base|Default|default'; then
+        xfconf-query -c xfce4-desktop -p "$prop" -s "$WALLPAPER" 2>/dev/null && changed=1
+    fi
 done
 for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'image-path$'); do
     cur=$(xfconf-query -c xfce4-desktop -p "$prop" 2>/dev/null)
-    case "$cur" in
-        ""|*desktop-base*|*Default*|*default*)
-            xfconf-query -c xfce4-desktop -p "$prop" -s "$WALLPAPER" 2>/dev/null && changed=1
-            ;;
-    esac
+    if [ -z "$cur" ] || [ ! -f "$cur" ] || echo "$cur" | grep -qE 'desktop-base|Default|default'; then
+        xfconf-query -c xfce4-desktop -p "$prop" -s "$WALLPAPER" 2>/dev/null && changed=1
+    fi
 done
 
 if [ "$changed" = "1" ]; then
@@ -40,6 +36,8 @@ if [ "$changed" = "1" ]; then
         xfconf-query -c xfce4-desktop -p "$prop" -s 5 2>/dev/null || true
     done
 fi
+
+xfdesktop --reload >/dev/null 2>&1 || true
 
 mkdir -p "$HOME/.config/dapeos"
 touch "$MARKER"
