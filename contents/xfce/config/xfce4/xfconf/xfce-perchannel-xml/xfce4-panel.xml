@@ -53,8 +53,8 @@
       <property name="view-mode" type="int" value="1"/>
       <property name="position-categories-alternate" type="bool" value="true"/>
       <property name="show-button-title" type="bool" value="true"/>
-      <property name="button-title" type="string" value="Start  "/>
-      <property name="button-icon" type="string" value="/etc/skel/.config/xfce4/desktop/linux.png"/>
+      <property name="button-title" type="string" value="Start"/>
+      <property name="button-icon" type="string" value="/usr/share/icons/hicolor/scalable/apps/dapeos-logo.svg"/>
       <property name="favorites" type="array">
       </property>
       <property name="command-lockscreen" type="string" value="dm-tool lock"/>

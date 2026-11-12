@@ -1,0 +1,18 @@
+#!/bin/sh
+# Windows/Mac-like touchpad: tap-to-click, clickfinger (1 finger = left, 2 = right).
+LOG="/tmp/dapeos-touchpad.log"
+
+apply() {
+    for id in $(xinput list --id-only 2>/dev/null); do
+        xinput list-props "$id" 2>/dev/null | grep -q 'libinput Tapping Enabled' || continue
+        xinput set-prop "$id" 'libinput Tapping Enabled' 1 2>>"$LOG"
+        xinput set-prop "$id" 'libinput Click Method Enabled' 0 1 2>>"$LOG"
+        xinput set-prop "$id" 'libinput Tapping Drag Enabled' 1 2>>"$LOG"
+        xinput set-prop "$id" 'libinput Natural Scrolling Enabled' 0 2>>"$LOG"
+        echo "$(date +%H:%M:%S) touchpad $id nastaven" >> "$LOG"
+    done
+}
+
+apply
+sleep 3
+apply
