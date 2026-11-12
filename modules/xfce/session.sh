@@ -30,6 +30,30 @@ xfce_skel_snapshot() {
 }
 
 
+
+dapeos_session_setup() {
+    log "Doplňuji session nastavení (jas, tray appleti, network-online)..."
+
+    install -d -m 755 /etc/tmpfiles.d
+    : > /etc/tmpfiles.d/dapeos-backlight.conf
+    local bl
+    for bl in /sys/class/backlight/*; do
+        [ -d "$bl" ] || continue
+        printf 'f %s/brightness 0664 root video\n' "$bl" >> /etc/tmpfiles.d/dapeos-backlight.conf
+    done
+    systemd-tmpfiles --create /etc/tmpfiles.d/dapeos-backlight.conf 2>/dev/null || true
+
+    install -d -m 755 "$USER_HOME/.config/autostart"
+    local a
+    for a in nm-applet blueman-applet; do
+        printf '[Desktop Entry]\nType=Application\nName=%s\nHidden=true\n' "$a" \
+            > "$USER_HOME/.config/autostart/$a.desktop"
+        chown "$REAL_USER:$REAL_USER" "$USER_HOME/.config/autostart/$a.desktop" 2>/dev/null || true
+    done
+
+    systemctl disable NetworkManager-wait-online.service 2>/dev/null || true
+}
+
 xfce_fix_ownership() {
     chown -R "$REAL_USER:$REAL_USER" \
         "$USER_HOME/.config" "$USER_HOME/.cache" "$USER_HOME/.local" 2>/dev/null || true

@@ -15,6 +15,7 @@ configure_xfce() {
     xfce_keyboard_shortcuts
     update_manager_setup
     welcome_setup
+    dapeos_session_setup
     xfce_skel_snapshot
     xfce_fix_ownership
 

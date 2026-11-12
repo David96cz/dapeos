@@ -52,6 +52,13 @@ setup_boot() {
         case " $cur " in *" quiet "*) ;; *) cur="${cur:+$cur }quiet" ;; esac
     fi
 
+    if grep -qi '0x8086' /sys/class/drm/card*/device/vendor 2>/dev/null; then
+        case " $cur " in
+            *" i915.enable_psr=0 "*) ;;
+            *) cur="${cur:+$cur }i915.enable_psr=0" ;;
+        esac
+    fi
+
     sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"$cur\"|" /etc/default/grub
 
     # --- 3) Plymouth: jen když ještě není hotový ---
