@@ -91,6 +91,10 @@ class OSD(QWidget):
         if vol > 100:
             vol = 100
             sh(["pactl", "set-sink-volume", "@DEFAULT_SINK@", "100%"])
+        if vol <= 0:
+            vol = 0
+            sh(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "1"])
+            muted = True
         if muted:
             self.show_osd("audio-volume-muted", "Zvuk", "ztlumeno")
         else:
