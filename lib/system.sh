@@ -87,7 +87,7 @@ apt_retry() {
     local tries=5 n=1
     while true; do
         log "apt-get $* (pokus $n/$tries)"
-        if apt-get "$@"; then
+        if apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 "$@"; then
             return 0
         fi
         if [ "$n" -ge "$tries" ]; then

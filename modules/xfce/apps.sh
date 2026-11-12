@@ -32,6 +32,16 @@ xfce_setup_apps_and_defaults() {
         fi
     done
 
+    # Chrome/Chromium bez dotazu na klíčenku (gnome-keyring)
+    local chrome_desktop="$LOCAL_APPS/google-chrome.desktop"
+    if [ -f "$chrome_desktop" ]; then
+        sed -i 's|google-chrome-stable %U|google-chrome-stable --password-store=basic --no-default-browser-check %U|g' "$chrome_desktop" || true
+    fi
+    local chromium_desktop="$LOCAL_APPS/chromium.desktop"
+    if [ -f "$chromium_desktop" ]; then
+        sed -i 's|chromium %U|chromium --password-store=basic --no-default-browser-check %U|g' "$chromium_desktop" || true
+    fi
+
     # 2. Skrytí aplikací definovaných v sekci [APPS_TO_HIDE] v xfce/config.txt
     local APPS_TO_HIDE_STR
     APPS_TO_HIDE_STR=$(get_section "$DESKTOP_CONFIG" "APPS_TO_HIDE" | tr -d '\r')
