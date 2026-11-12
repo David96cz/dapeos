@@ -29,6 +29,8 @@ monitors=$(xfconf-query -c xfce4-desktop -l 2>/dev/null \
 
 for mon in $monitors; do
     xset "$mon/image-path" string "$WALLPAPER"
+    xset "$mon/last-single-image" string "$WALLPAPER"
+    xset "$mon/image-show" bool true
     xset "$mon/image-style" int 4
     for ws in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E "^${mon}/workspace[0-9]+/last-image$"); do
         xset "$ws" string "$WALLPAPER"
@@ -43,11 +45,10 @@ for p in $props; do
     xset "$p" string "$WALLPAPER"
 done
 
-log "nastaveno: $(xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitorVirtual-1/workspace0/last-image 2>/dev/null)"
+log "nastaveno pro: $monitors"
 
 pkill -x xfdesktop 2>/dev/null
 sleep 1
 setsid xfdesktop >/dev/null 2>&1 < /dev/null &
 
-mkdir -p "$HOME/.config/dapeos"
-touch "$MARKER"
+
