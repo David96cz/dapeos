@@ -48,7 +48,7 @@ class OSD(QWidget):
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
-        p.setBrush(QColor(30, 30, 30, 235))
+        p.setBrush(QColor(47, 47, 47, 240))
         p.setPen(QColor(70, 70, 70))
         p.drawRoundedRect(QRectF(0, 0, self.width() - 1, self.height() - 1), 12, 12)
 
