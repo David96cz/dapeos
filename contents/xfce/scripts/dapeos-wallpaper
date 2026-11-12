@@ -1,0 +1,14 @@
+#!/bin/sh
+# Nastaví tapetu na všech monitorech (i nově připojených).
+WALLPAPER="/usr/share/backgrounds/wallpaper.png"
+[ -f "$WALLPAPER" ] || exit 0
+
+for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'last-image$'); do
+    xfconf-query -c xfce4-desktop -p "$p" -s "$WALLPAPER" 2>/dev/null || true
+done
+for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'image-path$'); do
+    xfconf-query -c xfce4-desktop -p "$p" -s "$WALLPAPER" 2>/dev/null || true
+done
+for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'image-style$'); do
+    xfconf-query -c xfce4-desktop -p "$p" -s 5 2>/dev/null || true
+done
