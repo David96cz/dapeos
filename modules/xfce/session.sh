@@ -51,6 +51,11 @@ dapeos_session_setup() {
         chown "$REAL_USER:$REAL_USER" "$USER_HOME/.config/autostart/$a.desktop" 2>/dev/null || true
     done
 
+    install -d -m 755 /usr/share/dapeos
+    if [ -f "$CONTENTS_DIR/xfce/config/app-names.conf" ]; then
+        install -m 644 "$CONTENTS_DIR/xfce/config/app-names.conf" /usr/share/dapeos/app-names.conf
+    fi
+
     systemctl disable NetworkManager-wait-online.service 2>/dev/null || true
 }
 

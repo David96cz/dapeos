@@ -320,7 +320,7 @@ class ShortcutApp(QMainWindow):
 
     def refresh_system_menu(self):
         subprocess.run(["update-desktop-database", APPS_DIR], capture_output=True)
-        subprocess.run(["lxqt-panel", "--restart"], capture_output=True)
+        subprocess.run(["sh", "-c", "pkill -x xfce4-panel; sleep 0.5; setsid xfce4-panel >/dev/null 2>&1 &"], capture_output=True)
 
     def pick_exec_file(self):
         fname, _ = QFileDialog.getOpenFileName(self, "Vyber soubor", USER_HOME)

@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""Synchronizuje .desktop soubory: StartupNotify a české názvy dle app-names.conf."""
+import glob
+import os
+import shutil
+import subprocess
+import sys
+
+HOME = os.path.expanduser("~")
+SRC = "/usr/share/applications"
+DST = os.path.join(HOME, ".local/share/applications")
+CONF = "/usr/share/dapeos/app-names.conf"
+os.makedirs(DST, exist_ok=True)
+
+
+def read_conf():
+    data, section = {}, None
+    try:
+        with open(CONF, encoding="utf-8") as f:
+            for line in f:
+                line = line.rstrip("\n")
+                if line.startswith("[") and line.endswith("]"):
+                    section = line[1:-1]
+                    data[section] = {}
+                elif section and "=" in line and not line.startswith("#"):
+                    k, v = line.split("=", 1)
+                    data[section][k.strip()] = v.strip()
+    except FileNotFoundError:
+        pass
+    return data
+
+
+def patch_desktop(path, overrides):
+    with open(path, encoding="utf-8", errors="ignore") as f:
+        lines = f.read().splitlines()
+
+    out, section, seen_notify = [], None, False
+    for line in lines:
+        if line.startswith("[") and line.endswith("]"):
+            if section == "Desktop Entry" and not seen_notify:
+                out.append("StartupNotify=true")
+            section = line[1:-1]
+            out.append(line)
+            continue
+        if section == "Desktop Entry" and line.startswith("StartupNotify="):
+            seen_notify = True
+            if overrides is not None:
+                out.append("StartupNotify=true")
+                continue
+        if overrides is not None and section == "Desktop Entry":
+            key = line.split("=", 1)[0] if "=" in line else None
+            if key in overrides:
+                out.append(f"{key}={overrides.pop(key)}")
+                continue
+        out.append(line)
+
+    if section == "Desktop Entry" and not seen_notify:
+        out.append("StartupNotify=true")
+    if overrides:
+        out.extend(f"{k}={v}" for k, v in overrides.items())
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(out) + "\n")
+
+
+def main():
+    conf = read_conf()
+    for src in glob.glob(os.path.join(SRC, "*.desktop")):
+        name = os.path.basename(src)
+        dst = os.path.join(DST, name)
+        if not os.path.exists(dst):
+            try:
+                shutil.copy2(src, dst)
+            except OSError:
+                continue
+        overrides = dict(conf.get(name, {})) or None
+        try:
+            patch_desktop(dst, overrides)
+        except OSError:
+            pass
+    subprocess.run(["update-desktop-database", DST], capture_output=True)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

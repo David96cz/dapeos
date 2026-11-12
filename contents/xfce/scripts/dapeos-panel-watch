@@ -1,5 +1,5 @@
 #!/bin/sh
-# Restartuje panel po změně tmavého režimu (ikony se přepnou hned).
+# Restartuje panel po zmene dark-mode nebo motivu/ikon (whiskermenu ikony).
 exec 9>/tmp/dapeos-panel-watch.lock
 flock -n 9 || exit 0
 
@@ -12,14 +12,17 @@ restart_panel() {
     dapeos-touchpad >/dev/null 2>&1 &
 }
 
-while true; do
-    xfconf-query -c xfce4-panel -m 2>/dev/null | while IFS= read -r line; do
+watch_channel() {
+    xfconf-query -c "$1" -m 2>/dev/null | while IFS= read -r line; do
         case "$line" in
-            *dark-mode*)
+            *dark-mode*|*ThemeName*|*IconThemeName*)
                 sleep 0.4
                 restart_panel
                 ;;
         esac
     done
-    sleep 2
-done
+}
+
+watch_channel xfce4-panel &
+watch_channel xsettings &
+wait

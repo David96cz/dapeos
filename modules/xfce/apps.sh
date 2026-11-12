@@ -15,8 +15,43 @@ xfce_deploy_scripts() {
 }
 
 
+chrome_no_keyring() {
+    local bin="/opt/google/chrome/google-chrome"
+    [ -x "$bin" ] || return 0
+
+    local name
+    for name in google-chrome google-chrome-stable; do
+        cat > "/usr/local/bin/$name" <<EOF
+#!/bin/sh
+exec $bin --password-store=basic --no-default-browser-check "\$@"
+EOF
+        chmod 755 "/usr/local/bin/$name"
+    done
+
+    local f
+    for f in /usr/share/applications/google-chrome.desktop \
+             "$USER_HOME/.local/share/applications/google-chrome.desktop"; do
+        [ -f "$f" ] || continue
+        sed -i 's|/usr/bin/google-chrome-stable|google-chrome-stable|g' "$f" || true
+        sed -i 's|google-chrome-stable %U|google-chrome-stable --password-store=basic %U|g' "$f" || true
+    done
+}
+
 xfce_setup_apps_and_defaults() {
     log "Nastavuji chování aplikací, skrytí bloatware a ikony pro XFCE..."
+    chrome_no_keyring
+
+    # VLC: bez prvotního dotazu a bez síťového metadata
+    install -d -m 755 "$USER_HOME/.config/vlc"
+    if [ ! -f "$USER_HOME/.config/vlc/vlcrc" ]; then
+        cat > "$USER_HOME/.config/vlc/vlcrc" <<'EOF'
+[qt]
+qt-privacy-ask=0
+[core]
+metadata-network-access=0
+EOF
+        chown "$REAL_USER:$REAL_USER" "$USER_HOME/.config/vlc/vlcrc" 2>/dev/null || true
+    fi
     
     local LOCAL_APPS="$USER_HOME/.local/share/applications"
     mkdir -p "$LOCAL_APPS"
