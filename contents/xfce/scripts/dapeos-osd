@@ -29,16 +29,25 @@ class OSD(QWidget):
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_ShowWithoutActivating, True)
-        self.setFixedSize(280, 90)
+        self.setFixedSize(240, 140)
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(12, 14, 12, 12)
+        lay.setSpacing(4)
+        lay.setAlignment(Qt.AlignCenter)
 
         self.icon = QLabel(self)
-        self.icon.setGeometry(20, 20, 50, 50)
+        self.icon.setAlignment(Qt.AlignCenter)
         self.title = QLabel(self)
-        self.title.setGeometry(85, 14, 175, 26)
-        self.title.setStyleSheet("color: #e8e8e8; font-size: 11pt; font-weight: bold;")
+        self.title.setAlignment(Qt.AlignCenter)
+        self.title.setStyleSheet("color: #e8e8e8; font-size: 12pt; font-weight: bold;")
         self.val = QLabel(self)
-        self.val.setGeometry(85, 50, 175, 24)
-        self.val.setStyleSheet("color: #9a9a9a; font-size: 10pt;")
+        self.val.setAlignment(Qt.AlignCenter)
+        self.val.setStyleSheet("color: #b0b0b0; font-size: 11pt;")
+
+        lay.addWidget(self.icon, 0, Qt.AlignCenter)
+        lay.addWidget(self.title, 0, Qt.AlignCenter)
+        lay.addWidget(self.val, 0, Qt.AlignCenter)
 
         self.hide_timer = QTimer(self)
         self.hide_timer.setSingleShot(True)
@@ -55,7 +64,7 @@ class OSD(QWidget):
     def show_osd(self, icon_name, title, value):
         path = f"/usr/local/share/dapeos/panel/{icon_name}.svg"
         ic = QIcon(path) if os.path.exists(path) else QIcon.fromTheme(icon_name)
-        self.icon.setPixmap(ic.pixmap(44, 44))
+        self.icon.setPixmap(ic.pixmap(52, 52))
         self.title.setText(title)
         self.val.setText(value)
         scr = QApplication.primaryScreen().geometry()
@@ -79,6 +88,9 @@ class OSD(QWidget):
                     vol = int(tok[:-1])
                 except ValueError:
                     pass
+        if vol > 100:
+            vol = 100
+            sh(["pactl", "set-sink-volume", "@DEFAULT_SINK@", "100%"])
         if muted:
             self.show_osd("audio-volume-muted", "Zvuk", "ztlumeno")
         else:
