@@ -2,7 +2,6 @@
 # Nastaví tapetu na všech monitorech a restartuje xfdesktop.
 WALLPAPER="/usr/share/backgrounds/wallpaper.png"
 LOG="/tmp/dapeos-wallpaper.log"
-MARKER="$HOME/.config/dapeos/wallpaper-initialized"
 
 log() { echo "$(date +%H:%M:%S) $*" >> "$LOG"; }
 
