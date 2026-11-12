@@ -107,10 +107,8 @@ def svg(color, net_type, vol, mute, cap):
             parts.append(f'<path d="M15.8 5.8a8 8 0 0 1 0 10.4" fill="none" stroke="{color}" stroke-width="1.6" stroke-linecap="round"/>')
     parts.append('</g>')
 
-    total_w = 3*W + 2*GAP
-    scale = 28.0 / H
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{total_w*scale:.1f}" height="28" '
-            f'viewBox="0 0 {total_w} {H}">' + "".join(parts) + '</svg>')
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{3*W+2*GAP}" height="{H}" '
+            f'viewBox="0 0 {3*W+2*GAP} {H}">' + "".join(parts) + '</svg>')
 
 
 def main():
