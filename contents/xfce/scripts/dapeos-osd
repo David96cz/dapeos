@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+import os
+import socket
+import subprocess
+import sys
+
+from PyQt5.QtCore import QTimer, Qt, QRectF
+from PyQt5.QtGui import QColor, QIcon, QPainter, QPixmap
+from PyQt5.QtNetwork import QLocalServer
+from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
+
+SOCK = "/tmp/dapeos-osd"
+STEP = 5
+BRI_MIN = 5
+
+
+def sh(cmd):
+    env = dict(os.environ, LANG="C", LC_ALL="C")
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=4,
+                              env=env).stdout.strip()
+    except Exception:
+        return ""
+
+
+class OSD(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WA_ShowWithoutActivating, True)
+        self.setFixedSize(280, 90)
+
+        self.icon = QLabel(self)
+        self.icon.setGeometry(20, 20, 50, 50)
+        self.title = QLabel(self)
+        self.title.setGeometry(85, 14, 175, 26)
+        self.title.setStyleSheet("color: #e8e8e8; font-size: 11pt; font-weight: bold;")
+        self.val = QLabel(self)
+        self.val.setGeometry(85, 50, 175, 24)
+        self.val.setStyleSheet("color: #9a9a9a; font-size: 10pt;")
+
+        self.hide_timer = QTimer(self)
+        self.hide_timer.setSingleShot(True)
+        self.hide_timer.timeout.connect(self.hide)
+        self.proc = QProcessShim()
+
+    def paintEvent(self, event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setBrush(QColor(30, 30, 30, 235))
+        p.setPen(QColor(70, 70, 70))
+        p.drawRoundedRect(QRectF(0, 0, self.width() - 1, self.height() - 1), 12, 12)
+
+    def show_osd(self, icon_name, title, value):
+        path = f"/usr/local/share/dapeos/panel/{icon_name}.svg"
+        ic = QIcon(path) if os.path.exists(path) else QIcon.fromTheme(icon_name)
+        self.icon.setPixmap(ic.pixmap(44, 44))
+        self.title.setText(title)
+        self.val.setText(value)
+        scr = QApplication.primaryScreen().geometry()
+        self.move(scr.center().x() - self.width() // 2, scr.bottom() - 220)
+        self.show()
+        self.raise_()
+        self.hide_timer.start(1400)
+
+    def volume(self, delta=None, mute=False):
+        if mute:
+            sh(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle"])
+        else:
+            sign = "+" if delta > 0 else "-"
+            sh(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{sign}{abs(delta)}%"])
+            sh(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "0"])
+        muted = "yes" in sh(["pactl", "get-sink-mute", "@DEFAULT_SINK@"])
+        vol = 0
+        for tok in sh(["pactl", "get-sink-volume", "@DEFAULT_SINK@"]).split():
+            if tok.endswith("%"):
+                try:
+                    vol = int(tok[:-1])
+                except ValueError:
+                    pass
+        if muted:
+            self.show_osd("audio-volume-muted", "Zvuk", "ztlumeno")
+        else:
+            name = "audio-volume-low" if vol < 34 else ("audio-volume-medium" if vol < 67 else "audio-volume-high")
+            self.show_osd(name, "Zvuk", f"{vol}%")
+
+    def brightness(self, delta):
+        cur = sh(["brightnessctl", "get"])
+        mx = sh(["brightnessctl", "max"])
+        try:
+            cur_i, mx_i = int(cur), int(mx)
+        except ValueError:
+            return
+        pct = int(cur_i * 100 / mx_i) + delta
+        pct = max(BRI_MIN, min(100, pct))
+        sh(["brightnessctl", "set", f"{pct}%"])
+        name = "brightness" if pct > 20 else "brightness"
+        self.show_osd(name, "Jas", f"{pct}%")
+
+
+class QProcessShim:
+    def __init__(self):
+        self.procs = []
+
+
+def main():
+    app = QApplication(sys.argv)
+    QLocalServer.removeServer(SOCK)
+    server = QLocalServer()
+    server.listen(SOCK)
+    osd = OSD()
+
+    def on_conn():
+        c = server.nextPendingConnection()
+        if c is None:
+            return
+        c.waitForReadyRead(100)
+        cmd = bytes(c.readAll()).decode().strip()
+        if cmd == "volume-up":
+            osd.volume(STEP)
+        elif cmd == "volume-down":
+            osd.volume(-STEP)
+        elif cmd == "volume-mute":
+            osd.volume(mute=True)
+        elif cmd == "brightness-up":
+            osd.brightness(10)
+        elif cmd == "brightness-down":
+            osd.brightness(-10)
+
+    server.newConnection.connect(on_conn)
+    osd.hide()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()
