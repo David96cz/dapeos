@@ -6,8 +6,19 @@ MARKER="$HOME/.config/dapeos/wallpaper-initialized"
 [ -f "$WALLPAPER" ] || exit 0
 [ -f "$MARKER" ] && exit 0
 
+# počkej, až xfdesktop vytvoří vlastnosti (max 15 s)
+props=""
+i=0
+while [ "$i" -lt 15 ]; do
+    props=$(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'last-image$')
+    [ -n "$props" ] && break
+    i=$((i + 1))
+    sleep 1
+done
+[ -n "$props" ] || exit 0
+
 changed=0
-for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'last-image$'); do
+for prop in $props; do
     cur=$(xfconf-query -c xfce4-desktop -p "$prop" 2>/dev/null)
     case "$cur" in
         ""|*desktop-base*|*Default*|*default*)
