@@ -1,43 +1,53 @@
 #!/bin/sh
-# Při prvním přihlášení nastaví tapetu tam, kde je prázdná nebo výchozí.
-# Potom uživatele nikdy nepřepisuje.
+# Nastaví tapetu na všech monitorech a restartuje xfdesktop.
 WALLPAPER="/usr/share/backgrounds/wallpaper.png"
+LOG="/tmp/dapeos-wallpaper.log"
 MARKER="$HOME/.config/dapeos/wallpaper-initialized"
-[ -f "$WALLPAPER" ] || exit 0
-[ -f "$MARKER" ] && exit 0
 
-# počkej, až xfdesktop vytvoří vlastnosti (max 15 s)
-props=""
+log() { echo "$(date +%H:%M:%S) $*" >> "$LOG"; }
+
+[ -f "$WALLPAPER" ] || { log "chybí $WALLPAPER"; exit 0; }
+
+# počkej na xfconf vlastnosti
 i=0
-while [ "$i" -lt 15 ]; do
+while [ "$i" -lt 20 ]; do
     props=$(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'last-image$')
     [ -n "$props" ] && break
     i=$((i + 1))
     sleep 1
 done
-[ -n "$props" ] || exit 0
+[ -n "$props" ] || { log "žádné last-image vlastnosti"; exit 0; }
 
-changed=0
-for prop in $props; do
-    cur=$(xfconf-query -c xfce4-desktop -p "$prop" 2>/dev/null)
-    if [ -z "$cur" ] || [ ! -f "$cur" ] || echo "$cur" | grep -qE 'desktop-base|Default|default'; then
-        xfconf-query -c xfce4-desktop -p "$prop" -s "$WALLPAPER" 2>/dev/null && changed=1
-    fi
-done
-for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'image-path$'); do
-    cur=$(xfconf-query -c xfce4-desktop -p "$prop" 2>/dev/null)
-    if [ -z "$cur" ] || [ ! -f "$cur" ] || echo "$cur" | grep -qE 'desktop-base|Default|default'; then
-        xfconf-query -c xfce4-desktop -p "$prop" -s "$WALLPAPER" 2>/dev/null && changed=1
-    fi
-done
+xset() {
+    xfconf-query -c xfce4-desktop -p "$1" -n -t "$2" -s "$3" 2>>"$LOG" \
+        || xfconf-query -c xfce4-desktop -p "$1" -t "$2" -s "$3" 2>>"$LOG"
+}
 
-if [ "$changed" = "1" ]; then
-    for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'image-style$'); do
-        xfconf-query -c xfce4-desktop -p "$prop" -s 5 2>/dev/null || true
+# všechny monitory
+monitors=$(xfconf-query -c xfce4-desktop -l 2>/dev/null \
+    | grep -oE '/backdrop/screen0/[^/]+' | sort -u)
+
+for mon in $monitors; do
+    xset "$mon/image-path" string "$WALLPAPER"
+    xset "$mon/image-style" int 4
+    for ws in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E "^${mon}/workspace[0-9]+/last-image$"); do
+        xset "$ws" string "$WALLPAPER"
     done
-fi
+    for ws in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E "^${mon}/workspace[0-9]+/image-style$"); do
+        xset "$ws" int 4
+    done
+done
 
-xfdesktop --reload >/dev/null 2>&1 || true
+# fallback: všechny last-image
+for p in $props; do
+    xset "$p" string "$WALLPAPER"
+done
+
+log "nastaveno: $(xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitorVirtual-1/workspace0/last-image 2>/dev/null)"
+
+pkill -x xfdesktop 2>/dev/null
+sleep 1
+setsid xfdesktop >/dev/null 2>&1 < /dev/null &
 
 mkdir -p "$HOME/.config/dapeos"
 touch "$MARKER"
