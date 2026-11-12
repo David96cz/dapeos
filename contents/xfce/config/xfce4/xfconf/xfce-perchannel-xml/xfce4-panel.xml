@@ -19,6 +19,7 @@
         <value type="int" value="7"/>
         <value type="int" value="8"/>
         <value type="int" value="12"/>
+        <value type="int" value="4"/>
         <value type="int" value="2"/>
       </property>
       <property name="icon-size" type="uint" value="32"/>
@@ -38,7 +39,16 @@
       <property name="menu-width" type="int" value="450"/>
       <property name="menu-height" type="int" value="450"/>
       <property name="recent" type="array">
+        <value type="string" value="com.rustdesk.RustDesk.desktop"/>
         <value type="string" value="xfce4-terminal.desktop"/>
+        <value type="string" value="xfce4-power-manager-settings.desktop"/>
+        <value type="string" value="xfce-session-settings.desktop"/>
+        <value type="string" value="xfce-ui-settings.desktop"/>
+        <value type="string" value="app-uninstaller.desktop"/>
+        <value type="string" value="deepseek-harness.desktop"/>
+        <value type="string" value="featherpad.desktop"/>
+        <value type="string" value="user-manager.desktop"/>
+        <value type="string" value="lightdm-settings.desktop"/>
       </property>
       <property name="view-mode" type="int" value="1"/>
       <property name="position-categories-alternate" type="bool" value="true"/>
@@ -70,22 +80,25 @@
     </property>
     <property name="plugin-8" type="string" value="systray">
       <property name="known-legacy-items" type="array">
-        <value type="string" value="správce schránky"/>
         <value type="string" value="applet networkmanager"/>
+        <value type="string" value="správce schránky"/>
+        <value type="string" value="připojení k síti wi-fi „vodafone“ je aktivní: vodafone-1e64 (60 %)"/>
       </property>
       <property name="hidden-legacy-items" type="array">
-        <value type="string" value="applet networkmanager"/>
         <value type="string" value="správce schránky"/>
+        <value type="string" value="připojení k síti wi-fi „vodafone“ je aktivní: vodafone-1e64 (60 %)"/>
       </property>
       <property name="icon-size" type="int" value="0"/>
       <property name="square-icons" type="bool" value="true"/>
       <property name="single-row" type="bool" value="true"/>
       <property name="known-items" type="array">
+        <value type="string" value="blueman"/>
       </property>
       <property name="symbolic-icons" type="bool" value="false"/>
       <property name="hide-new-items" type="bool" value="false"/>
       <property name="menu-is-primary" type="bool" value="false"/>
       <property name="hidden-items" type="array">
+        <value type="string" value="blueman"/>
       </property>
     </property>
     <property name="plugin-3" type="string" value="launcher">
@@ -101,8 +114,10 @@
     <property name="plugin-12" type="string" value="genmon"/>
     <property name="clipman" type="empty">
       <property name="tweaks" type="empty">
-        <property name="popup-at-pointer" type="bool" value="true"/>
+        <property name="popup-at-pointer" type="bool" value="false"/>
+        <property name="inhibit" type="bool" value="false"/>
       </property>
     </property>
+    <property name="plugin-4" type="string" value="xfce4-clipman-plugin"/>
   </property>
 </channel>

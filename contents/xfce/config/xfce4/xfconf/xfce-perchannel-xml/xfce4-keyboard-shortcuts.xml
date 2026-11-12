@@ -34,7 +34,7 @@
     <property name="custom" type="empty">
       <property name="override" type="bool" value="true"/>
       <property name="&lt;Super&gt;&lt;Shift&gt;s" type="string" value="flameshot gui"/>
-      <property name="&lt;Super&gt;v" type="string" value="copyq toggle"/>
+      <property name="&lt;Super&gt;v" type="string" value="xfce4-popup-clipman"/>
       <property name="&lt;Super&gt;s" type="string" value="albert toggle"/>
       <property name="&lt;Super&gt;d" type="string" value="show_desktop_key"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;Delete" type="string" value="cad-menu"/>
@@ -47,6 +47,11 @@
       <property name="&lt;Primary&gt;&lt;Shift&gt;Escape" type="string" value="xfce4-taskmanager"/>
       <property name="&lt;Super&gt;a" type="string" value="xfce4-notifyd-config"/>
       <property name="&lt;Super&gt;p" type="string" value="xfce4-display-settings"/>
+      <property name="XF86AudioRaiseVolume" type="string" value="dapeos-osdctl volume-up"/>
+      <property name="XF86AudioLowerVolume" type="string" value="dapeos-osdctl volume-down"/>
+      <property name="XF86AudioMute" type="string" value="dapeos-osdctl volume-mute"/>
+      <property name="XF86MonBrightnessUp" type="string" value="dapeos-osdctl brightness-up"/>
+      <property name="XF86MonBrightnessDown" type="string" value="dapeos-osdctl brightness-down"/>
     </property>
   </property>
   <property name="xfwm4" type="empty">
@@ -174,6 +179,8 @@
       <property name="&lt;Alt&gt;Insert" type="string" value="add_workspace_key"/>
       <property name="&lt;Primary&gt;F1" type="string" value="workspace_1_key"/>
       <property name="override" type="bool" value="true"/>
+      <property name="&lt;Control&gt;&lt;Super&gt;Left" type="string" value="left_workspace_key"/>
+      <property name="&lt;Control&gt;&lt;Super&gt;Right" type="string" value="right_workspace_key"/>
     </property>
   </property>
   <property name="providers" type="array">
