@@ -1,14 +1,34 @@
 #!/bin/sh
-# Nastaví tapetu na všech monitorech (i nově připojených).
+# Při prvním přihlášení nastaví tapetu tam, kde je prázdná nebo výchozí.
+# Potom uživatele nikdy nepřepisuje.
 WALLPAPER="/usr/share/backgrounds/wallpaper.png"
+MARKER="$HOME/.config/dapeos/wallpaper-initialized"
 [ -f "$WALLPAPER" ] || exit 0
+[ -f "$MARKER" ] && exit 0
 
-for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'last-image$'); do
-    xfconf-query -c xfce4-desktop -p "$p" -s "$WALLPAPER" 2>/dev/null || true
+changed=0
+for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'last-image$'); do
+    cur=$(xfconf-query -c xfce4-desktop -p "$prop" 2>/dev/null)
+    case "$cur" in
+        ""|*desktop-base*|*Default*|*default*)
+            xfconf-query -c xfce4-desktop -p "$prop" -s "$WALLPAPER" 2>/dev/null && changed=1
+            ;;
+    esac
 done
-for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'image-path$'); do
-    xfconf-query -c xfce4-desktop -p "$p" -s "$WALLPAPER" 2>/dev/null || true
+for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'image-path$'); do
+    cur=$(xfconf-query -c xfce4-desktop -p "$prop" 2>/dev/null)
+    case "$cur" in
+        ""|*desktop-base*|*Default*|*default*)
+            xfconf-query -c xfce4-desktop -p "$prop" -s "$WALLPAPER" 2>/dev/null && changed=1
+            ;;
+    esac
 done
-for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'image-style$'); do
-    xfconf-query -c xfce4-desktop -p "$p" -s 5 2>/dev/null || true
-done
+
+if [ "$changed" = "1" ]; then
+    for prop in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'image-style$'); do
+        xfconf-query -c xfce4-desktop -p "$prop" -s 5 2>/dev/null || true
+    done
+fi
+
+mkdir -p "$HOME/.config/dapeos"
+touch "$MARKER"

@@ -48,6 +48,37 @@ albert_install_arm64_release() {
     rm -rf "$tmp"
 }
 
+albert_install_amd64_repo() {
+    DEBIAN_FRONTEND=noninteractive apt-get install -y curl gnupg ca-certificates >/dev/null 2>&1 || true
+
+    local key_url="https://download.opensuse.org/repositories/home:manuelschneid3r/Debian_13/Release.key"
+    if ! curl -fsSL --connect-timeout 10 --retry 3 "$key_url" \
+            | gpg --dearmor > /etc/apt/trusted.gpg.d/home_manuelschneid3r.gpg; then
+        warn "Nepodařilo se stáhnout GPG klíč Alberta."
+        return 1
+    fi
+
+    echo 'deb http://download.opensuse.org/repositories/home:/manuelschneid3r/Debian_13/ /' \
+        > /etc/apt/sources.list.d/albert.list
+    apt-get update -qq || true
+
+    if DEBIAN_FRONTEND=noninteractive apt-get install -y albert; then
+        return 0
+    fi
+
+    local base="https://download.opensuse.org/repositories/home:/manuelschneid3r/Debian_13/amd64/"
+    local file
+    file=$(curl -fsSL "$base" | grep -oE 'albert_[^"]+_amd64\.deb' | head -n1)
+    if [ -n "$file" ]; then
+        if curl -fsSL "${base}${file}" -o "/tmp/${file}"; then
+            dpkg -i "/tmp/${file}" || apt-get install -f -y
+            rm -f "/tmp/${file}"
+            command -v albert >/dev/null 2>&1 && return 0
+        fi
+    fi
+    return 1
+}
+
 albert_setup() {
     log "Instaluji a konfiguruji Albert..."
 
@@ -55,8 +86,9 @@ albert_setup() {
         log "Používám balíček albert z repozitáře."
         DEBIAN_FRONTEND=noninteractive apt-get install -y albert \
             || log "VAROVÁNÍ: instalace balíčku albert selhala."
-    elif [ "$(uname -m)" != "aarch64" ]; then
-        log "UPOZORNĚNÍ: albert není v aptu a binárka je jen pro ARM64."
+    elif [ "$(uname -m)" = "x86_64" ]; then
+        log "Přidávám openSUSE repo Alberta (amd64)..."
+        albert_install_amd64_repo || warn "Albert (amd64) se nepodařilo nainstalovat."
     elif [ -x "$CONTENTS_DIR/xfce/albert/bin/albert" ]; then
         log "Používám přiloženou ARM64 binárku."
         albert_install_arm64_local
