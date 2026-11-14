@@ -39,26 +39,26 @@
       <property name="menu-width" type="int" value="450"/>
       <property name="menu-height" type="int" value="450"/>
       <property name="recent" type="array">
-        <value type="string" value="com.rustdesk.RustDesk.desktop"/>
+        <value type="string" value="dapeos-settings.desktop"/>
         <value type="string" value="xfce4-terminal.desktop"/>
-        <value type="string" value="xfce4-power-manager-settings.desktop"/>
-        <value type="string" value="xfce-session-settings.desktop"/>
-        <value type="string" value="xfce-ui-settings.desktop"/>
+        <value type="string" value="dapeos-welcome.desktop"/>
         <value type="string" value="app-uninstaller.desktop"/>
-        <value type="string" value="deepseek-harness.desktop"/>
-        <value type="string" value="featherpad.desktop"/>
-        <value type="string" value="user-manager.desktop"/>
-        <value type="string" value="lightdm-settings.desktop"/>
+        <value type="string" value="rustdesk.desktop"/>
+        <value type="string" value="dapeos-update.desktop"/>
+        <value type="string" value="xfce4-clipman.desktop"/>
+        <value type="string" value="vlc.desktop"/>
       </property>
       <property name="view-mode" type="int" value="1"/>
       <property name="position-categories-alternate" type="bool" value="true"/>
       <property name="show-button-title" type="bool" value="true"/>
       <property name="button-title" type="string" value="Start"/>
-      <property name="button-icon" type="string" value="/usr/share/icons/hicolor/scalable/apps/dapeos-logo.svg"/>
+      <property name="button-icon" type="string" value="/home/david/dapeos/contents/xfce/icons/dapeos-logo.svg"/>
       <property name="favorites" type="array">
       </property>
       <property name="command-lockscreen" type="string" value="dm-tool lock"/>
       <property name="search-actions" type="int" value="0"/>
+      <property name="show-command-settings" type="bool" value="true"/>
+      <property name="command-settings" type="string" value="dapeos-settings"/>
     </property>
     <property name="plugin-2" type="string" value="clock">
       <property name="digital-date-format" type="string" value=" %a, %d.%m.%Y "/>
@@ -80,25 +80,25 @@
     </property>
     <property name="plugin-8" type="string" value="systray">
       <property name="known-legacy-items" type="array">
+        <value type="string" value="udiskie"/>
         <value type="string" value="applet networkmanager"/>
-        <value type="string" value="správce schránky"/>
-        <value type="string" value="připojení k síti wi-fi „vodafone“ je aktivní: vodafone-1e64 (60 %)"/>
       </property>
       <property name="hidden-legacy-items" type="array">
-        <value type="string" value="správce schránky"/>
-        <value type="string" value="připojení k síti wi-fi „vodafone“ je aktivní: vodafone-1e64 (60 %)"/>
       </property>
       <property name="icon-size" type="int" value="0"/>
       <property name="square-icons" type="bool" value="true"/>
       <property name="single-row" type="bool" value="true"/>
       <property name="known-items" type="array">
+        <value type="string" value="dapeos-media"/>
+        <value type="string" value="tray-icon tray app rustdesk"/>
+        <value type="string" value="dapeos-update"/>
         <value type="string" value="blueman"/>
+        <value type="string" value="vlc"/>
       </property>
       <property name="symbolic-icons" type="bool" value="false"/>
       <property name="hide-new-items" type="bool" value="false"/>
       <property name="menu-is-primary" type="bool" value="false"/>
       <property name="hidden-items" type="array">
-        <value type="string" value="blueman"/>
       </property>
     </property>
     <property name="plugin-3" type="string" value="launcher">

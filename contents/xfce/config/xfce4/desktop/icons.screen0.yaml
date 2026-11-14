@@ -72,6 +72,9 @@ configs:
     "trash:///":
       row: 1
       col: 0
+    "/home/david/Plocha/xfce4":
+      row: 5
+      col: 0
     "/home/david/Plocha/org.kde.kolourpaint.desktop":
       row: 2
       col: 0
