@@ -74,6 +74,24 @@ def patch_desktop(path, overrides, no_display=False):
         f.write("\n".join(out) + "\n")
 
 
+def strip_nodisplay(path):
+    with open(path, encoding="utf-8", errors="ignore") as f:
+        lines = f.read().splitlines()
+    try:
+        start = lines.index("[Desktop Entry]")
+    except ValueError:
+        return
+    end = len(lines)
+    for i in range(start + 1, len(lines)):
+        if lines[i].startswith("["):
+            end = i
+            break
+    body = [l for l in lines[start + 1:end] if not l.startswith("NoDisplay=")]
+    out = lines[:start + 1] + body + lines[end:]
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(out) + "\n")
+
+
 def main():
     conf = read_conf()
     for src in glob.glob(os.path.join(SRC, "*.desktop")):
@@ -88,7 +106,9 @@ def main():
         try:
             with open(dst, encoding="utf-8", errors="ignore") as f:
                 is_settings = "X-XFCE-SettingsDialog" in f.read()
-            patch_desktop(dst, overrides, no_display=is_settings)
+            patch_desktop(dst, overrides, no_display=False)
+            if is_settings:
+                strip_nodisplay(dst)
         except OSError:
             pass
     subprocess.run(["update-desktop-database", DST], capture_output=True)
