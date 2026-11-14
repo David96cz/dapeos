@@ -11,12 +11,14 @@ SRC = "/usr/share/applications"
 DST = os.path.join(HOME, ".local/share/applications")
 CONF = "/usr/share/dapeos/app-names.conf"
 NO_MENU = {
-    "dapeos-update.desktop",
-    "blueman-manager.desktop",
     "blueman-adapters.desktop",
     "light-locker-settings.desktop",
     "nm-connection-editor.desktop",
     "xfce4-settings-manager.desktop",
+}
+MOVE_TO_SYSTEM = {
+    "dapeos-update.desktop",
+    "blueman-manager.desktop",
     "user-manager.desktop",
 }
 os.makedirs(DST, exist_ok=True)
@@ -83,6 +85,29 @@ def patch_desktop(path, overrides, no_display=False):
         f.write("\n".join(out) + "\n")
 
 
+def move_to_system(path):
+    with open(path, encoding="utf-8", errors="ignore") as f:
+        lines = f.read().splitlines()
+    try:
+        start = lines.index("[Desktop Entry]")
+    except ValueError:
+        return
+    end = len(lines)
+    for i in range(start + 1, len(lines)):
+        if lines[i].startswith("["):
+            end = i
+            break
+    for i in range(start + 1, end):
+        if lines[i].startswith("Categories="):
+            cats = [c for c in lines[i].split("=", 1)[1].split(";")
+                    if c and c not in ("Settings", "DesktopSettings")]
+            if "System" not in cats:
+                cats.insert(0, "System")
+            lines[i] = "Categories=" + ";".join(cats) + ";"
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
 def strip_nodisplay(path):
     with open(path, encoding="utf-8", errors="ignore") as f:
         lines = f.read().splitlines()
@@ -117,6 +142,8 @@ def main():
                 text = f.read()
             no_display = ("X-XFCE-SettingsDialog" in text or name in NO_MENU)
             patch_desktop(dst, overrides, no_display=no_display)
+            if name in MOVE_TO_SYSTEM:
+                move_to_system(dst)
         except OSError:
             pass
     subprocess.run(["update-desktop-database", DST], capture_output=True)

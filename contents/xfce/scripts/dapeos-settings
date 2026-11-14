@@ -14,13 +14,7 @@ from PyQt5.QtWidgets import (QApplication, QGridLayout, QLabel, QLineEdit,
 DIRS = ["/usr/share/applications", os.path.expanduser("~/.local/share/applications")]
 
 HIDDEN = {
-    "dapeos-update.desktop",
-    "blueman-manager.desktop",
-    "blueman-adapters.desktop",
-    "light-locker-settings.desktop",
-    "nm-connection-editor.desktop",
     "xfce4-settings-manager.desktop",
-    "user-manager.desktop",
 }
 
 GROUPS = ["Vzhled", "Hardware", "Systém", "Osobní", "Ostatní"]
