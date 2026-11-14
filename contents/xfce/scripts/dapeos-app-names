@@ -31,11 +31,11 @@ NO_MENU = {
     "nm-connection-editor.desktop",
     "xfce4-settings-manager.desktop",
     "user-manager.desktop",
-    "dapeos-settings.desktop",
 }
 MOVE_TO_SYSTEM = {
     "dapeos-update.desktop",
     "blueman-manager.desktop",
+    "dapeos-settings.desktop",
 }
 os.makedirs(DST, exist_ok=True)
 
