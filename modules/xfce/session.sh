@@ -55,6 +55,10 @@ dapeos_session_setup() {
         install -m 644 "$CONTENTS_DIR/xfce/config/apt/99dapeos-app-names" /etc/apt/apt.conf.d/99dapeos-app-names
     fi
 
+    if [ -f "$CONTENTS_DIR/xfce/config/dapeos-settings.desktop" ]; then
+        install -m 644 "$CONTENTS_DIR/xfce/config/dapeos-settings.desktop" /usr/share/applications/dapeos-settings.desktop
+    fi
+
     install -d -m 755 /usr/share/dapeos
     if [ -f "$CONTENTS_DIR/xfce/config/app-names.conf" ]; then
         install -m 644 "$CONTENTS_DIR/xfce/config/app-names.conf" /usr/share/dapeos/app-names.conf

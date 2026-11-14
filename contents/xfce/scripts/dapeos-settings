@@ -1,0 +1,138 @@
+#!/usr/bin/env python3
+# DapeOS Nastavení - jeden hub pro všechny XFCE nastavovací dialogy.
+import glob
+import os
+import shlex
+import subprocess
+import sys
+
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QLabel, QLineEdit,
+                             QPushButton, QScrollArea, QVBoxLayout, QWidget)
+
+DIRS = ["/usr/share/applications", os.path.expanduser("~/.local/share/applications")]
+
+
+def parse(path):
+    name = name_cs = icon = exec_line = ""
+    section = None
+    try:
+        with open(path, encoding="utf-8", errors="ignore") as f:
+            for raw in f:
+                line = raw.strip()
+                if line.startswith("["):
+                    section = line
+                    continue
+                if section != "[Desktop Entry]" or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                if k == "Name":
+                    name = v
+                elif k == "Name[cs]":
+                    name_cs = v
+                elif k == "Icon":
+                    icon = v
+                elif k == "Exec":
+                    exec_line = v
+    except OSError:
+        return None
+    if not exec_line:
+        return None
+    return {"name": name_cs or name or os.path.basename(path),
+            "icon": icon or "preferences-system",
+            "exec": exec_line}
+
+
+def collect():
+    items, seen = [], set()
+    for d in DIRS:
+        for path in sorted(glob.glob(os.path.join(d, "*.desktop"))):
+            try:
+                with open(path, encoding="utf-8", errors="ignore") as f:
+                    text = f.read()
+            except OSError:
+                continue
+            if "X-XFCE-SettingsDialog" not in text:
+                continue
+            base = os.path.basename(path)
+            if base in seen:
+                continue
+            data = parse(path)
+            if data:
+                seen.add(base)
+                items.append(data)
+    return sorted(items, key=lambda x: x["name"].lower())
+
+
+class SettingsHub(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Nastavení")
+        self.setWindowIcon(QIcon.fromTheme("preferences-system"))
+        self.setFixedSize(720, 560)
+        self.items = collect()
+        self.buttons = []
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(18, 18, 18, 18)
+        root.setSpacing(12)
+
+        title = QLabel("Nastavení")
+        title.setStyleSheet("font-size: 18pt; font-weight: bold;")
+        root.addWidget(title)
+
+        self.search = QLineEdit()
+        self.search.setPlaceholderText("Hledat nastavení…")
+        self.search.setStyleSheet("padding: 8px; border: 1px solid #bbb; border-radius: 6px;")
+        self.search.textChanged.connect(self.filter)
+        root.addWidget(self.search)
+
+        area = QScrollArea()
+        area.setWidgetResizable(True)
+        area.setFrameShape(QScrollArea.NoFrame)
+        inner = QWidget()
+        self.grid = QGridLayout(inner)
+        self.grid.setSpacing(8)
+        area.setWidget(inner)
+        root.addWidget(area, 1)
+
+        for item in self.items:
+            b = QPushButton(item["name"])
+            b.setIcon(QIcon.fromTheme(item["icon"]))
+            b.setIconSize(QSize(28, 28))
+            b.setStyleSheet("""
+                QPushButton { text-align: left; padding: 10px; border: 1px solid #ccc;
+                              border-radius: 8px; background: #fff; font-size: 10pt; }
+                QPushButton:hover { background: #eef4fb; border-color: #2a7fca; }
+            """)
+            b.setFixedHeight(62)
+            b.clicked.connect(lambda _=False, e=item["exec"]: self.launch(e))
+            idx = len(self.buttons)
+            self.buttons.append((item["name"], b))
+            self.grid.addWidget(b, idx // 3, idx % 3)
+        self.grid.setRowStretch(self.grid.rowCount(), 1)
+
+    def filter(self, text):
+        text = text.lower()
+        for name, b in self.buttons:
+            b.setVisible(text in name.lower())
+
+    def launch(self, command):
+        args = [a for a in shlex.split(command) if not a.startswith("%")]
+        if args:
+            subprocess.Popen(args, start_new_session=True)
+
+    def center(self):
+        scr = QApplication.primaryScreen().availableGeometry()
+        self.move(scr.center().x() - self.width() // 2,
+                  scr.center().y() - self.height() // 2)
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    QIcon.setThemeName("Papirus")
+    w = SettingsHub()
+    w.center()
+    w.show()
+    sys.exit(app.exec_())

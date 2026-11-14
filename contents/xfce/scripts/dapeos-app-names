@@ -105,10 +105,10 @@ def main():
         overrides = dict(conf.get(name, {})) or None
         try:
             with open(dst, encoding="utf-8", errors="ignore") as f:
-                is_settings = "X-XFCE-SettingsDialog" in f.read()
-            patch_desktop(dst, overrides, no_display=False)
-            if is_settings:
-                strip_nodisplay(dst)
+                text = f.read()
+            is_settings = ("X-XFCE-SettingsDialog" in text
+                           or name == "xfce4-settings-manager.desktop")
+            patch_desktop(dst, overrides, no_display=is_settings)
         except OSError:
             pass
     subprocess.run(["update-desktop-database", DST], capture_output=True)
