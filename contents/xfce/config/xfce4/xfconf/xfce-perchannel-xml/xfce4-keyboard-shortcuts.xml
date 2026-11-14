@@ -39,7 +39,7 @@
       <property name="&lt;Super&gt;d" type="string" value="show_desktop_key"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;Delete" type="string" value="cad-menu"/>
       <property name="&lt;Super&gt;l" type="string" value="dm-tool lock"/>
-      <property name="&lt;Super&gt;i" type="string" value="xfce4-settings-manager"/>
+      <property name="&lt;Super&gt;i" type="string" value="dapeos-settings"/>
       <property name="Super_L" type="string" value="xfce4-popup-whiskermenu"/>
       <property name="Super_R" type="string" value="xfce4-popup-whiskermenu"/>
       <property name="&lt;Super&gt;e" type="string" value="thunar"/>
