@@ -92,6 +92,7 @@ class SettingsHub(QWidget):
         self.setFixedSize(860, 620)
         self.items = collect()
         self.buttons = []
+        self.button_map = {}
 
         root = QVBoxLayout(self)
         root.setContentsMargins(18, 18, 18, 18)
@@ -117,31 +118,57 @@ class SettingsHub(QWidget):
         area.setWidget(inner)
         root.addWidget(area, 1)
 
+        self.header_labels = {}
+        for group in GROUPS:
+            lbl = QLabel(group)
+            lbl.setStyleSheet("font-size: 11pt; font-weight: bold; color: #444; padding-top: 8px;")
+            lbl.hide()
+            self.header_labels[group] = lbl
+
+        for item in self.items:
+            b = QPushButton(item["name"])
+            b.setIcon(QIcon.fromTheme(item["icon"]))
+            b.setIconSize(QSize(26, 26))
+            b.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            b.setMinimumWidth(0)
+            b.setStyleSheet("""
+                QPushButton { text-align: left; padding: 8px 10px; border: 1px solid #ccc;
+                              border-radius: 8px; background: #fff; font-size: 9.5pt; }
+                QPushButton:hover { background: #eef4fb; border-color: #2a7fca; }
+            """)
+            b.setFixedHeight(58)
+            b.clicked.connect(lambda _=False, e=item["exec"]: self.launch(e))
+            self.buttons.append((item, b))
+            self.button_map[id(item)] = b
+
+        self.reflow("")
+
+    def filter(self, text):
+        self.reflow(text.lower())
+
+    def reflow(self, needle):
+        while self.grid.count():
+            w = self.grid.takeAt(0).widget()
+            if w is not None:
+                w.hide()
+        for lbl in self.header_labels.values():
+            lbl.hide()
+
         row = 0
         for group in GROUPS:
-            items = [i for i in self.items if i["group"] == group]
+            items = [it for it, _b in self.buttons
+                     if it["group"] == group and needle in it["name"].lower()]
             if not items:
                 continue
-            head = QLabel(group)
-            head.setStyleSheet("font-size: 11pt; font-weight: bold; color: #444; padding-top: 8px;")
+            head = self.header_labels[group]
             self.grid.addWidget(head, row, 0, 1, 3)
+            head.show()
             row += 1
             col = 0
             for item in items:
-                b = QPushButton(item["name"])
-                b.setIcon(QIcon.fromTheme(item["icon"]))
-                b.setIconSize(QSize(26, 26))
-                b.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-                b.setMinimumWidth(0)
-                b.setStyleSheet("""
-                    QPushButton { text-align: left; padding: 8px 10px; border: 1px solid #ccc;
-                                  border-radius: 8px; background: #fff; font-size: 9.5pt; }
-                    QPushButton:hover { background: #eef4fb; border-color: #2a7fca; }
-                """)
-                b.setFixedHeight(58)
-                b.clicked.connect(lambda _=False, e=item["exec"]: self.launch(e))
-                self.buttons.append((item["name"], b))
+                b = self.button_map[id(item)]
                 self.grid.addWidget(b, row, col)
+                b.show()
                 col += 1
                 if col == 3:
                     col = 0
@@ -149,11 +176,6 @@ class SettingsHub(QWidget):
             if col:
                 row += 1
         self.grid.setRowStretch(row, 1)
-
-    def filter(self, text):
-        text = text.lower()
-        for name, b in self.buttons:
-            b.setVisible(text in name.lower())
 
     def launch(self, command):
         args = [a for a in shlex.split(command) if not a.startswith("%")]
