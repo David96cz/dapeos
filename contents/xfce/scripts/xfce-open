@@ -1,0 +1,10 @@
+#!/bin/sh
+# Shim pro thunar-volman: xfce-open --launch FileManager <cesta>
+if [ "$1" = "--launch" ] && [ "$2" = "FileManager" ]; then
+    shift 2
+    exec thunar "$@"
+fi
+if command -v exo-open >/dev/null 2>&1; then
+    exec exo-open "$@"
+fi
+exec xdg-open "$@"
