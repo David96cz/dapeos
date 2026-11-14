@@ -280,19 +280,44 @@ install_packages() {
     fi
 
     if [ "$RUSTDESK_REQ" == "TRUE" ]; then
-        log "Instalace RustDesku zahájena (čistá Flatpak metoda)..."
-        
-        # 1. Pojistka, že je v systému nainstalovaný samotný Flatpak
-        apt-get install -y flatpak
-        
-        # 2. Přidání oficiálního Flathub repozitáře (pokud už je, nic se nestane)
-        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-        
-        # 3. Samotná instalace RustDesku (automaticky vyřeší správnou architekturu)
-        flatpak install flathub com.rustdesk.RustDesk -y
-        
-        log "RustDesk byl úspěšně nainstalován. Žádný démon, žádné vynucování root hesel, čistý systém."
+        log "Instalace RustDesku z oficiálního .deb (nejnovější verze)..."
+
+        case "$(uname -m)" in
+            x86_64)  RD_ARCH="x86_64" ;;
+            aarch64) RD_ARCH="aarch64" ;;
+            *)       RD_ARCH="" ;;
+        esac
+
+        if [ -z "$RD_ARCH" ]; then
+            warn "RustDesk .deb není pro architekturu $(uname -m) – přeskakuji."
+        else
+            apt-get install -y curl ca-certificates >/dev/null 2>&1 || true
+            flatpak uninstall -y com.rustdesk.RustDesk >/dev/null 2>&1 || true
+
+            local rd_url
+            rd_url=$(curl -fsSL "https://api.github.com/repos/rustdesk/rustdesk/releases/latest" \
+                | grep -oE '"browser_download_url": "[^"]+"' \
+                | grep -oE 'https://[^"]*rustdesk-[0-9][^"/]*-'"$RD_ARCH"'\.deb' \
+                | head -n1)
+
+            if [ -z "$rd_url" ]; then
+                warn "Nepodařilo se najít RustDesk .deb pro $RD_ARCH."
+            else
+                log "Stahuji: $rd_url"
+                if curl -fsSL "$rd_url" -o /tmp/rustdesk.deb; then
+                    apt-get install -y /tmp/rustdesk.deb || {
+                        dpkg -i /tmp/rustdesk.deb || apt-get install -f -y
+                    }
+                    rm -f /tmp/rustdesk.deb
+                    systemctl enable --now rustdesk >/dev/null 2>&1 || true
+                    log "RustDesk nainstalován z .deb."
+                else
+                    warn "Stažení RustDesk .deb selhalo."
+                fi
+            fi
+        fi
     fi
+
 }
 
 
