@@ -7,7 +7,7 @@ import time
 import subprocess
 import sys
 
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QPoint, QTimer
 from PyQt5.QtGui import QCursor, QIcon
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QSystemTrayIcon
 
@@ -88,6 +88,7 @@ class MediaTray(QSystemTrayIcon):
             QMenu::separator { height: 1px; background: #555; margin: 4px 8px; }
         """)
         self.menu.aboutToShow.connect(self.build_menu)
+        self.setContextMenu(self.menu)
         self.activated.connect(self.on_activated)
         self.devs = []
         self.seen = set()
@@ -140,10 +141,23 @@ class MediaTray(QSystemTrayIcon):
                   f"udisksctl power-off -b {parent} >/dev/null 2>&1"])
 
     def on_activated(self, reason):
-        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick,
-                      QSystemTrayIcon.Context):
+        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
             self.build_menu()
-            self.menu.popup(QCursor.pos())
+            self.menu.adjustSize()
+            w = self.menu.sizeHint().width()
+            h = self.menu.sizeHint().height()
+            rect = self.geometry()
+            if rect.width() > 0:
+                x = rect.center().x() - w // 2
+                y = rect.top() - h - 4
+            else:
+                cur = QCursor.pos()
+                x = cur.x() - w // 2
+                y = cur.y() - h - 4
+            scr = QApplication.primaryScreen().availableGeometry()
+            x = max(scr.left() + 4, min(x, scr.right() - w - 4))
+            y = max(scr.top() + 4, y)
+            self.menu.popup(QPoint(x, y))
 
     def build_menu(self):
         self.menu.clear()
