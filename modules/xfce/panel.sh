@@ -3,31 +3,28 @@
 # Panel: ikony, téma, wrappery.
 
 xfce_browser_launcher() {
-    local bin icon name
+    local browser_id
     case "$BROWSER_CHOICE" in
-        1) bin="google-chrome-stable"; icon="google-chrome"; name="Google Chrome" ;;
-        2) bin="chromium"; icon="chromium"; name="Chromium" ;;
-        3) bin="brave-browser"; icon="brave-browser"; name="Brave" ;;
-        4) bin="firefox-esr"; icon="firefox-esr"; name="Firefox" ;;
+        1) browser_id="google-chrome.desktop" ;;
+        2) browser_id="chromium.desktop" ;;
+        3) browser_id="brave-browser.desktop" ;;
+        4) browser_id="firefox-esr.desktop" ;;
         *) return 0 ;;
     esac
-    command -v "$bin" >/dev/null 2>&1 || return 0
 
-    local apps="$USER_HOME/.local/share/applications"
-    local launcher="$USER_HOME/.config/xfce4/panel/launcher-4"
-    install -d -m 755 "$apps" "$launcher"
-    cat > "$apps/dapeos-browser.desktop" <<EOF
-[Desktop Entry]
-Type=Application
-Name=$name
-Exec=$bin %U
-Icon=$icon
-Terminal=false
-Categories=Network;WebBrowser;
-StartupNotify=true
-EOF
-    cp "$apps/dapeos-browser.desktop" "$launcher/dapeos-browser.desktop"
-    chown -R "$REAL_USER:$REAL_USER" "$apps/dapeos-browser.desktop" "$launcher" 2>/dev/null || true
+    local xml="$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
+    [ -f "$xml" ] || return 0
+    python3 - "$xml" "$browser_id" <<'PY'
+import sys
+
+path, browser = sys.argv[1], sys.argv[2]
+data = open(path, encoding="utf-8").read()
+for old in ("google-chrome.desktop", "chromium.desktop",
+            "brave-browser.desktop", "firefox-esr.desktop",
+            "dapeos-browser.desktop"):
+    data = data.replace(f'value="{old}"', f'value="{browser}"')
+open(path, "w", encoding="utf-8").write(data)
+PY
 }
 
 xfce_panel_icons() {
