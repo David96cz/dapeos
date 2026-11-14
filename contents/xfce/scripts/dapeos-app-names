@@ -28,8 +28,10 @@ NO_MENU = {
     "blueman-adapters.desktop",
     "kdesystemsettings.desktop",
     "light-locker-settings.desktop",
+    "lightdm-settings.desktop",
     "nm-connection-editor.desktop",
     "xfce4-settings-manager.desktop",
+    "xfce-settings-manager.desktop",
     "user-manager.desktop",
 }
 MOVE_TO_SYSTEM = {
@@ -168,6 +170,26 @@ def main():
                 move_to_system(dst)
         except OSError:
             pass
+    processed = {os.path.basename(p) for p in glob.glob(os.path.join(SRC, "*.desktop"))}
+    for dst in glob.glob(os.path.join(DST, "*.desktop")):
+        name = os.path.basename(dst)
+        if name in processed:
+            continue
+        try:
+            with open(dst, encoding="utf-8", errors="ignore") as f:
+                text = f.read()
+        except OSError:
+            continue
+        overrides = dict(conf.get(name, {})) or None
+        no_display = ("X-XFCE-SettingsDialog" in text or name in NO_MENU)
+        try:
+            patch_desktop(dst, overrides, no_display=no_display)
+            if name in MOVE_TO_SYSTEM:
+                strip_nodisplay(dst)
+                move_to_system(dst)
+        except OSError:
+            pass
+
     subprocess.run(["update-desktop-database", DST], capture_output=True)
     return 0
 

@@ -15,6 +15,7 @@ DIRS = ["/usr/share/applications", os.path.expanduser("~/.local/share/applicatio
 
 HIDDEN = {
     "xfce4-settings-manager.desktop",
+    "xfce-settings-manager.desktop",
 }
 
 GROUPS = ["Vzhled", "Hardware", "Systém", "Osobní", "Ostatní"]
