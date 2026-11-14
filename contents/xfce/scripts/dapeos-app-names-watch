@@ -9,6 +9,9 @@ while true; do
     if [ "$cur" != "$last" ]; then
         if [ -n "$last" ]; then
             sleep 1
+            while pgrep -x apt >/dev/null 2>&1 || pgrep -x apt-get >/dev/null 2>&1                   || pgrep -x dpkg >/dev/null 2>&1; do
+                sleep 1
+            done
             dapeos-app-names >/dev/null 2>&1 || true
         fi
         last="$cur"
