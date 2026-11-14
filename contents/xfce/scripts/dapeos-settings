@@ -12,6 +12,15 @@ from PyQt5.QtWidgets import (QApplication, QGridLayout, QLabel, QLineEdit,
                              QPushButton, QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
 
 DIRS = [os.path.expanduser("~/.local/share/applications"), "/usr/share/applications"]
+HIDE_CONF = "/usr/share/dapeos/settings-hide.conf"
+
+
+def hidden_names():
+    try:
+        with open(HIDE_CONF, encoding="utf-8") as f:
+            return {line.strip() for line in f if line.strip() and not line.startswith("#")}
+    except OSError:
+        return set()
 
 HIDDEN = {
     "xfce4-settings-manager.desktop",
@@ -66,6 +75,7 @@ def parse(path):
 
 def collect():
     items, seen = [], set()
+    hidden = hidden_names()
     for d in DIRS:
         for path in sorted(glob.glob(os.path.join(d, "*.desktop"))):
             try:
@@ -76,7 +86,7 @@ def collect():
             if "X-XFCE-SettingsDialog" not in text:
                 continue
             base = os.path.basename(path)
-            if base in seen or base in HIDDEN:
+            if base in seen or base in HIDDEN or base in hidden:
                 continue
             data = parse(path)
             if data:

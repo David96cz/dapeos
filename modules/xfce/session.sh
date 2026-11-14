@@ -65,6 +65,7 @@ dapeos_session_setup() {
     fi
 
     install -d -m 755 /usr/share/dapeos
+    get_section "$DESKTOP_CONFIG" "SETTINGS_TO_HIDE" > /usr/share/dapeos/settings-hide.conf 2>/dev/null || true
     if [ -f "$CONTENTS_DIR/xfce/config/app-names.conf" ]; then
         install -m 644 "$CONTENTS_DIR/xfce/config/app-names.conf" /usr/share/dapeos/app-names.conf
     fi

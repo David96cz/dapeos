@@ -8,11 +8,9 @@
 	<command>print-in-menu %f</command>
 	<description>Tisk dokumentu nebo obrázku</description>
 	<range></range>
-	<patterns>*</patterns>
-	<directories/>
+	<patterns>*.pdf;*.doc;*.docx;*.odt;*.ods;*.odp;*.rtf;*.txt;*.xls;*.xlsx;*.ppt;*.pptx;*.png;*.jpg;*.jpeg;*.gif;*.webp;*.bmp;*.tif;*.tiff</patterns>
 	<audio-files/>
 	<image-files/>
-	<other-files/>
 	<text-files/>
 	<video-files/>
 </action>

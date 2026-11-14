@@ -131,10 +131,13 @@ install_packages() {
             if command -v google-chrome &> /dev/null; then
                 log "Google Chrome je již nainstalován, přeskakuji..."
             elif [ "$SYS_ARCH" == "arm64" ]; then
-                log "UPOZORNĚNÍ: Google Chrome nevydává balíčky pro ARM. Instaluji jako náhradu Chromium."
-                if command -v chromium &> /dev/null; then
-                    log "Chromium je již nainstalováno, přeskakuji..."
+                log "Stahuji Google Chrome (ARM64)..."
+                if wget --timeout=20 --tries=3 -q --show-progress -O /tmp/chrome.deb \
+                        https://dl.google.com/linux/direct/google-chrome-stable_current_arm64.deb \
+                        && apt-get install -y /tmp/chrome.deb; then
+                    rm -f /tmp/chrome.deb
                 else
+                    log "Chrome ARM64 se nepodařilo nainstalovat, instaluji Chromium."
                     apt-get install -y chromium chromium-l10n || true
                 fi
             else
