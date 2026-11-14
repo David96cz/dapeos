@@ -88,7 +88,6 @@ class MediaTray(QSystemTrayIcon):
             QMenu::separator { height: 1px; background: #555; margin: 4px 8px; }
         """)
         self.menu.aboutToShow.connect(self.build_menu)
-        self.setContextMenu(self.menu)
         self.activated.connect(self.on_activated)
         self.devs = []
         self.seen = set()
@@ -141,7 +140,8 @@ class MediaTray(QSystemTrayIcon):
                   f"udisksctl power-off -b {parent} >/dev/null 2>&1"])
 
     def on_activated(self, reason):
-        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
+        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick,
+                      QSystemTrayIcon.Context):
             self.build_menu()
             self.menu.popup(QCursor.pos())
 
