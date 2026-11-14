@@ -4,12 +4,13 @@ import os
 import re
 import subprocess
 import glob
+import math
 import shutil
-from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, 
-                             QLineEdit, QPushButton, QMessageBox, QListWidget, 
+from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
+                             QLineEdit, QPushButton, QMessageBox, QListWidget,
                              QListWidgetItem, QLabel)
-from PyQt5.QtCore import Qt, QSize, QThread, QTimer, pyqtSignal
-from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt, QRectF, QSize, QThread, QTimer, pyqtSignal
+from PyQt5.QtGui import QColor, QIcon, QPainter, QPen
 
 # --- POMOCNÁ FUNKCE PRO EXTRAKCI IKON Z WINDOWS EXE SOUBORŮ ---
 # Musí být ZDE nahoře, MIMO všechny třídy!
@@ -53,6 +54,35 @@ def extract_wine_icon(win_path, app_name):
     return None
 
 # --- VLÁKNO PRO ODINSTALACI NA POZADÍ ---
+class Spinner(QWidget):
+    def __init__(self, size=18, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(size, size)
+        self._angle = 0
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._tick)
+        self._timer.start(70)
+
+    def _tick(self):
+        self._angle = (self._angle + 30) % 360
+        self.update()
+
+    def paintEvent(self, event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        c = self.rect().center()
+        r = 7.0
+        for i in range(12):
+            ang = (i * 30 + self._angle) % 360
+            alpha = 35 + int(220 * (i / 11.0))
+            col = QColor(42, 127, 202, alpha)
+            p.setPen(Qt.NoPen)
+            p.setBrush(col)
+            x = c.x() + r * math.cos(math.radians(ang))
+            y = c.y() + r * math.sin(math.radians(ang))
+            p.drawEllipse(QRectF(x - 1.8, y - 1.8, 3.6, 3.6))
+
+
 class UninstallWorker(QThread):
     finished = pyqtSignal(int, str, str, str, bool)
 
@@ -114,12 +144,9 @@ class AppUninstaller(QWidget):
         self.unremovable_file = "/etc/dapeos-unremovable.txt"
         self.unremovable_list = self.load_blacklist()
         self.worker = None
-        self._spin_frames = ["\u280b", "\u2819", "\u2839", "\u2838", "\u283c", "\u2834", "\u2826", "\u2827", "\u2807", "\u280f"]
-        self._spin_i = 0
         self._spin_item = None
         self._spin_name = ""
-        self.spin_timer = QTimer(self)
-        self.spin_timer.timeout.connect(self._spin_tick)
+        self._spin_widget = None
         self.initUI()
         self.load_apps()
 
@@ -320,23 +347,26 @@ class AppUninstaller(QWidget):
             item = self.app_list.item(i)
             item.setHidden(text.lower() not in item.text().lower())
 
-    def _spin_tick(self):
-        if self._spin_item is None:
-            return
-        self._spin_i = (self._spin_i + 1) % len(self._spin_frames)
-        self._spin_item.setText(f"{self._spin_name}  {self._spin_frames[self._spin_i]}")
-
     def _start_row_spin(self, item, name):
         self._spin_item = item
         self._spin_name = name
-        self._spin_i = 0
-        self.spin_timer.start(120)
+        item.setText("")
+        row = QWidget()
+        lay = QHBoxLayout(row)
+        lay.setContentsMargins(8, 0, 12, 0)
+        lbl = QLabel(name)
+        lay.addWidget(lbl)
+        lay.addStretch(1)
+        lay.addWidget(Spinner(18))
+        self._spin_widget = row
+        self.app_list.setItemWidget(item, row)
 
     def _stop_row_spin(self):
-        self.spin_timer.stop()
         if self._spin_item is not None:
+            self.app_list.removeItemWidget(self._spin_item)
             self._spin_item.setText(self._spin_name)
         self._spin_item = None
+        self._spin_widget = None
 
     def handle_uninstall(self):
         current_item = self.app_list.currentItem()
