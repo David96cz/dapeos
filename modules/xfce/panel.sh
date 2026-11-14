@@ -12,6 +12,13 @@ xfce_browser_launcher() {
         *) return 0 ;;
     esac
 
+    local launcher="$USER_HOME/.config/xfce4/panel/launcher-4"
+    install -d -m 755 "$launcher"
+    if [ -f "/usr/share/applications/$browser_id" ]; then
+        cp "/usr/share/applications/$browser_id" "$launcher/$browser_id"
+        chown "$REAL_USER:$REAL_USER" "$launcher/$browser_id" 2>/dev/null || true
+    fi
+
     local xml="$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
     [ -f "$xml" ] || return 0
     python3 - "$xml" "$browser_id" <<'PY'
