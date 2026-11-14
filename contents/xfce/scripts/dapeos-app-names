@@ -142,6 +142,8 @@ def main():
                 text = f.read()
             no_display = ("X-XFCE-SettingsDialog" in text or name in NO_MENU)
             patch_desktop(dst, overrides, no_display=no_display)
+            if not no_display:
+                strip_nodisplay(dst)
             if name in MOVE_TO_SYSTEM:
                 move_to_system(dst)
         except OSError:
