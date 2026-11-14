@@ -11,7 +11,22 @@ SRC = "/usr/share/applications"
 DST = os.path.join(HOME, ".local/share/applications")
 CONF = "/usr/share/dapeos/app-names.conf"
 NO_MENU = {
+    "thunar-bulk-rename.desktop",
+    "thunar-settings.desktop",
+    "xfce4-file-manager.desktop",
+    "xfce4-mail-reader.desktop",
+    "xfce4-terminal-settings.desktop",
+    "xfce4-web-browser.desktop",
+    "xfce4-terminal-emulator.desktop",
+    "xfce4-settings-editor.desktop",
+    "xfce4-session-logout.desktop",
+    "xfce4-clipman-settings",
+    "info.desktop",
+    "yad-icon-browser.desktop",
+    "vim.desktop",
+    "albert.desktop",
     "blueman-adapters.desktop",
+    "kdesystemsettings.desktop",
     "light-locker-settings.desktop",
     "nm-connection-editor.desktop",
     "xfce4-settings-manager.desktop",
@@ -140,11 +155,15 @@ def main():
         try:
             with open(dst, encoding="utf-8", errors="ignore") as f:
                 text = f.read()
-            no_display = ("X-XFCE-SettingsDialog" in text or name in NO_MENU)
+            sys_path = os.path.join(SRC, name)
+            sys_hidden = False
+            if os.path.exists(sys_path):
+                with open(sys_path, encoding="utf-8", errors="ignore") as sf:
+                    sys_hidden = "NoDisplay=true" in sf.read()
+            no_display = ("X-XFCE-SettingsDialog" in text or name in NO_MENU or sys_hidden)
             patch_desktop(dst, overrides, no_display=no_display)
-            if not no_display:
-                strip_nodisplay(dst)
             if name in MOVE_TO_SYSTEM:
+                strip_nodisplay(dst)
                 move_to_system(dst)
         except OSError:
             pass
