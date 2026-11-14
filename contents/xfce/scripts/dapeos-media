@@ -79,6 +79,14 @@ class MediaTray(QSystemTrayIcon):
         super().__init__(QIcon.fromTheme(ICON))
         self.setToolTip("Vyměnitelná média")
         self.menu = QMenu()
+        self.menu.setStyleSheet("""
+            QMenu { background: #2f2f2f; color: #eaeaea; border: 1px solid #555;
+                    padding: 4px; }
+            QMenu::item { padding: 6px 18px; border-radius: 4px; }
+            QMenu::item:selected { background: #2a7fca; color: white; }
+            QMenu::item:disabled { color: #9a9a9a; }
+            QMenu::separator { height: 1px; background: #555; margin: 4px 8px; }
+        """)
         self.menu.aboutToShow.connect(self.build_menu)
         self.setContextMenu(self.menu)
         self.activated.connect(self.on_activated)
