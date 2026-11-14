@@ -18,7 +18,7 @@ import time
 from PyQt5.QtCore import QProcess, QSize, Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
-    QAction, QApplication, QComboBox, QHBoxLayout, QLabel, QListWidget,
+    QAction, QApplication, QCheckBox, QComboBox, QHBoxLayout, QLabel, QListWidget,
     QListWidgetItem, QMenu, QMessageBox, QProgressBar, QPushButton,
     QSystemTrayIcon, QVBoxLayout, QWidget,
 )
@@ -116,6 +116,10 @@ class Updater(QWidget):
         self.init_tray()
         self.ensure_autostart()
         self.reload()
+        if tray_mode:
+            self.auto_timer = QTimer(self)
+            self.auto_timer.timeout.connect(lambda: self.reload(force=True))
+            self.auto_timer.start(6 * 3600 * 1000)
 
     # ------------------------------------------------------------------ UI
     def init_ui(self):
@@ -123,6 +127,7 @@ class Updater(QWidget):
         self.setFixedSize(660, 620)
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon.fromTheme(PKG_ICON))
+        self.center_on_screen()
 
         self.setStyleSheet("""
             QWidget { background-color: #f5f5f5; font-family: sans-serif; }
@@ -174,6 +179,11 @@ class Updater(QWidget):
         self.bar = QProgressBar()
         self.bar.setVisible(False)
         layout.addWidget(self.bar)
+
+        self.auto = QCheckBox("Aktualizovat automaticky na pozadí")
+        self.auto.setChecked(bool(self.conf.get("auto_update", False)))
+        self.auto.toggled.connect(self.on_auto_toggled)
+        layout.addWidget(self.auto)
 
         buttons = QHBoxLayout()
         self.btn_all = QPushButton("Aktualizovat vše")
@@ -292,6 +302,7 @@ class Updater(QWidget):
         self.tray.setVisible(bool(packages))
         if self.tray_mode and packages:
             self.notify(packages)
+            self.maybe_auto_install()
 
     def populate(self):
         self.list.clear()
@@ -353,7 +364,30 @@ class Updater(QWidget):
         )
 
     # ------------------------------------------------------------- akce
+    def center_on_screen(self):
+        scr = QApplication.primaryScreen().availableGeometry()
+        self.move(scr.center().x() - self.width() // 2,
+                  scr.center().y() - self.height() // 2)
+
+    def on_auto_toggled(self, on):
+        self.conf["auto_update"] = bool(on)
+        save_conf(self.conf)
+
+    def maybe_auto_install(self):
+        if not self.tray_mode or not self.conf.get("auto_update") or not self.packages:
+            return
+        try:
+            last = float(self.conf.get("last_auto", 0))
+        except Exception:  # noqa: BLE001
+            last = 0
+        if time.time() - last < 6 * 3600:
+            return
+        self.conf["last_auto"] = time.time()
+        save_conf(self.conf)
+        self.start_install([p["name"] for p in self.packages])
+
     def show_window(self):
+        self.center_on_screen()
         self.showNormal()
         self.raise_()
         self.activateWindow()
