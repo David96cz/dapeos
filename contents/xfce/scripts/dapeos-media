@@ -88,7 +88,6 @@ class MediaTray(QSystemTrayIcon):
             QMenu::separator { height: 1px; background: #555; margin: 4px 8px; }
         """)
         self.menu.aboutToShow.connect(self.build_menu)
-        self.setContextMenu(self.menu)
         self.activated.connect(self.on_activated)
         self.devs = []
         self.seen = set()
@@ -149,12 +148,11 @@ class MediaTray(QSystemTrayIcon):
             rect = self.geometry()
             if rect.width() > 0:
                 x = rect.center().x() - w // 2
-                y = rect.top() - h - 4
             else:
-                cur = QCursor.pos()
-                x = cur.x() - w // 2
-                y = cur.y() - h - 4
+                x = QCursor.pos().x() - w // 2
             scr = QApplication.primaryScreen().availableGeometry()
+            # nabidka vzdy tesne nad panelem (panel je dole)
+            y = scr.bottom() - h - 4
             x = max(scr.left() + 4, min(x, scr.right() - w - 4))
             y = max(scr.top() + 4, y)
             self.menu.popup(QPoint(x, y))
