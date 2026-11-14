@@ -79,7 +79,9 @@ class MediaTray(QSystemTrayIcon):
         super().__init__(QIcon.fromTheme(ICON))
         self.setToolTip("Vyměnitelná média")
         self.menu = QMenu()
+        self.menu.aboutToShow.connect(self.build_menu)
         self.setContextMenu(self.menu)
+        self.devs = []
         self.seen = set()
         self.pending = {}
         self.opened = set()
@@ -122,18 +124,46 @@ class MediaTray(QSystemTrayIcon):
             log(f"mount output {dev}: {out!r}")
 
     def action_mount(self, dev):
-        self.run(["udisksctl", "mount", "-b", dev])
+        self.mount_and_open(dev)
 
     def action_eject(self, dev, parent):
         self.run(["sh", "-c",
                   f"udisksctl unmount -b {dev} >/dev/null 2>&1; "
                   f"udisksctl power-off -b {parent} >/dev/null 2>&1"])
 
+    def build_menu(self):
+        self.menu.clear()
+        if not self.devs:
+            return
+        title = QAction("Vyměnitelná média", self)
+        title.setEnabled(False)
+        self.menu.addAction(title)
+        self.menu.addSeparator()
+        for d in self.devs:
+            if d["mount"]:
+                act = QAction(f"Vysunout {d['label']}", self)
+                act.triggered.connect(
+                    lambda _=False, x=d["dev"], p=d["parent"]: self.action_eject(x, p))
+            else:
+                act = QAction(f"Připojit {d['label']}", self)
+                act.triggered.connect(
+                    lambda _=False, x=d["dev"]: self.action_mount(x))
+            self.menu.addAction(act)
+
     def scan(self):
         devs = devices()
+        self.devs = devs
+        present = {d["dev"] for d in devs}
+        self.opened &= present
+        self.pending = {k: v for k, v in self.pending.items() if k in present}
+        log("devices: " + ", ".join(f"{d['dev']} mount={d['mount']}" for d in devs))
+        self.first_scan = False
+
         for d in devs:
             if not d["mount"]:
-                if xfconf_bool("/automount-drives/enabled", True):
+                auto_mount = (xfconf_bool("/automount-drives/enabled", True)
+                              or xfconf_bool("/automount-media/enabled", True))
+                if auto_mount:
                     last = self.pending.get(d["dev"], 0)
                     if time.time() - last > 3:
                         self.pending[d["dev"]] = time.time()
@@ -145,40 +175,11 @@ class MediaTray(QSystemTrayIcon):
                     self.opened.add(d["dev"])
                     if not self.first_scan and xfconf_bool("/autobrowse/enabled", True):
                         self.open_thunar(d["mount"])
-            self.seen.add(d["dev"])
-        present = {d["dev"] for d in devs}
-        self.opened &= present
-        self.pending = {k: v for k, v in self.pending.items() if k in present}
-        log("devices: " + ", ".join(f"{d['dev']} mount={d['mount']}" for d in devs))
-        self.first_scan = False
-        self.menu.clear()
-        if not devs:
+
+        if devs:
+            self.show()
+        else:
             self.hide()
-            return
-
-        title = QAction("Vyměnitelná média", self)
-        title.setEnabled(False)
-        self.menu.addAction(title)
-        self.menu.addSeparator()
-
-        for d in devs:
-            if d["mount"]:
-                act = QAction(f"Vysunout {d['label']}", self)
-                act.triggered.connect(
-                    lambda _=False, x=d["dev"], p=d["parent"]: self.action_eject(x, p))
-            else:
-                act = QAction(f"Připojit {d['label']}", self)
-                act.triggered.connect(
-                    lambda _=False, x=d["dev"]: self.action_mount(x))
-            self.menu.addAction(act)
-
-        self.menu.addSeparator()
-        quit_act = QAction("Ukončit", self)
-        quit_act.triggered.connect(QApplication.instance().quit)
-        self.menu.addAction(quit_act)
-
-        self.setIcon(QIcon.fromTheme(ICON))
-        self.show()
 
 
 if __name__ == "__main__":
