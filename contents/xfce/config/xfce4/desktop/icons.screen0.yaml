@@ -12,75 +12,53 @@ configs:
       width: 1024
       height: 768
   icons:
-    "/home/david/Plocha/peazip_portable-11.4.0.LINUX.GTK2.aarch64.tar.gz":
-      row: 3
-      col: 9
-    "/home/david/Plocha/tex\u0165\xE1k.txt":
-      row: 3
-      col: 3
-    "/home/david/Plocha/peazip_portable-11.4.0.LINUX.GTK2.aarch64":
-      row: 3
-      col: 0
-    "/home/david/Plocha/app-uninstaller":
-      row: 5
-      col: 4
-    "/home/david/Plocha/Nov\xFD pr\xE1zdn\xFD soubor":
-      row: 6
-      col: 2
-    "/home/david/Plocha/sample-1.rar":
-      row: 1
-      col: 2
-    "/home/david/Plocha/kupfer-v329.tar.xz":
-      row: 3
-      col: 1
     "/home/david/Plocha/linux.png":
       row: 3
       col: 2
-    "/media/psf/iCloud":
-      row: 3
-      col: 0
-      last_seen: 1793736995378192
-    "/home/david/Plocha/negr.rar":
-      row: 4
-      col: 4
-    "/home/david/Plocha/wallpaper.png":
-      row: 4
-      col: 3
-    "/home/david/Plocha/kupfer-v329":
-      row: 2
-      col: 0
-    "/":
+    "trash:///":
       row: 1
       col: 0
+    "/home/david/Plocha/peazip_portable-11.4.0.LINUX.GTK2.aarch64":
+      row: 3
+      col: 0
+    "/home/david/Plocha/peazip_portable-11.4.0.LINUX.GTK2.aarch64.tar.gz":
+      row: 3
+      col: 9
     "/media/psf/Data":
       row: 4
       col: 0
       last_seen: 1793736995378639
-- level: 0
-  monitors:
-  - id: "878f7557151ebceb4fddab470b4ef5fd2ff365cb"
-    display_name: "Chimei Innolux Corporation 0x14B1 (eDP-1)"
-    geometry:
-      x: 0
-      y: 0
-      width: 1920
-      height: 1080
-  icons:
+    "/home/david/Plocha/Nov\xFD pr\xE1zdn\xFD soubor":
+      row: 6
+      col: 2
+    "/home/david/Plocha/kupfer-v329.tar.xz":
+      row: 3
+      col: 1
+    "/home/david/Plocha/kupfer-v329":
+      row: 2
+      col: 0
+    "/home/david/Plocha/sample-1.rar":
+      row: 1
+      col: 2
+    "/":
+      row: 1
+      col: 0
+    "/home/david/Plocha/tex\u0165\xE1k.txt":
+      row: 3
+      col: 3
+    "/home/david/Plocha/negr.rar":
+      row: 4
+      col: 4
+    "/home/david/Plocha/app-uninstaller":
+      row: 5
+      col: 4
     "/home/david":
       row: 0
       col: 0
-    "trash:///":
-      row: 1
-      col: 0
-    "/home/david/Plocha/org.kde.kolourpaint.desktop":
-      row: 2
-      col: 0
-    "/home/david/Plocha/google-chrome.desktop":
-      row: 3
-      col: 0
-    "/home/david/Plocha/2026-11-14_17-43.png":
+    "/home/david/Plocha/wallpaper.png":
       row: 4
       col: 3
-    "/home/david/Plocha/featherpad.desktop":
-      row: 4
+    "/media/psf/iCloud":
+      row: 3
       col: 0
+      last_seen: 1793736995378192
