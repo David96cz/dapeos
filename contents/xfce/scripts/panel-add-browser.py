@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
-"""Vloží samostatný launcher plugin-13 pred plugin-11."""
+"""Vloží prohlížeč jako plugin-4 hned za plugin-3 (Thunar)."""
 import sys
 
 path = sys.argv[1]
 data = open(path, encoding="utf-8").read()
-if 'name="plugin-13"' in data:
+
+# clipman z plugin-4 na plugin-14
+if 'name="plugin-4"' in data and 'name="plugin-14"' not in data:
+    data = data.replace('name="plugin-4"', 'name="plugin-14"', 1)
+
+# už existuje prohlížeč?
+if 'plugin-4' in data and 'dapeos-browser.desktop' in data:
+    open(path, "w", encoding="utf-8").write(data)
     sys.exit(0)
 
-block = ('    <property name="plugin-13" type="string" value="launcher">\n'
+block = ('    <property name="plugin-4" type="string" value="launcher">\n'
          '      <property name="items" type="array">\n'
          '        <value type="string" value="dapeos-browser.desktop"/>\n'
          '      </property>\n'

@@ -14,7 +14,7 @@ xfce_browser_launcher() {
     command -v "$bin" >/dev/null 2>&1 || return 0
 
     local apps="$USER_HOME/.local/share/applications"
-    local launcher="$USER_HOME/.config/xfce4/panel/launcher-13"
+    local launcher="$USER_HOME/.config/xfce4/panel/launcher-4"
     install -d -m 755 "$apps" "$launcher"
     cat > "$apps/dapeos-browser.desktop" <<EOF
 [Desktop Entry]
