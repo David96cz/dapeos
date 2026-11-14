@@ -11,7 +11,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QLabel, QLineEdit,
                              QPushButton, QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
 
-DIRS = ["/usr/share/applications", os.path.expanduser("~/.local/share/applications")]
+DIRS = [os.path.expanduser("~/.local/share/applications"), "/usr/share/applications"]
 
 HIDDEN = {
     "xfce4-settings-manager.desktop",
