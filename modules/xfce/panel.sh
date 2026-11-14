@@ -31,33 +31,7 @@ EOF
 
     local xml="$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
     [ -f "$xml" ] || return 0
-    python3 - "$xml" <<'PY'
-import re
-import sys
-
-path = sys.argv[1]
-data = open(path, encoding="utf-8").read()
-if 'name="plugin-13"' in data:
-    sys.exit(0)
-
-m3 = re.search(r'(<property name="plugin-3" type="string" value="launcher">.*?</property>)',
-               data, re.S)
-if m3:
-    cleaned = re.sub(r'\s*<value type="string" value="dapeos-browser.desktop"/>', '',
-                     m3.group(1))
-    data = data.replace(m3.group(1), cleaned, 1)
-    m3 = re.search(r'(<property name="plugin-3" type="string" value="launcher">.*?</property>)',
-                   data, re.S)
-
-block = ('    <property name="plugin-13" type="string" value="launcher">\n'
-         '      <property name="items" type="array">\n'
-         '        <value type="string" value="dapeos-browser.desktop"/>\n'
-         '      </property>\n'
-         '    </property>\n')
-if m3:
-    data = data.replace(m3.group(1), m3.group(1) + "\n" + block, 1)
-open(path, "w", encoding="utf-8").write(data)
-PY
+    python3 "$CONTENTS_DIR/xfce/scripts/panel-add-browser.py" "$xml"
 }
 
 xfce_panel_icons() {
