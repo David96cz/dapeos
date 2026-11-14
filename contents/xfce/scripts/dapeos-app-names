@@ -10,6 +10,15 @@ HOME = os.path.expanduser("~")
 SRC = "/usr/share/applications"
 DST = os.path.join(HOME, ".local/share/applications")
 CONF = "/usr/share/dapeos/app-names.conf"
+NO_MENU = {
+    "dapeos-update.desktop",
+    "blueman-manager.desktop",
+    "blueman-adapters.desktop",
+    "light-locker-settings.desktop",
+    "nm-connection-editor.desktop",
+    "xfce4-settings-manager.desktop",
+    "user-manager.desktop",
+}
 os.makedirs(DST, exist_ok=True)
 
 
@@ -106,9 +115,8 @@ def main():
         try:
             with open(dst, encoding="utf-8", errors="ignore") as f:
                 text = f.read()
-            is_settings = ("X-XFCE-SettingsDialog" in text
-                           or name == "xfce4-settings-manager.desktop")
-            patch_desktop(dst, overrides, no_display=is_settings)
+            no_display = ("X-XFCE-SettingsDialog" in text or name in NO_MENU)
+            patch_desktop(dst, overrides, no_display=no_display)
         except OSError:
             pass
     subprocess.run(["update-desktop-database", DST], capture_output=True)
