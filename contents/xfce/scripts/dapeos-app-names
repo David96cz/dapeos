@@ -87,7 +87,7 @@ def main():
         overrides = dict(conf.get(name, {})) or None
         try:
             with open(dst, encoding="utf-8", errors="ignore") as f:
-                is_settings = "X-XFCE-SettingsDialog=" in f.read()
+                is_settings = "X-XFCE-SettingsDialog" in f.read()
             patch_desktop(dst, overrides, no_display=is_settings)
         except OSError:
             pass
