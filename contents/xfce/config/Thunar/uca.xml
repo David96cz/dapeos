@@ -1,1 +1,19 @@
-<actions> </actions>
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+<action>
+	<icon>printer</icon>
+	<name>Tisknout</name>
+	<submenu></submenu>
+	<unique-id>dapeos-print</unique-id>
+	<command>print-in-menu %f</command>
+	<description>Tisk dokumentu nebo obrázku</description>
+	<range></range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>
+</actions>

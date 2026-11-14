@@ -36,6 +36,7 @@
     <property name="window-height" type="int" value="559"/>
   </property>
   <property name="desktop-icons" type="empty">
+    <property name="show-thumbnails" type="bool" value="true"/>
     <property name="file-icons" type="empty">
       <property name="show-filesystem" type="bool" value="false"/>
       <property name="show-removable" type="bool" value="false"/>
