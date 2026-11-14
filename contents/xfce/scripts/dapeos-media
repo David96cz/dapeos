@@ -15,6 +15,19 @@ ICON = "drive-removable-media"
 LOG = "/tmp/dapeos-media.log"
 
 
+def xfconf_bool(prop, default=True):
+    try:
+        out = subprocess.run(["xfconf-query", "-c", "thunar-volman", "-p", prop],
+                             capture_output=True, text=True, timeout=2).stdout.strip()
+        if out == "true":
+            return True
+        if out == "false":
+            return False
+    except Exception:
+        pass
+    return default
+
+
 def log(msg):
     try:
         with open(LOG, "a", encoding="utf-8") as f:
@@ -103,7 +116,8 @@ class MediaTray(QSystemTrayIcon):
             path = m.group(1).strip().rstrip(".")
             self.opened.add(dev)
             self.pending.pop(dev, None)
-            self.open_thunar(path)
+            if xfconf_bool("/autobrowse/enabled", True):
+                self.open_thunar(path)
         else:
             log(f"mount output {dev}: {out!r}")
 
@@ -119,16 +133,17 @@ class MediaTray(QSystemTrayIcon):
         devs = devices()
         for d in devs:
             if not d["mount"]:
-                last = self.pending.get(d["dev"], 0)
-                if time.time() - last > 3:
-                    self.pending[d["dev"]] = time.time()
-                    log(f"mount {d['dev']}")
-                    self.mount_and_open(d["dev"])
+                if xfconf_bool("/automount-drives/enabled", True):
+                    last = self.pending.get(d["dev"], 0)
+                    if time.time() - last > 3:
+                        self.pending[d["dev"]] = time.time()
+                        log(f"mount {d['dev']}")
+                        self.mount_and_open(d["dev"])
             else:
                 self.pending.pop(d["dev"], None)
                 if d["dev"] not in self.opened:
                     self.opened.add(d["dev"])
-                    if not self.first_scan:
+                    if not self.first_scan and xfconf_bool("/autobrowse/enabled", True):
                         self.open_thunar(d["mount"])
             self.seen.add(d["dev"])
         present = {d["dev"] for d in devs}
