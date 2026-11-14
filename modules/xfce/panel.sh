@@ -28,10 +28,6 @@ StartupNotify=true
 EOF
     cp "$apps/dapeos-browser.desktop" "$launcher/dapeos-browser.desktop"
     chown -R "$REAL_USER:$REAL_USER" "$apps/dapeos-browser.desktop" "$launcher" 2>/dev/null || true
-
-    local xml="$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
-    [ -f "$xml" ] || return 0
-    python3 "$CONTENTS_DIR/xfce/scripts/panel-add-browser.py" "$xml"
 }
 
 xfce_panel_icons() {
