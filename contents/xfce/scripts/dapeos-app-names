@@ -34,31 +34,36 @@ def patch_desktop(path, overrides):
     with open(path, encoding="utf-8", errors="ignore") as f:
         lines = f.read().splitlines()
 
-    out, section, seen_notify = [], None, False
-    for line in lines:
-        if line.startswith("[") and line.endswith("]"):
-            if section == "Desktop Entry" and not seen_notify:
-                out.append("StartupNotify=true")
-            section = line[1:-1]
-            out.append(line)
+    try:
+        start = lines.index("[Desktop Entry]")
+    except ValueError:
+        return
+
+    end = len(lines)
+    for i in range(start + 1, len(lines)):
+        if lines[i].startswith("["):
+            end = i
+            break
+
+    remaining = dict(overrides or {})
+    body, seen_notify = [], False
+    for line in lines[start + 1:end]:
+        key = line.split("=", 1)[0] if "=" in line else None
+        if key in remaining:
+            body.append(f"{key}={remaining.pop(key)}")
+            if key == "StartupNotify":
+                seen_notify = True
             continue
-        if section == "Desktop Entry" and line.startswith("StartupNotify="):
+        if key == "StartupNotify":
             seen_notify = True
-            if overrides is not None:
-                out.append("StartupNotify=true")
-                continue
-        if overrides is not None and section == "Desktop Entry":
-            key = line.split("=", 1)[0] if "=" in line else None
-            if key in overrides:
-                out.append(f"{key}={overrides.pop(key)}")
-                continue
-        out.append(line)
+        body.append(line)
 
-    if section == "Desktop Entry" and not seen_notify:
-        out.append("StartupNotify=true")
-    if overrides:
-        out.extend(f"{k}={v}" for k, v in overrides.items())
+    if not seen_notify:
+        body.append("StartupNotify=true")
+    for k, v in remaining.items():
+        body.append(f"{k}={v}")
 
+    out = lines[:start + 1] + body + lines[end:]
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(out) + "\n")
 
