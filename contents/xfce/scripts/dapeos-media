@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+# DapeOS removable media tray - cesky, ikona jen kdyz je medium pripojene.
+import json
+import os
+import subprocess
+import sys
+
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QAction, QApplication, QMenu, QSystemTrayIcon
+
+ICON = "drive-removable-media"
+
+
+def lsblk():
+    try:
+        out = subprocess.run(
+            ["lsblk", "-J", "-o", "NAME,RM,TYPE,LABEL,MOUNTPOINT,SIZE"],
+            capture_output=True, text=True, timeout=4,
+            env=dict(os.environ, LANG="C", LC_ALL="C"),
+        ).stdout
+        return json.loads(out).get("blockdevices", [])
+    except Exception:
+        return []
+
+
+def devices():
+    result = []
+    for disk in lsblk():
+        removable = disk.get("rm") in (True, "1", 1)
+        if not removable:
+            continue
+        for part in disk.get("children", []):
+            if part.get("type") != "part":
+                continue
+            result.append({
+                "dev": "/dev/" + part["name"],
+                "parent": "/dev/" + disk["name"],
+                "label": part.get("label") or part["name"],
+                "mount": part.get("mountpoint"),
+            })
+    return result
+
+
+class MediaTray(QSystemTrayIcon):
+    def __init__(self):
+        super().__init__(QIcon.fromTheme(ICON))
+        self.setToolTip("Vyměnitelná média")
+        self.menu = QMenu()
+        self.setContextMenu(self.menu)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.scan)
+        self.timer.start(3000)
+        self.scan()
+
+    def run(self, args):
+        subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def action_mount(self, dev):
+        self.run(["udisksctl", "mount", "-b", dev])
+
+    def action_eject(self, dev, parent):
+        self.run(["sh", "-c",
+                  f"udisksctl unmount -b {dev} >/dev/null 2>&1; "
+                  f"udisksctl power-off -b {parent} >/dev/null 2>&1"])
+
+    def scan(self):
+        devs = devices()
+        self.menu.clear()
+        if not devs:
+            self.hide()
+            return
+
+        title = QAction("Vyměnitelná média", self)
+        title.setEnabled(False)
+        self.menu.addAction(title)
+        self.menu.addSeparator()
+
+        for d in devs:
+            if d["mount"]:
+                act = QAction(f"Vysunout {d['label']}", self)
+                act.triggered.connect(
+                    lambda _=False, x=d["dev"], p=d["parent"]: self.action_eject(x, p))
+            else:
+                act = QAction(f"Připojit {d['label']}", self)
+                act.triggered.connect(
+                    lambda _=False, x=d["dev"]: self.action_mount(x))
+            self.menu.addAction(act)
+
+        self.menu.addSeparator()
+        quit_act = QAction("Ukončit", self)
+        quit_act.triggered.connect(QApplication.instance().quit)
+        self.menu.addAction(quit_act)
+
+        self.setIcon(QIcon.fromTheme(ICON))
+        self.show()
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    QIcon.setThemeName("Papirus")
+    tray = MediaTray()
+    sys.exit(app.exec_())
