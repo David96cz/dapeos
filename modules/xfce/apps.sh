@@ -55,9 +55,9 @@ flameshot_setup() {
 }
 
 xfce_default_apps() {
-    command -v ristretto >/dev/null 2>&1 || return 0
+    command -v gthumb >/dev/null 2>&1 || return 0
     local mimes="image/png image/jpeg image/gif image/webp image/bmp image/tiff image/x-icon"
-    sudo -u "$REAL_USER" xdg-mime default ristretto.desktop $mimes 2>/dev/null || true
+    sudo -u "$REAL_USER" xdg-mime default gthumb.desktop $mimes 2>/dev/null || true
 }
 
 xfce_setup_apps_and_defaults() {
