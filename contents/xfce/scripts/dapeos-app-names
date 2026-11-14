@@ -30,11 +30,12 @@ NO_MENU = {
     "light-locker-settings.desktop",
     "nm-connection-editor.desktop",
     "xfce4-settings-manager.desktop",
+    "user-manager.desktop",
+    "dapeos-settings.desktop",
 }
 MOVE_TO_SYSTEM = {
     "dapeos-update.desktop",
     "blueman-manager.desktop",
-    "user-manager.desktop",
 }
 os.makedirs(DST, exist_ok=True)
 
