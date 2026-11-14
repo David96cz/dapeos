@@ -1,0 +1,17 @@
+#!/bin/sh
+# Hlídá /usr/share/applications a po každé změně spustí dapeos-app-names.
+last=""
+dapeos-app-names >/dev/null 2>&1 || true
+
+while true; do
+    cur=$(find /usr/share/applications -maxdepth 1 -name '*.desktop' \
+        -printf '%T@ %f\n' 2>/dev/null | sort | md5sum)
+    if [ "$cur" != "$last" ]; then
+        if [ -n "$last" ]; then
+            sleep 1
+            dapeos-app-names >/dev/null 2>&1 || true
+        fi
+        last="$cur"
+    fi
+    sleep 3
+done
