@@ -114,7 +114,7 @@ class AppUninstaller(QWidget):
         self.unremovable_file = "/etc/dapeos-unremovable.txt"
         self.unremovable_list = self.load_blacklist()
         self.worker = None
-        self._spin_frames = ["\u25dc", "\u25dd", "\u25de", "\u25df"]
+        self._spin_frames = ["\u280b", "\u2819", "\u2839", "\u2838", "\u283c", "\u2834", "\u2826", "\u2827", "\u2807", "\u280f"]
         self._spin_i = 0
         self._spin_item = None
         self._spin_name = ""
@@ -324,7 +324,7 @@ class AppUninstaller(QWidget):
         if self._spin_item is None:
             return
         self._spin_i = (self._spin_i + 1) % len(self._spin_frames)
-        self._spin_item.setText(f"{self._spin_frames[self._spin_i]}  {self._spin_name}")
+        self._spin_item.setText(f"{self._spin_name}  {self._spin_frames[self._spin_i]}")
 
     def _start_row_spin(self, item, name):
         self._spin_item = item

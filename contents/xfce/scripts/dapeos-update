@@ -481,6 +481,7 @@ class Updater(QWidget):
         self.proc = None
 
         if code == 0:
+            subprocess.run(["dapeos-app-names"], capture_output=True)
             self.status.setText("Hotovo.")
             reboot = os.path.exists("/var/run/reboot-required") or os.path.exists("/run/reboot-required")
             if reboot:

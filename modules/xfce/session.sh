@@ -51,6 +51,10 @@ dapeos_session_setup() {
         chown "$REAL_USER:$REAL_USER" "$USER_HOME/.config/autostart/$a.desktop" 2>/dev/null || true
     done
 
+    if [ -f "$CONTENTS_DIR/xfce/config/apt/99dapeos-app-names" ]; then
+        install -m 644 "$CONTENTS_DIR/xfce/config/apt/99dapeos-app-names" /etc/apt/apt.conf.d/99dapeos-app-names
+    fi
+
     install -d -m 755 /usr/share/dapeos
     if [ -f "$CONTENTS_DIR/xfce/config/app-names.conf" ]; then
         install -m 644 "$CONTENTS_DIR/xfce/config/app-names.conf" /usr/share/dapeos/app-names.conf
