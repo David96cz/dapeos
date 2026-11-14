@@ -30,7 +30,7 @@ def read_conf():
     return data
 
 
-def patch_desktop(path, overrides):
+def patch_desktop(path, overrides, no_display=False):
     with open(path, encoding="utf-8", errors="ignore") as f:
         lines = f.read().splitlines()
 
@@ -46,7 +46,7 @@ def patch_desktop(path, overrides):
             break
 
     remaining = dict(overrides or {})
-    body, seen_notify = [], False
+    body, seen_notify, seen_nodisplay = [], False, False
     for line in lines[start + 1:end]:
         key = line.split("=", 1)[0] if "=" in line else None
         if key in remaining:
@@ -56,10 +56,16 @@ def patch_desktop(path, overrides):
             continue
         if key == "StartupNotify":
             seen_notify = True
+        if key == "NoDisplay":
+            seen_nodisplay = True
+            body.append("NoDisplay=true" if no_display else line)
+            continue
         body.append(line)
 
     if not seen_notify:
         body.append("StartupNotify=true")
+    if no_display and not seen_nodisplay:
+        body.append("NoDisplay=true")
     for k, v in remaining.items():
         body.append(f"{k}={v}")
 
@@ -80,7 +86,9 @@ def main():
                 continue
         overrides = dict(conf.get(name, {})) or None
         try:
-            patch_desktop(dst, overrides)
+            with open(dst, encoding="utf-8", errors="ignore") as f:
+                is_settings = "X-XFCE-SettingsDialog=" in f.read()
+            patch_desktop(dst, overrides, no_display=is_settings)
         except OSError:
             pass
     subprocess.run(["update-desktop-database", DST], capture_output=True)
