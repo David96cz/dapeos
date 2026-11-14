@@ -309,8 +309,8 @@ install_packages() {
                         dpkg -i /tmp/rustdesk.deb || apt-get install -f -y
                     }
                     rm -f /tmp/rustdesk.deb
-                    systemctl enable --now rustdesk >/dev/null 2>&1 || true
-                    log "RustDesk nainstalován z .deb."
+                    systemctl disable rustdesk >/dev/null 2>&1 || true
+                    log "RustDesk nainstalován z .deb (autostart vypnut)."
                 else
                     warn "Stažení RustDesk .deb selhalo."
                 fi
