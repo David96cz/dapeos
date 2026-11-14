@@ -37,6 +37,23 @@ EOF
     done
 }
 
+flameshot_setup() {
+    command -v flameshot >/dev/null 2>&1 || return 0
+
+    # Flameshot 12 v trixie nenacita preklady pro CLI (flameshot gui).
+    # 13.3 v trixie-backports to uz opravuje.
+    if ! grep -q 'trixie-backports' /etc/apt/sources.list.d/dapeos-backports.list 2>/dev/null; then
+        echo 'deb http://deb.debian.org/debian trixie-backports main' \
+            > /etc/apt/sources.list.d/dapeos-backports.list
+        apt-get update -qq || true
+    fi
+
+    if apt-cache policy flameshot 2>/dev/null | grep -q 'trixie-backports'; then
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -t trixie-backports flameshot \
+            || log "VAROVÁNÍ: Flameshot z backports se nepodařilo nainstalovat."
+    fi
+}
+
 xfce_setup_apps_and_defaults() {
     log "Nastavuji chování aplikací, skrytí bloatware a ikony pro XFCE..."
     chrome_no_keyring

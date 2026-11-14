@@ -10,6 +10,7 @@ configure_xfce() {
     xfce_appearance          # xfce4 konfigurace + xfce_panel_icons
     xfce_deploy_scripts      # skripty + wrappery xfce4-panel / nm-applet
     xfce_setup_apps_and_defaults
+    flameshot_setup
     xfce_browser_launcher
     xfce_app_names
     xfce_actions_config
