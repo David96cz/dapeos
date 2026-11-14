@@ -54,6 +54,12 @@ flameshot_setup() {
     fi
 }
 
+xfce_default_apps() {
+    command -v ristretto >/dev/null 2>&1 || return 0
+    local mimes="image/png image/jpeg image/gif image/webp image/bmp image/tiff image/x-icon"
+    sudo -u "$REAL_USER" xdg-mime default ristretto.desktop $mimes 2>/dev/null || true
+}
+
 xfce_setup_apps_and_defaults() {
     log "Nastavuji chování aplikací, skrytí bloatware a ikony pro XFCE..."
     chrome_no_keyring

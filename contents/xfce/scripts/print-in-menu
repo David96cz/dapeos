@@ -5,7 +5,9 @@ RAW_PRINTERS=$(lpstat -p 2>/dev/null | awk '{print $2}')
 
 if [ -z "$RAW_PRINTERS" ]; then
     yad --error --title="Chyba" --text="V systému není žádná nainstalovaná tiskárna!" \
-        --button="OK:0" --center --width=300 --window-icon="printer"
+        --button="Otevřít nastavení tisku:0" --button="Zavřít:1" \
+        --center --width=340 --window-icon="printer"
+    [ $? -eq 0 ] && (system-config-printer >/dev/null 2>&1 &)
     exit 1
 fi
 
@@ -39,5 +41,8 @@ lp -d "$TISKARNA" -n "$KOPIE" $MOJE_OPTS "$SOUBOR"
 if [ $? -eq 0 ]; then
     notify-send -i printer "Tisk odeslán" "Tiskárna: $TISKARNA"
 else
-    yad --error --text="Chyba při odesílání na tiskárnu."
+    yad --error --title="Chyba" --text="Chyba při odesílání na tiskárnu." \
+        --button="Otevřít nastavení tisku:0" --button="Zavřít:1" \
+        --center --width=340 --window-icon="printer"
+    [ $? -eq 0 ] && (system-config-printer >/dev/null 2>&1 &)
 fi
