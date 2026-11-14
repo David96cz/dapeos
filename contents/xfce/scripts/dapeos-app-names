@@ -26,6 +26,7 @@ NO_MENU = {
     "vim.desktop",
     "albert.desktop",
     "blueman-adapters.desktop",
+    "blueman-manager.desktop",
     "kdesystemsettings.desktop",
     "light-locker-settings.desktop",
     "lightdm-settings.desktop",
@@ -36,7 +37,6 @@ NO_MENU = {
 }
 MOVE_TO_SYSTEM = {
     "dapeos-update.desktop",
-    "blueman-manager.desktop",
     "dapeos-settings.desktop",
 }
 os.makedirs(DST, exist_ok=True)
