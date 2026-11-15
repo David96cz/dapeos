@@ -62,10 +62,10 @@ main() {
             --no-reboot) no_reboot=true ;;
             --lang=*) lang_arg="${1#--lang=}" ;;
             -h|--help)
-                echo "$(_ \"Usage: \$0 [--no-reboot] [--lang=en|cs]\")"
+                echo "$(_ 'Usage: dapeos.sh [--no-reboot] [--lang=en|cs]')"
                 exit 0
                 ;;
-            *) echo "$(_ \"Unknown parameter: \$1\")" >&2; exit 2 ;;
+            *) echo "$(_ 'Unknown parameter'): $1" >&2; exit 2 ;;
         esac
         shift
     done
@@ -96,10 +96,10 @@ main() {
     setup_boot
     admin_security
     echo "=================================================="
-    echo "$(_ \"DONE\")"
+    echo "$(_ 'DONE')"
     echo "=================================================="
     if [ "$no_reboot" = "true" ]; then
-        echo "$(_ \"Restart skipped (--no-reboot), repository kept.\")"
+        echo "$(_ 'Restart skipped (--no-reboot), repository kept.')"
         exit 0
     fi
 
@@ -107,14 +107,14 @@ main() {
         rm -rf "$BASE_DIR"
     fi
 
-    echo "$(_ \"RESTARTING IN 5 SECONDS...\")"
+    echo "$(_ 'RESTARTING IN 5 SECONDS...')"
 
     for i in {5..1}
     do
         echo "$i..."
         sleep 1
     done
-    echo "$(_ \"Restarting now!\")"
+    echo "$(_ 'Restarting now!')"
     reboot
 }
 

@@ -3,11 +3,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Language: cs\n"
 
-msgid "Usage: $0 [--no-reboot] [--lang=en|cs]"
-msgstr "Použití: $0 [--no-reboot] [--lang=en|cs]"
+msgid "Usage: dapeos.sh [--no-reboot] [--lang=en|cs]"
+msgstr "Použití: dapeos.sh [--no-reboot] [--lang=en|cs]"
 
-msgid "Unknown parameter: $1"
-msgstr "Neznámý parametr: $1"
+msgid "Unknown parameter"
+msgstr "Neznámý parametr"
 
 msgid "DONE"
 msgstr "HOTOVO"
