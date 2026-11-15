@@ -586,7 +586,7 @@ class QuickSettings(QWidget):
         gear.setStyleSheet("font-size: 15pt;")
         gear.setFixedSize(42, 32)
         gear.setToolTip(_("Settings"))
-        gear.clicked.connect(lambda: subprocess.Popen(["xfce4-settings-manager"]))
+        gear.clicked.connect(lambda: subprocess.Popen(["dapeos-settings"]))
         foot.addWidget(gear)
         self.main_lay.addLayout(foot)
         self.main_lay.addStretch(1)

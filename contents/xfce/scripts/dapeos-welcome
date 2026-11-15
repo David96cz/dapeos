@@ -226,7 +226,7 @@ class Welcome(QWidget):
             ("folder-download", _("Move data from Windows"),
              _("Documents, pictures and music from your old computer."),
              self.migrate),
-            ("system-software-update", "Aktualizace",
+            ("system-software-update", "Updates",
              _("Install available system and application updates."),
              self.open_updates),
             ("help-browser", _("Help"),
