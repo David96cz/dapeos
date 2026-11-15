@@ -1,3 +1,8 @@
+
+try:
+    from dapeos_i18n import _
+except Exception:  # noqa: BLE001
+    _ = lambda s: s
 #!/usr/bin/env python3
 import os
 import subprocess
@@ -134,9 +139,9 @@ def main():
     elif net_type == "wifi":
         net_txt = f"Wi-Fi: {net_name}"
     else:
-        net_txt = "Nepřipojeno"
-    vol_txt = "zvuk: ztlumeno" if mute else f"zvuk: {vol}%"
-    bat_txt = f"baterie: {cap}% ({status})" if cap is not None else "bez baterie"
+        net_txt = _("Not connected")
+    vol_txt = _("sound: muted") if mute else f"{_('sound')}: {vol}%"
+    bat_txt = f"{_('battery')}: {cap}% ({status})" if cap is not None else _("no battery")
 
     print(f"<img>{out}</img>")
     if os.path.exists("/tmp/dapeos-quicksettings-open"):

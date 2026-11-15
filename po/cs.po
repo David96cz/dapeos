@@ -308,3 +308,21 @@ msgstr "Krátké odpovědi na první otázky."
 
 msgid "<h2>About</h2><table cellspacing='6'>"
 msgstr "<h2>O systému</h2><table cellspacing='6'>"
+
+msgid "no battery"
+msgstr "bez baterie"
+
+msgid "full"
+msgstr "nabito"
+
+msgid "not charging"
+msgstr "nezapojeno"
+
+msgid "sound"
+msgstr "zvuk"
+
+msgid "battery"
+msgstr "baterie"
+
+msgid "sound: muted"
+msgstr "zvuk: ztlumeno"
