@@ -9,6 +9,11 @@ from PyQt5.QtGui import QColor, QIcon, QPainter, QPixmap
 from PyQt5.QtNetwork import QLocalServer
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
+try:
+    from dapeos_i18n import _
+except Exception:  # noqa: BLE001
+    _ = lambda s: s
+
 SOCK = "/tmp/dapeos-osd"
 STEP = 5
 BRI_MIN = 5
@@ -96,10 +101,10 @@ class OSD(QWidget):
             sh(["pactl", "set-sink-mute", "@DEFAULT_SINK@", "1"])
             muted = True
         if muted:
-            self.show_osd("audio-volume-muted", "Zvuk", "ztlumeno")
+            self.show_osd("audio-volume-muted", _( "Sound" ), _( "muted" ))
         else:
             name = "audio-volume-low" if vol < 34 else ("audio-volume-medium" if vol < 67 else "audio-volume-high")
-            self.show_osd(name, "Zvuk", f"{vol}%")
+            self.show_osd(name, _( "Sound" ), f"{vol}%")
 
     def brightness(self, delta):
         cur = sh(["brightnessctl", "get"])
@@ -112,7 +117,7 @@ class OSD(QWidget):
         pct = max(BRI_MIN, min(100, pct))
         sh(["brightnessctl", "set", f"{pct}%"])
         name = "brightness" if pct > 20 else "brightness"
-        self.show_osd(name, "Jas", f"{pct}%")
+        self.show_osd(name, _( "Brightness" ), f"{pct}%")
 
 
 class QProcessShim:

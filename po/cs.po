@@ -23,3 +23,21 @@ msgstr "Osobní"
 
 msgid "Other"
 msgstr "Ostatní"
+
+msgid "Sound"
+msgstr "Zvuk"
+
+msgid "Brightness"
+msgstr "Jas"
+
+msgid "muted"
+msgstr "ztlumeno"
+
+msgid "Removable media"
+msgstr "Vyměnitelná média"
+
+msgid "Eject"
+msgstr "Vysunout"
+
+msgid "Mount"
+msgstr "Připojit"
