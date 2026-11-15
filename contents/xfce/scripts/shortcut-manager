@@ -23,11 +23,11 @@ APPS_DIR = os.path.join(USER_HOME, ".local/share/applications")
 BUSY_SCRIPT = "/usr/local/bin/busy-launch"
 
 XDG_CATEGORIES = [
-    ("Hry", "Game", "applications-games"), 
+    (_("Games"), "Game", "applications-games"), 
     ("Internet", "Network", "applications-internet"), 
-    ("Grafika", "Graphics", "applications-graphics"),
+    (_("Graphics"), "Graphics", "applications-graphics"),
     (_("Office"), "Office", "applications-office"), 
-    ("Zvuk a Video", "AudioVideo", "applications-multimedia"),
+    (_("Sound & Video"), "AudioVideo", "applications-multimedia"),
     (_("System tools"), "System;Utility", "applications-system"), 
     (_("Development"), "Development", "applications-development"),
     (_("Accessories"), "Qt;Utility", "applications-accessories")
@@ -107,7 +107,7 @@ class ShortcutApp(QMainWindow):
             icon = QIcon.fromTheme(icon_name)
             if icon.isNull(): icon = QIcon.fromTheme("applications-other")
             self.category_input.addItem(icon, friendly_name, xdg_name)
-        form_layout.addRow("Kategorie menu:", self.category_input)  
+        form_layout.addRow(_("Menu category:"), self.category_input)  
         
         self.icon_input = QLineEdit()
         self.icon_btn = QPushButton(_("Choose..."))
@@ -118,7 +118,7 @@ class ShortcutApp(QMainWindow):
         
         icon_layout = QHBoxLayout()
         icon_layout.addWidget(self.icon_input); icon_layout.addWidget(self.icon_btn); icon_layout.addWidget(self.extract_btn)
-        form_layout.addRow("Ikona aplikace:", icon_layout)
+        form_layout.addRow(_("Application icon:"), icon_layout)
         
         self.create_btn = QPushButton(_("Create menu shortcut"))
         self.create_btn.setStyleSheet("font-weight: bold; padding: 12px; background-color: #2a7fca; color: white;")
@@ -131,7 +131,7 @@ class ShortcutApp(QMainWindow):
         tab = QWidget()
         layout = QVBoxLayout(tab)
         self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("Hledat v menu...")
+        self.search_bar.setPlaceholderText(_("Search menu..."))
         self.search_bar.textChanged.connect(self.filter_apps)
         layout.addWidget(self.search_bar)
         
@@ -190,7 +190,7 @@ class ShortcutApp(QMainWindow):
                     name, icon, is_custom = parse_desktop_file(path)
                     if not name: continue
                     rel_path = os.path.relpath(path, APPS_DIR)
-                    typ = _("Custom") if is_custom else ("Wine Aplikace" if rel_path.startswith(f"wine{os.sep}") else _("System"))
+                    typ = _("Custom") if is_custom else (_("Wine application") if rel_path.startswith(f"wine{os.sep}") else _("System"))
                     apps_dict[f] = {"name": name, "icon": icon, "path": path, "typ": typ}
 
         sorted_keys = sorted(apps_dict.keys(), key=lambda x: apps_dict[x]["name"].lower())
@@ -208,7 +208,7 @@ class ShortcutApp(QMainWindow):
             item.setFlags(item.flags() & ~Qt.ItemIsEditable); self.table.setItem(row, 1, item)
             typ_item = QTableWidgetItem(data["typ"]); typ_item.setFlags(typ_item.flags() & ~Qt.ItemIsEditable)
             if data["typ"] == _("Custom"): typ_item.setForeground(Qt.blue)
-            elif data["typ"] == "Wine Aplikace": typ_item.setForeground(Qt.darkMagenta)
+            elif data["typ"] == _("Wine application"): typ_item.setForeground(Qt.darkMagenta)
             self.table.setItem(row, 2, typ_item); self.table.setItem(row, 3, QTableWidgetItem(data["path"]))
 
     def check_row_selection(self):
@@ -216,7 +216,7 @@ class ShortcutApp(QMainWindow):
         if row < 0:
             self.delete_btn.setEnabled(False); self.edit_btn.setEnabled(False); return
         typ = self.table.item(row, 2).text()
-        self.delete_btn.setEnabled(typ in [_("Custom"), "Wine Aplikace"])
+        self.delete_btn.setEnabled(typ in [_("Custom"), _("Wine application")])
         self.edit_btn.setEnabled(typ == _("Custom"))
 
     def edit_shortcut(self):
@@ -328,7 +328,7 @@ class ShortcutApp(QMainWindow):
         subprocess.run(["sh", "-c", "pkill -x xfce4-panel; sleep 0.5; setsid xfce4-panel >/dev/null 2>&1 &"], capture_output=True)
 
     def pick_exec_file(self):
-        fname, _ = QFileDialog.getOpenFileName(self, "Vyber soubor", USER_HOME)
+        fname, _ = QFileDialog.getOpenFileName(self, _("Select file"), USER_HOME)
         if fname: self.exec_input.setText(fname)
 
     def validate_exec_intelligence(self, text):
@@ -358,7 +358,7 @@ class ShortcutApp(QMainWindow):
         except: pass
 
     def pick_icon_file(self):
-        fname, _ = QFileDialog.getOpenFileName(self, "Vyber ikonu", "/usr/share/icons")
+        fname, _ = QFileDialog.getOpenFileName(self, _("Select icon"), "/usr/share/icons")
         if fname: self.icon_input.setText(fname)
 
 if __name__ == "__main__":

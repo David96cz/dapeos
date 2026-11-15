@@ -856,10 +856,10 @@ class QuickSettings(QWidget):
                 self.bri_lbl.setText(_("unavailable"))
 
         st_map = {"Charging": _("charging"), "Discharging": _("discharging"),
-                  "Full": "nabito", "Not charging": "nezapojeno"}
+                  "Full": _("full"), "Not charging": _("not charging")}
         st = st_map.get(s["status"], s["status"])
         self.batt.setText(_("No battery") if s["cap"] is None
-                          else f"Baterie {s['cap']}% ({st})")
+                          else f"{_('Battery')} {s['cap']}% ({st})")
 
         if self.qstack.currentWidget() is self.wifi:
             self.update_wifi_page(False)

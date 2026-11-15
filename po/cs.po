@@ -458,3 +458,33 @@ msgstr "Typ"
 
 msgid "Path"
 msgstr "Cesta"
+
+msgid "Battery"
+msgstr "Baterie"
+
+msgid "Games"
+msgstr "Hry"
+
+msgid "Graphics"
+msgstr "Grafika"
+
+msgid "Sound & Video"
+msgstr "Zvuk a Video"
+
+msgid "Menu category:"
+msgstr "Kategorie menu:"
+
+msgid "Application icon:"
+msgstr "Ikona aplikace:"
+
+msgid "Search menu..."
+msgstr "Hledat v menu..."
+
+msgid "Wine application"
+msgstr "Wine aplikace"
+
+msgid "Select file"
+msgstr "Vyber soubor"
+
+msgid "Select icon"
+msgstr "Vyber ikonu"
