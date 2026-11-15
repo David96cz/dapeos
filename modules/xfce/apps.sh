@@ -246,3 +246,18 @@ xfce_actions_config() {
     fi
 }
 
+
+
+whiskermenu_no_run_setup() {
+    local arch deb
+    arch="$(dpkg --print-architecture)"
+    deb="$(find "$BASE_DIR/packages/whiskermenu-no-run" -maxdepth 1 \
+        -name "xfce4-whiskermenu-plugin_*_${arch}.deb" 2>/dev/null | head -n1)"
+    if [ -z "$deb" ]; then
+        log "Patchnutý WhiskerMenu pro $arch není k dispozici, ponechávám stock."
+        return 0
+    fi
+    log "Instaluji WhiskerMenu bez Run akce: $(basename "$deb")"
+    apt-get install -y "$deb" || return 0
+    apt-mark hold xfce4-whiskermenu-plugin >/dev/null 2>&1 || true
+}

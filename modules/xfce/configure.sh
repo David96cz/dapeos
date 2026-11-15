@@ -13,6 +13,7 @@ configure_xfce() {
     xfce_default_apps
     flameshot_setup
     xfce_browser_launcher
+    whiskermenu_no_run_setup
     whisker_rename
     xfce_app_names
     xfce_actions_config

@@ -1,0 +1,19 @@
+--- a/panel-plugin/search-page.cpp
++++ b/panel-plugin/search-page.cpp
+@@ -105,16 +105,11 @@
+ 	{
+ 		update_search_order();
+ 		m_matches.clear();
+-		m_matches.push_back(&m_run_action);
+ 		for (auto launcher : m_launchers)
+ 		{
+ 			m_matches.push_back(launcher);
+ 		}
+ 	}
+-	else if (std::find(m_matches.cbegin(), m_matches.cend(), &m_run_action) == m_matches.cend())
+-	{
+-		m_matches.insert(m_matches.begin(), &m_run_action);
+-	}
+ 	m_query.set(query);
+ 
+ 	// Create search results
