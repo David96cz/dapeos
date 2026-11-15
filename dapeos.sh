@@ -86,6 +86,7 @@ main() {
     clear_screen
 
     init_setup
+    clear_screen
 
     local LOG="/var/log/dapeos-install.log"
     mkdir -p /var/log
