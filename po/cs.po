@@ -488,3 +488,45 @@ msgstr "Vyber soubor"
 
 msgid "Select icon"
 msgstr "Vyber ikonu"
+
+msgid "No printer is installed on this system!"
+msgstr "V systému není žádná nainstalovaná tiskárna!"
+
+msgid "Open print settings"
+msgstr "Otevřít nastavení tisku"
+
+msgid "Print file"
+msgstr "Tisk souboru"
+
+msgid "Printer:"
+msgstr "Tiskárna:"
+
+msgid "Copies:"
+msgstr "Počet kopií:"
+
+msgid "Print quality:"
+msgstr "Kvalita tisku:"
+
+msgid "Normal"
+msgstr "Normální"
+
+msgid "Fast (Draft)"
+msgstr "Rychlá (Koncept)"
+
+msgid "High (Photo)"
+msgstr "Vysoká (Foto)"
+
+msgid "Print"
+msgstr "Tisk"
+
+msgid "Printing document"
+msgstr "Tisk dokumentu"
+
+msgid "File:"
+msgstr "Soubor:"
+
+msgid "Print job sent"
+msgstr "Tisk odeslán"
+
+msgid "Failed to send the print job."
+msgstr "Chyba při odesílání na tiskárnu."
