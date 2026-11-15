@@ -1,12 +1,12 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
 
 try:
     from dapeos_i18n import _
 except Exception:  # noqa: BLE001
     _ = lambda s: s
-#!/usr/bin/env python3
-import os
-import subprocess
-import sys
 
 W, H = 22, 22
 GAP = 4

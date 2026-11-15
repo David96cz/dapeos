@@ -1,8 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Nastavení
+Name=DapeOS Settings
 Name[cs]=Nastavení
-Comment=Centrum nastavení DapeOS
+Comment=DapeOS settings hub
+Comment[cs]=Centrum nastavení DapeOS
 Exec=dapeos-settings
 Icon=preferences-system
 Terminal=false

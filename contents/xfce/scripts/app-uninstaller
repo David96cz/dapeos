@@ -231,7 +231,8 @@ class AppUninstaller(QWidget):
                         elif line.startswith("Icon="): icon_name = line.split("=", 1)[1].strip()
                         elif line.startswith("Categories="): categories = line.split("=", 1)[1].strip()
 
-                    name = temp_name_cs if temp_name_cs else (temp_name if temp_name else filename)
+                    use_cs = os.environ.get("LANG", "").startswith("cs")
+                    name = (temp_name_cs if use_cs else temp_name) or temp_name or temp_name_cs or filename
                     cat_lower = categories.lower()
                     if "settings" in cat_lower or "system" in cat_lower or "desktopsettings" in cat_lower: continue
                     
@@ -258,7 +259,8 @@ class AppUninstaller(QWidget):
                         elif line.startswith("Icon="): icon_name = line.split("=", 1)[1].strip()
                         elif line.startswith("Categories="): categories = line.split("=", 1)[1].strip()
 
-                    name = temp_name_cs if temp_name_cs else (temp_name if temp_name else filename)
+                    use_cs = os.environ.get("LANG", "").startswith("cs")
+                    name = (temp_name_cs if use_cs else temp_name) or temp_name or temp_name_cs or filename
                     cat_lower = categories.lower()
                     if "settings" in cat_lower or "system" in cat_lower or "desktopsettings" in cat_lower: continue
                     

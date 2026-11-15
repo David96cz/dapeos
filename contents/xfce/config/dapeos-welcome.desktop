@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Welcome to DapeOS
+Name[cs]=Vítejte v DapeOS
+Comment=First steps and help
+Comment[cs]=První kroky a nápověda
+Exec=dapeos-welcome
+Icon=dapeos-logo
+Terminal=false
+Categories=System;
+StartupNotify=true
