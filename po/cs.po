@@ -1,0 +1,25 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: cs\n"
+
+msgid "Settings"
+msgstr "Nastavení"
+
+msgid "Search settings…"
+msgstr "Hledat nastavení…"
+
+msgid "Appearance"
+msgstr "Vzhled"
+
+msgid "Hardware"
+msgstr "Hardware"
+
+msgid "System"
+msgstr "Systém"
+
+msgid "Personal"
+msgstr "Osobní"
+
+msgid "Other"
+msgstr "Ostatní"

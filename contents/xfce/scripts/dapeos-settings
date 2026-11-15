@@ -11,6 +11,11 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QLabel, QLineEdit,
                              QPushButton, QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
 
+try:
+    from dapeos_i18n import _
+except Exception:  # noqa: BLE001
+    _ = lambda s: s
+
 DIRS = [os.path.expanduser("~/.local/share/applications"), "/usr/share/applications"]
 HIDE_CONF = "/usr/share/dapeos/settings-hide.conf"
 
@@ -27,7 +32,7 @@ HIDDEN = {
     "xfce-settings-manager.desktop",
 }
 
-GROUPS = ["Vzhled", "Hardware", "Systém", "Osobní", "Ostatní"]
+GROUPS = ["Appearance", "Hardware", "System", "Personal", "Other"]
 
 
 def parse(path):
@@ -61,15 +66,15 @@ def parse(path):
     if "HardwareSettings" in cat:
         group = "Hardware"
     elif "PersonalSettings" in cat:
-        group = "Osobní"
+        group = "Personal"
     elif "SystemSettings" in cat:
-        group = "Systém"
+        group = "System"
     elif "DesktopSettings" in cat:
-        group = "Vzhled"
+        group = "Appearance"
     elif "Settings" in cat:
-        group = "Systém"
+        group = "System"
     else:
-        group = "Ostatní"
+        group = "Other"
     return {"name": name_cs or name or os.path.basename(path),
             "icon": icon or "preferences-system",
             "exec": exec_line, "group": group, "file": os.path.basename(path)}
@@ -100,7 +105,7 @@ def collect():
 class SettingsHub(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Nastavení")
+        self.setWindowTitle(_("Settings"))
         self.setWindowIcon(QIcon.fromTheme("preferences-system"))
         self.setFixedSize(860, 620)
         self.items = collect()
@@ -111,12 +116,12 @@ class SettingsHub(QWidget):
         root.setContentsMargins(18, 18, 18, 18)
         root.setSpacing(12)
 
-        title = QLabel("Nastavení")
+        title = QLabel(_("Settings"))
         title.setStyleSheet("font-size: 18pt; font-weight: bold;")
         root.addWidget(title)
 
         self.search = QLineEdit()
-        self.search.setPlaceholderText("Hledat nastavení…")
+        self.search.setPlaceholderText(_("Search settings…"))
         self.search.setStyleSheet("padding: 8px; border: 1px solid #bbb; border-radius: 6px;")
         self.search.textChanged.connect(self.filter)
         root.addWidget(self.search)
@@ -133,7 +138,7 @@ class SettingsHub(QWidget):
 
         self.header_labels = {}
         for group in GROUPS:
-            lbl = QLabel(group)
+            lbl = QLabel(_(group))
             lbl.setStyleSheet("font-size: 11pt; font-weight: bold; color: #444; padding-top: 8px;")
             lbl.hide()
             self.header_labels[group] = lbl

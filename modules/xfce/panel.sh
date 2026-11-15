@@ -13,8 +13,12 @@ whisker_rename() {
 
     local desc="/usr/share/xfce4/panel/plugins/whiskermenu.desktop"
     if [ -f "$desc" ]; then
-        sed -i 's/^Name=.*/Name=Nabídka Start/' "$desc"
-        sed -i 's/^Name\[cs\]=.*/Name[cs]=Nabídka Start/' "$desc"
+        sed -i 's/^Name=.*/Name=Start Menu/' "$desc"
+        if grep -q '^Name\[cs\]=' "$desc"; then
+            sed -i 's/^Name\[cs\]=.*/Name[cs]=Nabídka Start/' "$desc"
+        else
+            sed -i '/^Name=/a Name[cs]=Nabídka Start' "$desc"
+        fi
     fi
 }
 
