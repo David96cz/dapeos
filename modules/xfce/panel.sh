@@ -3,14 +3,6 @@
 # Panel: ikony, téma, wrappery.
 
 whisker_rename() {
-    local mo="/usr/share/locale/cs/LC_MESSAGES/xfce4-whiskermenu-plugin.mo"
-    [ -f "$mo" ] || return 0
-    command -v msgunfmt >/dev/null 2>&1 || return 0
-    msgunfmt "$mo" -o /tmp/wm.po 2>/dev/null || return 0
-    sed -i 's/msgstr "Nabídka Whisker"/msgstr "Nabídka Start"/' /tmp/wm.po
-    msgfmt /tmp/wm.po -o "$mo" 2>/dev/null || true
-    rm -f /tmp/wm.po
-
     local desc="/usr/share/xfce4/panel/plugins/whiskermenu.desktop"
     if [ -f "$desc" ]; then
         sed -i 's/^Name=.*/Name=Start Menu/' "$desc"
@@ -20,6 +12,14 @@ whisker_rename() {
             sed -i '/^Name=/a Name[cs]=Nabídka Start' "$desc"
         fi
     fi
+
+    local mo="/usr/share/locale/cs/LC_MESSAGES/xfce4-whiskermenu-plugin.mo"
+    [ -f "$mo" ] || return 0
+    command -v msgunfmt >/dev/null 2>&1 || return 0
+    msgunfmt "$mo" -o /tmp/wm.po 2>/dev/null || return 0
+    sed -i 's/msgstr "Nabídka Whisker"/msgstr "Nabídka Start"/' /tmp/wm.po
+    msgfmt /tmp/wm.po -o "$mo" 2>/dev/null || true
+    rm -f /tmp/wm.po
 }
 
 xfce_browser_launcher() {
