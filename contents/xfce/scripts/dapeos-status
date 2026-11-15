@@ -119,9 +119,9 @@ def svg(color, net_type, vol, mute, cap):
 def main():
     if "--svg" in sys.argv:
         color = sys.argv[sys.argv.index("--svg") + 1]
-        net_type, _ = net_state()
+        net_type, _unused = net_state()
         vol, mute = volume_state()
-        cap, _ = battery_state()
+        cap, _unused = battery_state()
         sys.stdout.write(svg(color, net_type, vol, mute, cap))
         return
 

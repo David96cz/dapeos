@@ -75,7 +75,9 @@ def parse(path):
         group = "System"
     else:
         group = "Other"
-    return {"name": name_cs or name or os.path.basename(path),
+    use_cs = os.environ.get("LANG", "").startswith("cs")
+    display = (name_cs if use_cs else name) or name or name_cs or os.path.basename(path)
+    return {"name": display,
             "icon": icon or "preferences-system",
             "exec": exec_line, "group": group, "file": os.path.basename(path)}
 

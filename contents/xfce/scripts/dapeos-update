@@ -166,7 +166,7 @@ class Updater(QWidget):
         row = QHBoxLayout()
         row.addWidget(QLabel("Zobrazit:"))
         self.filter = QComboBox()
-        for label, _ in FILTERS:
+        for label, _pred in FILTERS:
             self.filter.addItem(label)
         self.filter.currentIndexChanged.connect(self.populate)
         row.addWidget(self.filter)

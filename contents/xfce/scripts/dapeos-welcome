@@ -210,7 +210,7 @@ class Welcome(QWidget):
             logo.setPixmap(QIcon(LOGO).pixmap(QSize(64, 64)))
         header.addWidget(logo)
         titles = QVBoxLayout()
-        title = QLabel(f_("Welcome to DapeOS"))
+        title = QLabel(_("Welcome to DapeOS"))
         title.setObjectName("title")
         sub = QLabel(_("A system that behaves like Windows – no surprises."))
         sub.setObjectName("sub")
