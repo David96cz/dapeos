@@ -6,6 +6,11 @@ import subprocess
 import glob
 import math
 import shutil
+try:
+    from dapeos_i18n import _
+except Exception:  # noqa: BLE001
+    _ = lambda s: s
+
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QLineEdit, QPushButton, QMessageBox, QListWidget,
                              QListWidgetItem, QLabel)
@@ -180,7 +185,7 @@ class AppUninstaller(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
         
-        lbl_info = QLabel("<b>Správce aplikací</b><br>Vyberte aplikaci pro trvalé odstranění.")
+        lbl_info = QLabel(_("<b>Application Manager</b><br>Select an application to remove permanently."))
         lbl_info.setStyleSheet("font-size: 12pt;")
         layout.addWidget(lbl_info)
 
@@ -371,7 +376,7 @@ class AppUninstaller(QWidget):
     def handle_uninstall(self):
         current_item = self.app_list.currentItem()
         if not current_item:
-            QMessageBox.warning(self, "Chyba", "Musíte nejprve vybrat aplikaci ze seznamu.")
+            QMessageBox.warning(self, "Chyba", _("Select an application first."))
             return
             
         self.app_name = current_item.text()
@@ -386,7 +391,7 @@ class AppUninstaller(QWidget):
         if reply != QMessageBox.Yes: return
 
         self.btn_uninstall.setEnabled(False)
-        self.btn_uninstall.setText("Probíhá odinstalace..." if not is_wine else "Spouštím odinstalátor...")
+        self.btn_uninstall.setText(_("Uninstalling...") if not is_wine else _("Starting uninstaller..."))
         self.app_list.setEnabled(False)
         self._start_row_spin(current_item, self.app_name)
 
@@ -411,7 +416,7 @@ class AppUninstaller(QWidget):
             self.search_bar.clear()
         elif returncode == 1 and not is_wine:
             # Tvrdá chyba u Linux balíčku (např. chybějící práva)
-            QMessageBox.warning(self, "Chyba", "Při odinstalaci došlo k chybě.")
+            QMessageBox.warning(self, "Chyba", _("An error occurred during uninstallation."))
             
         # POKUD JE RETURNCODE 2 (Zrušeno u Wine), NESTANE SE VŮBEC NIC. Žádné okno.
 

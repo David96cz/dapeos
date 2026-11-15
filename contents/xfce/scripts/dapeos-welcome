@@ -15,6 +15,11 @@ import sys
 
 from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QIcon, QPixmap
+try:
+    from dapeos_i18n import _
+except Exception:  # noqa: BLE001
+    _ = lambda s: s
+
 from PyQt5.QtWidgets import (
     QApplication, QCheckBox, QDialog, QFrame, QGridLayout,
     QHBoxLayout, QLabel, QPushButton, QTextBrowser, QVBoxLayout,
@@ -81,7 +86,7 @@ class InfoDialog(QDialog):
         browser.setHtml(html)
         layout.addWidget(browser)
 
-        close = QPushButton("Zavřít")
+        close = QPushButton(_("Close"))
         close.clicked.connect(self.accept)
         layout.addWidget(close, 0, Qt.AlignRight)
 
@@ -116,16 +121,16 @@ def system_info_html():
     hours, minutes = int(uptime // 3600), int((uptime % 3600) // 60)
 
     rows = [
-        ("Systém", pretty),
-        ("Jádro", platform.release()),
-        ("Prostředí", os.environ.get("XDG_CURRENT_DESKTOP", "XFCE")),
+        (_("System"), pretty),
+        (_("Kernel"), platform.release()),
+        (_("Desktop"), os.environ.get("XDG_CURRENT_DESKTOP", "XFCE")),
         ("Procesor", cpu or "—"),
-        ("Paměť", f"{mem_kb / 1024 / 1024:.1f} GB"),
+        (_("Memory"), f"{mem_kb / 1024 / 1024:.1f} GB"),
         ("Disk /", f"{used / 1024**3:.1f} z {total / 1024**3:.1f} GB"),
         ("Uptime", f"{hours} h {minutes} min"),
     ]
 
-    html = "<h2>O systému</h2><table cellspacing='6'>"
+    html = _("<h2>About</h2><table cellspacing='6'>")
     for key, value in rows:
         html += f"<tr><td><b>{key}</b></td><td>{value}</td></tr>"
     html += "</table>"
@@ -205,9 +210,9 @@ class Welcome(QWidget):
             logo.setPixmap(QIcon(LOGO).pixmap(QSize(64, 64)))
         header.addWidget(logo)
         titles = QVBoxLayout()
-        title = QLabel(f"Vítejte v DapeOS")
+        title = QLabel(f_("Welcome to DapeOS"))
         title.setObjectName("title")
-        sub = QLabel("Systém, který se chová jako Windows – bez překvapení.")
+        sub = QLabel(_("A system that behaves like Windows – no surprises."))
         sub.setObjectName("sub")
         titles.addWidget(title)
         titles.addWidget(sub)
@@ -218,23 +223,23 @@ class Welcome(QWidget):
         grid.setSpacing(12)
 
         cards = [
-            ("folder-download", "Přesunout data z Windows",
-             "Dokumenty, obrázky a hudbu z vašeho starého počítače.",
+            ("folder-download", _("Move data from Windows"),
+             _("Documents, pictures and music from your old computer."),
              self.migrate),
             ("system-software-update", "Aktualizace",
-             "Nainstalujte dostupné aktualizace systému a aplikací.",
+             _("Install available system and application updates."),
              self.open_updates),
-            ("help-browser", "Nápověda",
-             "Krátké odpovědi na první otázky.",
+            ("help-browser", _("Help"),
+             _("Short answers to your first questions."),
              self.open_help),
-            ("preferences-desktop-theme", "Nastavení vzhledu",
-             "Barevné téma, ikony a tapeta.",
+            ("preferences-desktop-theme", _("Appearance settings"),
+             _("Color theme, icons and wallpaper."),
              self.open_appearance),
-            ("preferences-desktop-keyboard", "Klávesové zkratky",
-             "Co dělá Win, Ctrl+Alt+Del a další.",
+            ("preferences-desktop-keyboard", _("Keyboard shortcuts"),
+             _("What Win, Ctrl+Alt+Del and others do."),
              self.open_shortcuts),
-            ("dialog-information", "O systému",
-             "Co je uvnitř počítače.",
+            ("dialog-information", _("About"),
+             _("What is inside the computer."),
              self.open_about),
         ]
 
@@ -246,14 +251,14 @@ class Welcome(QWidget):
         layout.addLayout(grid, 1)
 
         footer = QHBoxLayout()
-        self.dont_show = QCheckBox("Příště už nezobrazovat")
+        self.dont_show = QCheckBox(_("Do not show again"))
         self.dont_show.setChecked(True)
         footer.addWidget(self.dont_show)
         footer.addStretch(1)
 
-        close = QPushButton("Zavřít")
+        close = QPushButton(_("Close"))
         close.clicked.connect(self.close)
-        start = QPushButton("Začít")
+        start = QPushButton(_("Get started"))
         start.setObjectName("primary")
         start.clicked.connect(self.close)
         footer.addWidget(close)
@@ -263,7 +268,7 @@ class Welcome(QWidget):
     # ----------------------------------------------------------------- akce
     def migrate(self):
         InfoDialog(
-            self, "Přesunout data z Windows",
+            self, _("Move data from Windows"),
             "<h2>Přesun dat z Windows</h2>"
             "<p>Průvodce připojí váš disk s Windows (jen pro čtení) a nabídne "
             "zkopírování složek <b>Dokumenty, Obrázky, Hudba, Videa a Stažené soubory</b> "
@@ -279,13 +284,13 @@ class Welcome(QWidget):
         subprocess.Popen(["xfce4-appearance-settings"])
 
     def open_help(self):
-        InfoDialog(self, "Nápověda", HELP_HTML).exec_()
+        InfoDialog(self, _("Help"), HELP_HTML).exec_()
 
     def open_shortcuts(self):
-        InfoDialog(self, "Klávesové zkratky", SHORTCUTS_HTML).exec_()
+        InfoDialog(self, _("Keyboard shortcuts"), SHORTCUTS_HTML).exec_()
 
     def open_about(self):
-        InfoDialog(self, "O systému", system_info_html()).exec_()
+        InfoDialog(self, _("About"), system_info_html()).exec_()
 
     def closeEvent(self, event):
         if self.dont_show.isChecked():

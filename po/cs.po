@@ -41,3 +41,270 @@ msgstr "Vysunout"
 
 msgid "Mount"
 msgstr "Připojit"
+
+msgid "Back"
+msgstr "Zpět"
+
+msgid "Network"
+msgstr "Síť"
+
+msgid "Bluetooth"
+msgstr "Bluetooth"
+
+msgid "Night light"
+msgstr "Noční světlo"
+
+msgid "On"
+msgstr "Zapnuto"
+
+msgid "Off"
+msgstr "Vypnuto"
+
+msgid "Connected"
+msgstr "Připojeno"
+
+msgid "Not connected"
+msgstr "Nepřipojeno"
+
+msgid "Disconnect"
+msgstr "Odpojit"
+
+msgid "Forget"
+msgstr "Zapomenout"
+
+msgid "Refresh"
+msgstr "Obnovit"
+
+msgid "Connect"
+msgstr "Připojit"
+
+msgid "Cancel"
+msgstr "Zrušit"
+
+msgid "Password for"
+msgstr "Heslo pro"
+
+msgid "Enter password"
+msgstr "Zadej heslo"
+
+msgid "Show password"
+msgstr "Zobrazit heslo"
+
+msgid "No networks"
+msgstr "Žádné sítě"
+
+msgid "No devices"
+msgstr "Žádná zařízení"
+
+msgid "Bluetooth is off"
+msgstr "Bluetooth je vypnutý"
+
+msgid "Connecting…"
+msgstr "Připojuji…"
+
+msgid "Looking for network…"
+msgstr "Vyhledávám síť…"
+
+msgid "charging"
+msgstr "nabíjí se"
+
+msgid "discharging"
+msgstr "vybíjí se"
+
+msgid "unavailable"
+msgstr "nedostupné"
+
+msgid "No battery"
+msgstr "Bez baterie"
+
+msgid "Old profile deleted. Enter the password again."
+msgstr "Starý profil byl smazán. Zadej prosím heslo znovu."
+
+msgid "Turn on Wi-Fi to see known and new networks."
+msgstr "Pro zobrazení známých a nových sítí zapněte Wi-Fi."
+
+msgid "Mute / unmute"
+msgstr "Ztlumit / odtlumit"
+
+msgid "Connected: "
+msgstr "Připojeno: "
+
+msgid "System Updates"
+msgstr "Aktualizace systému"
+
+msgid "Updates: system is up to date"
+msgstr "Aktualizace: systém je aktuální"
+
+msgid "System is up to date."
+msgstr "Systém je aktuální."
+
+msgid "Checking for updates…"
+msgstr "Zjišťuji dostupné aktualizace…"
+
+msgid "Refreshing package list…"
+msgstr "Obnovuji seznam balíčků…"
+
+msgid "Failed to load the list."
+msgstr "Seznam se nepodařilo načíst."
+
+msgid "Update failed."
+msgstr "Aktualizace selhala."
+
+msgid "Update all"
+msgstr "Aktualizovat vše"
+
+msgid "Update selected"
+msgstr "Aktualizovat vybrané"
+
+msgid "Refresh list"
+msgstr "Obnovit seznam"
+
+msgid "Remind me tomorrow"
+msgstr "Připomenout zítra"
+
+msgid "I will remind you tomorrow."
+msgstr "Připomenu zítra."
+
+msgid "Update automatically in the background"
+msgstr "Aktualizovat automaticky na pozadí"
+
+msgid "Starting update…"
+msgstr "Spouštím aktualizaci…"
+
+msgid "Done."
+msgstr "Hotovo."
+
+msgid "Done – a restart is required."
+msgstr "Hotovo – je potřeba restartovat počítač."
+
+msgid "Updates were installed successfully."
+msgstr "Aktualizace byly úspěšně nainstalovány."
+
+msgid "Updates completed. A restart is required to finish."
+msgstr "Aktualizace proběhla. Pro dokončení je potřeba restartovat počítač."
+
+msgid "Update could not finish. Check your connection and try again."
+msgstr "Aktualizace se nepodařila dokončit. Zkontroluj připojení a zkus to znovu."
+
+msgid "Select the packages you want to update."
+msgstr "Vyber zaškrtnutím balíčky, které chceš aktualizovat."
+
+msgid "Could not start the update (pkexec?)."
+msgstr "Aktualizaci se nepodařilo spustit (pkexec?)."
+
+msgid "All"
+msgstr "Vše"
+
+msgid "Security"
+msgstr "Zabezpečení"
+
+msgid "System package"
+msgstr "Systémový balíček"
+
+msgid "Security update"
+msgstr "Zabezpečovací aktualizace"
+
+msgid "Available updates: "
+msgstr "Dostupné aktualizace: "
+
+msgid "Open"
+msgstr "Otevřít"
+
+msgid "Check for updates"
+msgstr "Zkontrolovat aktualizace"
+
+msgid "Quit"
+msgstr "Ukončit"
+
+msgid "Uninstall Programs"
+msgstr "Odinstalovat programy"
+
+msgid "<b>Application Manager</b><br>Select an application to remove permanently."
+msgstr "<b>Správce aplikací</b><br>Vyberte aplikaci pro trvalé odstranění."
+
+msgid "Select an application first."
+msgstr "Musíte nejprve vybrat aplikaci ze seznamu."
+
+msgid "Uninstall selected program"
+msgstr "Odinstalovat vybraný program"
+
+msgid "Confirm uninstallation"
+msgstr "Potvrzení odinstalace"
+
+msgid "Uninstalling..."
+msgstr "Probíhá odinstalace..."
+
+msgid "Starting uninstaller..."
+msgstr "Spouštím odinstalátor..."
+
+msgid "An error occurred during uninstallation."
+msgstr "Při odinstalaci došlo k chybě."
+
+msgid " was successfully removed."
+msgstr " byl úspěšně odstraněn."
+
+msgid "Do you really want to permanently remove <b>"
+msgstr "Opravdu chcete trvale odstranit program <b>"
+
+msgid "Welcome to DapeOS"
+msgstr "Vítejte v DapeOS"
+
+msgid "Welcome to "
+msgstr "Vítejte v "
+
+msgid "Get started"
+msgstr "Začít"
+
+msgid "Close"
+msgstr "Zavřít"
+
+msgid "Do not show again"
+msgstr "Příště už nezobrazovat"
+
+msgid "Help"
+msgstr "Nápověda"
+
+msgid "About"
+msgstr "O systému"
+
+msgid "Kernel"
+msgstr "Jádro"
+
+msgid "Memory"
+msgstr "Paměť"
+
+msgid "Desktop"
+msgstr "Prostředí"
+
+msgid "A system that behaves like Windows – no surprises."
+msgstr "Systém, který se chová jako Windows – bez překvapení."
+
+msgid "Color theme, icons and wallpaper."
+msgstr "Barevné téma, ikony a tapeta."
+
+msgid "Appearance settings"
+msgstr "Nastavení vzhledu"
+
+msgid "Keyboard shortcuts"
+msgstr "Klávesové zkratky"
+
+msgid "What Win, Ctrl+Alt+Del and others do."
+msgstr "Co dělá Win, Ctrl+Alt+Del a další."
+
+msgid "Move data from Windows"
+msgstr "Přesunout data z Windows"
+
+msgid "Documents, pictures and music from your old computer."
+msgstr "Dokumenty, obrázky a hudbu z vašeho starého počítače."
+
+msgid "Install available system and application updates."
+msgstr "Nainstalujte dostupné aktualizace systému a aplikací."
+
+msgid "What is inside the computer."
+msgstr "Co je uvnitř počítače."
+
+msgid "Short answers to your first questions."
+msgstr "Krátké odpovědi na první otázky."
+
+msgid "<h2>About</h2><table cellspacing='6'>"
+msgstr "<h2>O systému</h2><table cellspacing='6'>"

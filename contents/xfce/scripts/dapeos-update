@@ -17,6 +17,11 @@ import time
 
 from PyQt5.QtCore import QProcess, QSize, Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon
+try:
+    from dapeos_i18n import _
+except Exception:  # noqa: BLE001
+    _ = lambda s: s
+
 from PyQt5.QtWidgets import (
     QAction, QApplication, QCheckBox, QComboBox, QHBoxLayout, QLabel, QListWidget,
     QListWidgetItem, QMenu, QMessageBox, QProgressBar, QPushButton,
@@ -32,10 +37,10 @@ CONF_FILE = os.path.join(CONF_DIR, "update.json")
 AUTOSTART = os.path.expanduser("~/.config/autostart/dapeos-update.desktop")
 
 FILTERS = [
-    ("Vše", lambda p: True),
-    ("Zabezpečení", lambda p: p["security"]),
+    (_("All"), lambda p: True),
+    (_("Security"), lambda p: p["security"]),
     ("Aplikace", lambda p: p["app"]),
-    ("Systém", lambda p: not p["app"]),
+    (_("System"), lambda p: not p["app"]),
 ]
 
 
@@ -150,11 +155,11 @@ class Updater(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(10)
 
-        title = QLabel("Aktualizace systému")
+        title = QLabel(_("System Updates"))
         title.setObjectName("title")
         layout.addWidget(title)
 
-        self.sub = QLabel("Zjišťuji dostupné aktualizace…")
+        self.sub = QLabel(_("Checking for updates…"))
         self.sub.setObjectName("sub")
         layout.addWidget(self.sub)
 
@@ -180,20 +185,20 @@ class Updater(QWidget):
         self.bar.setVisible(False)
         layout.addWidget(self.bar)
 
-        self.auto = QCheckBox("Aktualizovat automaticky na pozadí")
+        self.auto = QCheckBox(_("Update automatically in the background"))
         self.auto.setChecked(bool(self.conf.get("auto_update", False)))
         self.auto.toggled.connect(self.on_auto_toggled)
         layout.addWidget(self.auto)
 
         buttons = QHBoxLayout()
-        self.btn_all = QPushButton("Aktualizovat vše")
+        self.btn_all = QPushButton(_("Update all"))
         self.btn_all.setObjectName("primary")
         self.btn_all.clicked.connect(self.install_all)
-        self.btn_sel = QPushButton("Aktualizovat vybrané")
+        self.btn_sel = QPushButton(_("Update selected"))
         self.btn_sel.clicked.connect(self.install_selected)
-        self.btn_reload = QPushButton("Obnovit seznam")
+        self.btn_reload = QPushButton(_("Refresh list"))
         self.btn_reload.clicked.connect(lambda: self.reload(force=True))
-        self.btn_later = QPushButton("Připomenout zítra")
+        self.btn_later = QPushButton(_("Remind me tomorrow"))
         self.btn_later.clicked.connect(self.snooze)
         for b in (self.btn_all, self.btn_sel, self.btn_reload, self.btn_later):
             buttons.addWidget(b)
@@ -203,11 +208,11 @@ class Updater(QWidget):
         self.tray = QSystemTrayIcon(QIcon.fromTheme(PKG_ICON), self)
 
         menu = QMenu()
-        act_open = QAction("Otevřít", self)
+        act_open = QAction(_("Open"), self)
         act_open.triggered.connect(self.show_window)
-        act_check = QAction("Zkontrolovat aktualizace", self)
+        act_check = QAction(_("Check for updates"), self)
         act_check.triggered.connect(self.reload)
-        act_quit = QAction("Ukončit", self)
+        act_quit = QAction(_("Quit"), self)
         act_quit.triggered.connect(QApplication.instance().quit)
         menu.addAction(act_open)
         menu.addAction(act_check)
@@ -267,7 +272,7 @@ class Updater(QWidget):
             self.list_updates()
 
     def run_refresh(self):
-        self.sub.setText("Obnovuji seznam balíčků…")
+        self.sub.setText(_("Refreshing package list…"))
         if not os.path.exists(HELPER):
             self.list_updates()
             return
@@ -284,14 +289,14 @@ class Updater(QWidget):
         self.list_updates()
 
     def list_updates(self):
-        self.sub.setText("Zjišťuji dostupné aktualizace…")
+        self.sub.setText(_("Checking for updates…"))
         self.lister = Lister()
         self.lister.done.connect(self.on_listed)
         self.lister.failed.connect(self.on_list_failed)
         self.lister.start()
 
     def on_list_failed(self, message):
-        self.sub.setText("Seznam se nepodařilo načíst.")
+        self.sub.setText(_("Failed to load the list."))
         self.status.setText(message)
         self.update_tray()
 
@@ -317,19 +322,19 @@ class Updater(QWidget):
             item.setData(Qt.UserRole, pkg["name"])
             if pkg["security"]:
                 item.setIcon(QIcon.fromTheme("security-high"))
-                item.setToolTip("Zabezpečovací aktualizace")
+                item.setToolTip(_("Security update"))
             elif pkg["app"]:
                 item.setIcon(QIcon.fromTheme("applications-other"))
                 item.setToolTip("Aplikace")
             else:
                 item.setIcon(QIcon.fromTheme("applications-system"))
-                item.setToolTip("Systémový balíček")
+                item.setToolTip(_("System package"))
             self.list.addItem(item)
             shown += 1
 
         total = len(self.packages)
         if total == 0:
-            self.sub.setText("Systém je aktuální.")
+            self.sub.setText(_("System is up to date."))
         else:
             sec = sum(1 for p in self.packages if p["security"])
             self.sub.setText(
@@ -346,7 +351,7 @@ class Updater(QWidget):
             self.tray.setToolTip(f"Aktualizace: {count}")
             self.tray.setIcon(QIcon.fromTheme("software-update-available"))
         else:
-            self.tray.setToolTip("Aktualizace: systém je aktuální")
+            self.tray.setToolTip(_("Updates: system is up to date"))
             self.tray.setIcon(QIcon.fromTheme(PKG_ICON))
 
     def notify(self, packages):
@@ -402,7 +407,7 @@ class Updater(QWidget):
     def snooze(self):
         self.conf["snooze_until"] = time.time() + 24 * 3600
         save_conf(self.conf)
-        self.status.setText("Připomenu zítra.")
+        self.status.setText(_("I will remind you tomorrow."))
         if self.tray_mode:
             self.hide()
 
@@ -416,7 +421,7 @@ class Updater(QWidget):
             if item.checkState() == Qt.Checked:
                 names.append(item.data(Qt.UserRole))
         if not names:
-            QMessageBox.information(self, "Aktualizace", "Vyber zaškrtnutím balíčky, které chceš aktualizovat.")
+            QMessageBox.information(self, "Aktualizace", _("Select the packages you want to update."))
             return
         self.start_install(names)
 
@@ -434,7 +439,7 @@ class Updater(QWidget):
         self.btn_reload.setEnabled(False)
         self.bar.setVisible(True)
         self.bar.setRange(0, 0)
-        self.status.setText("Spouštím aktualizaci…")
+        self.status.setText(_("Starting update…"))
 
         self.proc = QProcess(self)
         self.proc.setProcessChannelMode(QProcess.MergedChannels)
@@ -465,7 +470,7 @@ class Updater(QWidget):
                 self.status.setText(f"Instaluji: {pkg}")
 
     def install_error(self, _error):
-        self.finish_common(1, "Aktualizaci se nepodařilo spustit (pkexec?).")
+        self.finish_common(1, _("Could not start the update (pkexec?)."))
 
     def install_finished(self, code, _status):
         self.finish_common(code, None)
@@ -482,22 +487,22 @@ class Updater(QWidget):
 
         if code == 0:
             subprocess.run(["dapeos-app-names"], capture_output=True)
-            self.status.setText("Hotovo.")
+            self.status.setText(_("Done."))
             reboot = os.path.exists("/var/run/reboot-required") or os.path.exists("/run/reboot-required")
             if reboot:
-                self.status.setText("Hotovo – je potřeba restartovat počítač.")
+                self.status.setText(_("Done – a restart is required."))
                 QMessageBox.information(
                     self, "Aktualizace",
-                    "Aktualizace proběhla. Pro dokončení je potřeba restartovat počítač.",
+                    _("Updates completed. A restart is required to finish."),
                 )
             else:
-                QMessageBox.information(self, "Aktualizace", "Aktualizace byly úspěšně nainstalovány.")
+                QMessageBox.information(self, "Aktualizace", _("Updates were installed successfully."))
             self.reload()
         else:
-            self.status.setText("Aktualizace selhala.")
+            self.status.setText(_("Update failed."))
             QMessageBox.warning(
                 self, "Chyba",
-                message or "Aktualizace se nepodařila dokončit. Zkontroluj připojení a zkus to znovu.",
+                message or _("Update could not finish. Check your connection and try again."),
             )
 
     def closeEvent(self, event):
