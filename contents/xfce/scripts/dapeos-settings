@@ -60,11 +60,13 @@ def parse(path):
     cat = categories
     if "HardwareSettings" in cat:
         group = "Hardware"
+    elif "PersonalSettings" in cat:
+        group = "Osobní"
+    elif "SystemSettings" in cat:
+        group = "Systém"
     elif "DesktopSettings" in cat:
         group = "Vzhled"
-    elif "PersonalSettings" in cat or "X-XFCE-PersonalSettings" in cat:
-        group = "Osobní"
-    elif "SystemSettings" in cat or "X-XFCE-System" in cat or "System" in cat:
+    elif "Settings" in cat:
         group = "Systém"
     else:
         group = "Ostatní"
