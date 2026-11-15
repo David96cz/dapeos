@@ -197,3 +197,33 @@ msgstr "Žádný"
 
 msgid "Nothing"
 msgstr "Nic"
+
+msgid "Preparing the system"
+msgstr "Příprava systému"
+
+msgid "Installing packages"
+msgstr "Instalace balíčků"
+
+msgid "Configuring updates"
+msgstr "Nastavení aktualizací"
+
+msgid "Configuring KDE Plasma"
+msgstr "Konfigurace KDE Plasma"
+
+msgid "Configuring LXQt"
+msgstr "Konfigurace LXQt"
+
+msgid "Configuring XFCE"
+msgstr "Konfigurace XFCE"
+
+msgid "Configuring display manager"
+msgstr "Konfigurace přihlašovací obrazovky"
+
+msgid "Configuring boot"
+msgstr "Konfigurace zavádění"
+
+msgid "Applying security settings"
+msgstr "Nastavení zabezpečení"
+
+msgid "Installation complete"
+msgstr "Instalace dokončena"

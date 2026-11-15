@@ -9,6 +9,8 @@ CONTENTS_DIR="$BASE_DIR/contents"
 
 # shellcheck source=lib/i18n.sh
 source "$BASE_DIR/lib/i18n.sh"
+# shellcheck source=lib/progress.sh
+source "$BASE_DIR/lib/progress.sh"
 # shellcheck source=lib/init.sh
 source "$BASE_DIR/lib/init.sh"
 # shellcheck source=lib/common.sh
@@ -84,26 +86,41 @@ main() {
     clear_screen
 
     init_setup
-    prepare_system
-    install_packages
-    setup_auto_updates
+
+    local LOG="/var/log/dapeos-install.log"
+    mkdir -p /var/log
+    touch "$LOG"
+    if [ -w /dev/tty ]; then
+        exec 3>/dev/tty
+    else
+        exec 3>&1
+    fi
+    exec >>"$LOG" 2>&1
+    progress_init
+    trap - ERR
+
+    run_phase 5  "$(_ 'Preparing the system')" prepare_system
+    run_phase 15 "$(_ 'Installing packages')" install_packages
+    run_phase 45 "$(_ 'Configuring updates')" setup_auto_updates
 
     if [ "$DESKTOP_ENV" == "PLASMA" ]; then
-        configure_plasma
+        run_phase 55 "$(_ 'Configuring KDE Plasma')" configure_plasma
     elif [ "$DESKTOP_ENV" == "LXQT" ]; then
-        configure_lxqt
+        run_phase 55 "$(_ 'Configuring LXQt')" configure_lxqt
     else
-        configure_xfce
+        run_phase 55 "$(_ 'Configuring XFCE')" configure_xfce
     fi
 
-    setup_display_manager
-    setup_boot
-    admin_security
-    echo "=================================================="
-    echo "$(_ 'DONE')"
-    echo "=================================================="
+    run_phase 85 "$(_ 'Configuring display manager')" setup_display_manager
+    run_phase 90 "$(_ 'Configuring boot')" setup_boot
+    run_phase 95 "$(_ 'Applying security settings')" admin_security
+    progress_done "$(_ 'Installation complete')"
+
+    printf "\n==================================================\n" >&3
+    printf "%s\n" "$(_ 'DONE')" >&3
+    printf "==================================================\n" >&3
     if [ "$no_reboot" = "true" ]; then
-        echo "$(_ 'Restart skipped (--no-reboot), repository kept.')"
+        printf "%s\n" "$(_ 'Restart skipped (--no-reboot), repository kept.')" >&3
         exit 0
     fi
 
@@ -111,14 +128,14 @@ main() {
         rm -rf "$BASE_DIR"
     fi
 
-    echo "$(_ 'RESTARTING IN 5 SECONDS...')"
+    printf "%s\n" "$(_ 'RESTARTING IN 5 SECONDS...')" >&3
 
     for i in {5..1}
     do
-        echo "$i..."
+        printf "%s...\n" "$i" >&3
         sleep 1
     done
-    echo "$(_ 'Restarting now!')"
+    printf "%s\n" "$(_ 'Restarting now!')" >&3
     reboot
 }
 
