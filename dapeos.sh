@@ -7,6 +7,8 @@
 BASE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 CONTENTS_DIR="$BASE_DIR/contents"
 
+# shellcheck source=lib/i18n.sh
+source "$BASE_DIR/lib/i18n.sh"
 # shellcheck source=lib/init.sh
 source "$BASE_DIR/lib/init.sh"
 # shellcheck source=lib/common.sh
@@ -34,19 +36,47 @@ source "$BASE_DIR/modules/lxqt.sh"
 # shellcheck source=modules/plasma.sh
 source "$BASE_DIR/modules/plasma.sh"
 
+choose_language() {
+    local choice
+    if [ -n "${DAPEOS_LANG:-}" ] && [ "$DAPEOS_LANG" != "en" ]; then
+        return 0
+    fi
+    printf 'Select language / Vyberte jazyk:\n'
+    printf '1) English\n'
+    printf '2) Čeština\n'
+    printf 'Choice / Volba [1]: '
+    read -r choice </dev/tty || choice=1
+    case "$choice" in
+        2) DAPEOS_LANG="cs" ;;
+        *) DAPEOS_LANG="en" ;;
+    esac
+    export DAPEOS_LANG
+    export LANGUAGE="$DAPEOS_LANG"
+}
+
 main() {
     local no_reboot=false
+    local lang_arg=""
     while [ "$#" -gt 0 ]; do
         case "$1" in
             --no-reboot) no_reboot=true ;;
+            --lang=*) lang_arg="${1#--lang=}" ;;
             -h|--help)
-                echo "Použití: $0 [--no-reboot]"
+                echo "$(_ \"Usage: \$0 [--no-reboot] [--lang=en|cs]\")"
                 exit 0
                 ;;
-            *) echo "Neznámý parametr: $1" >&2; exit 2 ;;
+            *) echo "$(_ \"Unknown parameter: \$1\")" >&2; exit 2 ;;
         esac
         shift
     done
+
+    if [ -n "$lang_arg" ]; then
+        DAPEOS_LANG="$lang_arg"
+        export DAPEOS_LANG
+        export LANGUAGE="$DAPEOS_LANG"
+    else
+        choose_language
+    fi
 
     init_script
     init_setup
@@ -66,10 +96,10 @@ main() {
     setup_boot
     admin_security
     echo "=================================================="
-    echo "HOTOVO"
+    echo "$(_ \"DONE\")"
     echo "=================================================="
     if [ "$no_reboot" = "true" ]; then
-        echo "Restart přeskočen (--no-reboot), repo ponecháno."
+        echo "$(_ \"Restart skipped (--no-reboot), repository kept.\")"
         exit 0
     fi
 
@@ -77,14 +107,14 @@ main() {
         rm -rf "$BASE_DIR"
     fi
 
-    echo "RESTART ZA 5 SEKUND..."
+    echo "$(_ \"RESTARTING IN 5 SECONDS...\")"
 
     for i in {5..1}
     do
         echo "$i..."
         sleep 1
     done
-    echo "Restartuji nyní!"
+    echo "$(_ \"Restarting now!\")"
     reboot
 }
 

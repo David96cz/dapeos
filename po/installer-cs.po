@@ -1,0 +1,22 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: cs\n"
+
+msgid "Usage: $0 [--no-reboot] [--lang=en|cs]"
+msgstr "Použití: $0 [--no-reboot] [--lang=en|cs]"
+
+msgid "Unknown parameter: $1"
+msgstr "Neznámý parametr: $1"
+
+msgid "DONE"
+msgstr "HOTOVO"
+
+msgid "Restart skipped (--no-reboot), repository kept."
+msgstr "Restart přeskočen (--no-reboot), repo ponecháno."
+
+msgid "RESTARTING IN 5 SECONDS..."
+msgstr "RESTART ZA 5 SEKUND..."
+
+msgid "Restarting now!"
+msgstr "Restartuji nyní!"
