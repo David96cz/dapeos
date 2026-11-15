@@ -149,3 +149,9 @@ msgstr "Zadej číslo (1 nebo 2, případně R pro restart): "
 
 msgid "(Type R at any time to reset and return to the beginning)"
 msgstr "(Kdykoliv zadej 'R' pro reset a návrat na začátek)"
+
+msgid "Enter number (1-4): "
+msgstr "Zadej číslo (1 až 4): "
+
+msgid "Invalid choice! Enter 1-4 or R."
+msgstr "Neplatná volba! Zadej číslo 1 až 4 nebo R."

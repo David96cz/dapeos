@@ -73,15 +73,15 @@ init_setup() {
         done
 
 
-        echo "--------------------------------------------------"
+        clear
+        setup_banner
         echo "2. Choose browser"
         while true; do
             echo "1) Chrome"
             echo "2) Chromium"
             echo "3) Brave"
             echo "4) Firefox"
-            echo "5) Nic"
-            read -p "$(_ 'Enter number (1-5): ')" BROWSER_CHOICE
+            read -p "$(_ 'Enter number (1-4): ')" BROWSER_CHOICE
             case "$BROWSER_CHOICE" in
                 1) BROWSER_STR="Google Chrome"; break ;;
                 2) BROWSER_STR="Chromium"; break ;;
@@ -93,7 +93,8 @@ init_setup() {
             esac
         done
 
-        echo "--------------------------------------------------"
+        clear
+        setup_banner
         echo "3. Choose office suite"
         while true; do
             echo "1) LibreOffice"
@@ -109,7 +110,8 @@ init_setup() {
             esac
         done
 
-        echo "--------------------------------------------------"
+        clear
+        setup_banner
         echo "4. Enable automatic login?"
         while true; do
             echo "1) Ano"
@@ -123,7 +125,8 @@ init_setup() {
             esac
         done
 
-        echo "--------------------------------------------------"
+        clear
+        setup_banner
         echo "5. Choose computer security profile (passwords and permissions)"
         echo ""
         
@@ -187,7 +190,8 @@ init_setup() {
             done
         fi
 
-        echo "--------------------------------------------------"
+        clear
+        setup_banner
         echo "6. Install Wine and Winetricks for Windows applications?"
         while true; do
             echo "1) Ano"
@@ -201,7 +205,8 @@ init_setup() {
             esac
         done
 
-        echo "--------------------------------------------------"
+        clear
+        setup_banner
         echo "7. Install RustDesk (Remote Desktop)?"
         echo "   Lets you control this computer from another device, or vice versa."
         echo "   Ideal for quick technical support or remote management."
