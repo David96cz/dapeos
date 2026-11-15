@@ -155,3 +155,42 @@ msgstr "Zadej číslo (1 až 4): "
 
 msgid "Invalid choice! Enter 1-4 or R."
 msgstr "Neplatná volba! Zadej číslo 1 až 4 nebo R."
+
+msgid "Target user:"
+msgstr "Cílový uživatel:"
+
+msgid "Desktop:"
+msgstr "Prostředí:"
+
+msgid "Browser:"
+msgstr "Prohlížeč:"
+
+msgid "Security:"
+msgstr "Bezpečnost:"
+
+msgid "Wine support:"
+msgstr "Wine podpora:"
+
+msgid "Family PC (no passwords)"
+msgstr "Rodinný PC (Bez hesel)"
+
+msgid "Standard Linux (user password)"
+msgstr "Standardní Linux (Uživatelské heslo)"
+
+msgid "Strict Administrator (ROOT password required)"
+msgstr "Přísný Administrátor (Vyžaduje ROOT heslo)"
+
+msgid "Yes (no password)"
+msgstr "Ano (Bez hesla)"
+
+msgid "No (with password)"
+msgstr "Ne (S heslem)"
+
+msgid "Yes"
+msgstr "Ano"
+
+msgid "No"
+msgstr "Ne"
+
+msgid "None"
+msgstr "Žádný"

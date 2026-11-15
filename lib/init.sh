@@ -68,7 +68,7 @@ init_setup() {
                 2) DESKTOP_ENV="LXQT"; DESKTOP_STR="LXQt"; break ;;
                 3) DESKTOP_ENV="XFCE"; DESKTOP_STR="XFCE"; break ;;
                 r|R) continue 2 ;;
-                *) echo -e "\033[1;31mNeplatná volba! Zadej 1, 2, 3 nebo R.\033[0m" ;;
+                *) echo -e "\033[1;31m$(_ 'Invalid choice! Enter 1, 2, 3 or R.')\033[0m" ;;
             esac
         done
 
@@ -87,9 +87,9 @@ init_setup() {
                 2) BROWSER_STR="Chromium"; break ;;
                 3) BROWSER_STR="Brave"; break ;;
                 4) BROWSER_STR="Firefox"; break ;;
-                5) BROWSER_STR="Žádný"; break ;;
+                5) BROWSER_STR="$(_ 'None')"; break ;;
                 r|R) continue 2 ;;
-                *) echo -e "\033[1;31mNeplatná volba! Zadej číslo 1 až 5 nebo R.\033[0m" ;;
+                *) echo -e "\033[1;31m$(_ 'Invalid choice! Enter 1-5 or R.')\033[0m" ;;
             esac
         done
 
@@ -104,9 +104,9 @@ init_setup() {
             case "$OFFICE_CHOICE" in
                 1) OFFICE_STR="LibreOffice"; break ;;
                 2) OFFICE_STR="OnlyOffice"; break ;;
-                3) OFFICE_STR="Žádný"; break ;;
+                3) OFFICE_STR="$(_ 'None')"; break ;;
                 r|R) continue 2 ;;
-                *) echo -e "\033[1;31mNeplatná volba! Zadej číslo 1 až 3 nebo R.\033[0m" ;;
+                *) echo -e "\033[1;31m$(_ 'Invalid choice! Enter 1-3 or R.')\033[0m" ;;
             esac
         done
 
@@ -114,14 +114,14 @@ init_setup() {
         setup_banner
         echo "4. Enable automatic login?"
         while true; do
-            echo "1) Ano"
-            echo "2) Ne"
+            echo "$(_ '1) Yes')"
+            echo "$(_ '2) No')"
             read -p "$(_ 'Enter number (1 or 2): ')" AUTO_ANS
             case "$AUTO_ANS" in
-                1) AUTOLOGIN_REQ="TRUE"; AUTOLOGIN_STR="Ano"; break ;;
-                2) AUTOLOGIN_REQ="FALSE"; AUTOLOGIN_STR="Ne"; break ;;
+                1) AUTOLOGIN_REQ="TRUE"; AUTOLOGIN_STR="$(_ 'Yes')"; break ;;
+                2) AUTOLOGIN_REQ="FALSE"; AUTOLOGIN_STR="$(_ 'No')"; break ;;
                 r|R) continue 2 ;;
-                *) echo -e "\033[1;31mNeplatná volba! Zadej 1, 2 nebo R.\033[0m" ;;
+                *) echo -e "\033[1;31m$(_ 'Invalid choice! Enter 1, 2 or R.')\033[0m" ;;
             esac
         done
 
@@ -143,7 +143,7 @@ init_setup() {
             echo "   - The user has their own password (or none) for login."
             echo "   - Installing apps and system changes always require the ROOT password."
         else
-            echo -e "\033[1;30m3) Přísný Administrátor - NEDOSTUPNÉ (Při instalaci Debianu nebylo nastaveno heslo ROOTa)\033[0m"
+            echo -e "\033[1;30m$(_ '3) Strict Administrator - UNAVAILABLE (ROOT password was not set during Debian installation)')\033[0m"
         fi
 
         while true; do
@@ -151,25 +151,25 @@ init_setup() {
             case "$SEC_ANS" in
                 1)
                     SEC_PROFILE="FAMILY"
-                    SEC_STR="Rodinný PC (Bez hesel)"
+                    SEC_STR="$(_ 'Family PC (no passwords)')"
                     break
                     ;;
                 2)
                     SEC_PROFILE="STANDARD"
-                    SEC_STR="Standardní Linux (Uživatelské heslo)"
+                    SEC_STR="$(_ 'Standard Linux (user password)')"
                     break
                     ;;
                 3)
                     if [ "$ROOT_LOCKED" == "FALSE" ]; then
                         SEC_PROFILE="ADMIN"
-                        SEC_STR="Přísný Administrátor (Vyžaduje ROOT heslo)"
+                        SEC_STR="$(_ 'Strict Administrator (ROOT password required)')"
                         break
                     else
                         echo -e "\033[1;31mTato volba vyžaduje nastavené heslo ROOTa.\033[0m"
                     fi
                     ;;
                 r|R) continue 2 ;;
-                *) echo -e "\033[1;31mNeplatná volba!\033[0m" ;;
+                *) echo -e "\033[1;31m$(_ 'Invalid choice!')\033[0m" ;;
             esac
         done
 
@@ -182,10 +182,10 @@ init_setup() {
                 echo "2) No (keep the user password)"
                 read -p "$(_ 'Enter number (1 or 2): ')" PASS_ANS
                 case "$PASS_ANS" in
-                    1) REMOVE_PASS="TRUE"; REMOVE_PASS_STR="Ano (Bez hesla)"; break ;;
-                    2) REMOVE_PASS="FALSE"; REMOVE_PASS_STR="Ne (S heslem)"; break ;;
+                    1) REMOVE_PASS="TRUE"; REMOVE_PASS_STR="$(_ 'Yes (no password)')"; break ;;
+                    2) REMOVE_PASS="FALSE"; REMOVE_PASS_STR="$(_ 'No (with password)')"; break ;;
                     r|R) continue 2 ;;
-                    *) echo -e "\033[1;31mNeplatná volba! Zadej 1, 2 nebo R.\033[0m" ;;
+                    *) echo -e "\033[1;31m$(_ 'Invalid choice! Enter 1, 2 or R.')\033[0m" ;;
                 esac
             done
         fi
@@ -194,14 +194,14 @@ init_setup() {
         setup_banner
         echo "6. Install Wine and Winetricks for Windows applications?"
         while true; do
-            echo "1) Ano"
-            echo "2) Ne"
+            echo "$(_ '1) Yes')"
+            echo "$(_ '2) No')"
             read -p "$(_ 'Enter number (1 or 2): ')" WINE_ANS
             case "$WINE_ANS" in
-                1) WINE_REQ="TRUE"; WINE_STR="Ano"; break ;;
-                2) WINE_REQ="FALSE"; WINE_STR="Ne"; break ;;
+                1) WINE_REQ="TRUE"; WINE_STR="$(_ 'Yes')"; break ;;
+                2) WINE_REQ="FALSE"; WINE_STR="$(_ 'No')"; break ;;
                 r|R) continue 2 ;;
-                *) echo -e "\033[1;31mNeplatná volba! Zadej 1, 2 nebo R.\033[0m" ;;
+                *) echo -e "\033[1;31m$(_ 'Invalid choice! Enter 1, 2 or R.')\033[0m" ;;
             esac
         done
 
@@ -215,25 +215,25 @@ init_setup() {
             echo "2) No (skip)"
             read -p "$(_ 'Enter number (1 or 2): ')" RUSTDESK_ANS
             case "$RUSTDESK_ANS" in
-                1) RUSTDESK_REQ="TRUE"; RUSTDESK_STR="Ano"; break ;;
-                2) RUSTDESK_REQ="FALSE"; RUSTDESK_STR="Ne"; break ;;
+                1) RUSTDESK_REQ="TRUE"; RUSTDESK_STR="$(_ 'Yes')"; break ;;
+                2) RUSTDESK_REQ="FALSE"; RUSTDESK_STR="$(_ 'No')"; break ;;
                 r|R) continue 2 ;;
-                *) echo -e "\033[1;31mNeplatná volba! Zadej 1, 2 nebo R.\033[0m" ;;
+                *) echo -e "\033[1;31m$(_ 'Invalid choice! Enter 1, 2 or R.')\033[0m" ;;
             esac
         done
 
         # SOUHRN A POTVRZENÍ
         clear_screen
         echo -e "\033[1;36m==================================================\033[0m"
-        echo -e "\033[1;36m                 SOUHRN NASTAVENÍ                 \033[0m"
+        echo -e "\033[1;36m                 $(_ 'SETTINGS SUMMARY')                 \033[0m"
         echo -e "\033[1;36m==================================================\033[0m"
-        echo " Cílový uživatel:  $REAL_USER"
-        echo " Prostředí:        $DESKTOP_STR"
-        echo " Prohlížeč:        $BROWSER_STR"
-        echo " Office:           $OFFICE_STR"
-        echo " Bezpečnost:       $SEC_STR"
-        echo " Wine podpora:     $WINE_STR"
-        echo " RustDesk:         $RUSTDESK_STR"
+        echo "$(_ 'Target user:') $REAL_USER"
+        echo "$(_ 'Desktop:') $DESKTOP_STR"
+        echo "$(_ 'Browser:') $BROWSER_STR"
+        echo "$(_ 'Office:') $OFFICE_STR"
+        echo "$(_ 'Security:') $SEC_STR"
+        echo "$(_ 'Wine support:') $WINE_STR"
+        echo "$(_ 'RustDesk:') $RUSTDESK_STR"
         echo -e "\033[1;36m==================================================\033[0m"
         echo "Is this configuration correct?"
         while true; do
@@ -243,7 +243,7 @@ init_setup() {
             case "$CONFIRM_ANS" in
                 1) break 2 ;; 
                 2|r|R) continue 2 ;; 
-                *) echo -e "\033[1;31mNeplatná volba! Zadej 1, 2 nebo R.\033[0m" ;;
+                *) echo -e "\033[1;31m$(_ 'Invalid choice! Enter 1, 2 or R.')\033[0m" ;;
             esac
         done
     done
