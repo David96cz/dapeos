@@ -175,7 +175,7 @@ SHORTCUTS_HTML = """
 class Welcome(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(f"Vítejte v {APP_NAME}")
+        self.setWindowTitle(_("Welcome to DapeOS"))
         self.setFixedSize(760, 640)
         # Vystředění okna na aktuální obrazovku
         screen = QApplication.primaryScreen().geometry()

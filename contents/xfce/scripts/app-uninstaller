@@ -163,7 +163,7 @@ class AppUninstaller(QWidget):
         return blacklist
 
     def initUI(self):
-        self.setWindowTitle('Odinstalovat programy')
+        self.setWindowTitle(_("Uninstall Programs"))
         self.setFixedSize(550, 600)
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
         
@@ -199,7 +199,7 @@ class AppUninstaller(QWidget):
         self.app_list.setStyleSheet("font-size: 12pt;")
         layout.addWidget(self.app_list)
         
-        self.btn_uninstall = QPushButton('Odinstalovat vybraný program')
+        self.btn_uninstall = QPushButton(_("Uninstall selected program"))
         self.btn_uninstall.setObjectName("btnUninstall")
         self.btn_uninstall.setCursor(Qt.PointingHandCursor)
         self.btn_uninstall.clicked.connect(self.handle_uninstall)
@@ -386,8 +386,8 @@ class AppUninstaller(QWidget):
         filename = current_item.data(Qt.UserRole + 1)
         is_wine = current_item.data(Qt.UserRole + 2)
         
-        reply = QMessageBox.question(self, 'Potvrzení odinstalace', 
-                                     f"Opravdu chcete trvale odstranit program <b>{self.app_name}</b>?",
+        reply = QMessageBox.question(self, _("Confirm uninstallation"), 
+                                     f"{_('Do you really want to permanently remove <b>{name}</b>?')}".format(name=self.app_name),
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                                      
         if reply != QMessageBox.Yes: return
@@ -405,7 +405,7 @@ class AppUninstaller(QWidget):
         self._stop_row_spin()
         # 1. Okamžité obnovení tlačítek a seznamu
         self.btn_uninstall.setEnabled(True)
-        self.btn_uninstall.setText('Odinstalovat vybraný program')
+        self.btn_uninstall.setText(_("Uninstall selected program"))
         self.app_list.setEnabled(True)
 
         # 2. Logika vyskakovacích oken
@@ -414,7 +414,7 @@ class AppUninstaller(QWidget):
             if not is_wine:
                 self.post_uninstall_cleanup(filename)
             self.remove_stale_shortcuts()
-            QMessageBox.information(self, "Hotovo", f"Program {app_name} byl úspěšně odstraněn.")
+            QMessageBox.information(self, _("Done"), f"{_('Program')} {app_name} {_('was successfully removed.')}")
             self.search_bar.clear()
         elif returncode == 1 and not is_wine:
             # Tvrdá chyba u Linux balíčku (např. chybějící práva)

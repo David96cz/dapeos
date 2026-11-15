@@ -4,6 +4,11 @@ import glob
 import os
 import subprocess
 import shutil
+try:
+    from dapeos_i18n import _
+except Exception:  # noqa: BLE001
+    _ = lambda s: s
+
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QTabWidget, QLabel, QLineEdit, 
                              QPushButton, QCheckBox, QComboBox, QFileDialog, 
@@ -21,11 +26,11 @@ XDG_CATEGORIES = [
     ("Hry", "Game", "applications-games"), 
     ("Internet", "Network", "applications-internet"), 
     ("Grafika", "Graphics", "applications-graphics"),
-    ("Kancelář", "Office", "applications-office"), 
+    (_("Office"), "Office", "applications-office"), 
     ("Zvuk a Video", "AudioVideo", "applications-multimedia"),
-    ("Systémové nástroje", "System;Utility", "applications-system"), 
-    ("Vývoj", "Development", "applications-development"),
-    ("Příslušenství", "Qt;Utility", "applications-accessories")
+    (_("System tools"), "System;Utility", "applications-system"), 
+    (_("Development"), "Development", "applications-development"),
+    (_("Accessories"), "Qt;Utility", "applications-accessories")
 ]
 
 # --- POMOCNÉ FUNKCE ---
@@ -55,7 +60,7 @@ def parse_desktop_file(filepath):
 class ShortcutApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Správce Zástupců")
+        self.setWindowTitle(_("Shortcut Manager"))
         self.resize(850, 600)
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
         self.editing_path = None
@@ -72,25 +77,25 @@ class ShortcutApp(QMainWindow):
     def init_creator_tab(self):
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        form_group = QGroupBox("Nastavení zástupce")
+        form_group = QGroupBox(_("Shortcut settings"))
         form_layout = QFormLayout(form_group)
         
         self.name_input = QLineEdit()
-        form_layout.addRow("Název aplikace:", self.name_input)
+        form_layout.addRow(_("Application name:"), self.name_input)
         
         self.exec_input = QLineEdit()
         self.exec_input.textChanged.connect(self.validate_exec_intelligence)
-        self.exec_btn = QPushButton("Procházet...")
+        self.exec_btn = QPushButton(_("Browse..."))
         self.exec_btn.clicked.connect(self.pick_exec_file)
         
         exec_layout = QHBoxLayout()
         exec_layout.addWidget(self.exec_input); exec_layout.addWidget(self.exec_btn)
-        form_layout.addRow("Příkaz / Cesta (Povinné):", exec_layout)
+        form_layout.addRow(_("Command / path (required):"), exec_layout)
         
-        self.intel_group = QGroupBox("Inteligentní balení (jen pro nové)")
+        self.intel_group = QGroupBox(_("Smart packaging (new shortcuts only)"))
         intel_layout = QVBoxLayout(self.intel_group)
-        self.terminal_cb = QCheckBox("Spustit v terminálu")
-        self.wrapper_cb = QCheckBox("Indikace načítání (Wrapper)")
+        self.terminal_cb = QCheckBox(_("Run in terminal"))
+        self.wrapper_cb = QCheckBox(_("Loading indicator (wrapper)"))
         self.wrapper_cb.setChecked(True)
         intel_layout.addWidget(self.terminal_cb); intel_layout.addWidget(self.wrapper_cb)
         self.intel_group.hide()
@@ -105,9 +110,9 @@ class ShortcutApp(QMainWindow):
         form_layout.addRow("Kategorie menu:", self.category_input)  
         
         self.icon_input = QLineEdit()
-        self.icon_btn = QPushButton("Vybrat...")
+        self.icon_btn = QPushButton(_("Choose..."))
         self.icon_btn.clicked.connect(self.pick_icon_file)
-        self.extract_btn = QPushButton("Vytáhnout z EXE")
+        self.extract_btn = QPushButton(_("Extract from EXE"))
         self.extract_btn.clicked.connect(self.extract_exe_icon)
         self.extract_btn.hide()
         
@@ -115,12 +120,12 @@ class ShortcutApp(QMainWindow):
         icon_layout.addWidget(self.icon_input); icon_layout.addWidget(self.icon_btn); icon_layout.addWidget(self.extract_btn)
         form_layout.addRow("Ikona aplikace:", icon_layout)
         
-        self.create_btn = QPushButton("Vytvořit zástupce v Menu")
+        self.create_btn = QPushButton(_("Create menu shortcut"))
         self.create_btn.setStyleSheet("font-weight: bold; padding: 12px; background-color: #2a7fca; color: white;")
         self.create_btn.clicked.connect(self.create_shortcut)
         
         layout.addWidget(form_group); layout.addStretch(); layout.addWidget(self.create_btn)
-        self.tabs.addTab(tab, "Generátor")
+        self.tabs.addTab(tab, _("Generator"))
 
     def init_manager_tab(self):
         tab = QWidget()
@@ -132,7 +137,7 @@ class ShortcutApp(QMainWindow):
         
         self.table = QTableWidget()
         self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(['Viditelný', 'Aplikace', 'Typ', 'Cesta'])
+        self.table.setHorizontalHeaderLabels([_('Visible'), _('Application'), _('Type'), _('Path')])
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table.setAlternatingRowColors(True)
@@ -148,11 +153,11 @@ class ShortcutApp(QMainWindow):
         layout.addWidget(self.table)
         
         button_layout = QHBoxLayout()
-        self.save_btn = QPushButton("Uložit viditelnost")
+        self.save_btn = QPushButton(_("Save visibility"))
         self.save_btn.setStyleSheet("background-color: #4caf50; color: white; padding: 10px; font-weight: bold;")
         self.save_btn.clicked.connect(self.save_visibility)
         
-        self.edit_btn = QPushButton("Upravit")
+        self.edit_btn = QPushButton(_("Edit"))
         self.edit_btn.setStyleSheet("""
             QPushButton { background-color: #2196F3; color: white; padding: 10px; font-weight: bold; border-radius: 4px; }
             QPushButton:disabled { background-color: #e0e0e0; color: #a0a0a0; border: 1px solid #cccccc; }
@@ -160,7 +165,7 @@ class ShortcutApp(QMainWindow):
         self.edit_btn.setEnabled(False)
         self.edit_btn.clicked.connect(self.edit_shortcut)
         
-        self.delete_btn = QPushButton("Smazat")
+        self.delete_btn = QPushButton(_("Delete"))
         self.delete_btn.setStyleSheet("""
             QPushButton { background-color: #f44336; color: white; padding: 10px; font-weight: bold; border-radius: 4px; }
             QPushButton:disabled { background-color: #e0e0e0; color: #a0a0a0; border: 1px solid #cccccc; }
@@ -172,7 +177,7 @@ class ShortcutApp(QMainWindow):
         
         self.table.itemSelectionChanged.connect(self.check_row_selection)
         self.delete_btn.clicked.connect(self.delete_shortcut)
-        self.tabs.addTab(tab, "Úprava zástupců")
+        self.tabs.addTab(tab, _("Edit shortcuts"))
         self.load_applications()
 
     def load_applications(self):
@@ -185,7 +190,7 @@ class ShortcutApp(QMainWindow):
                     name, icon, is_custom = parse_desktop_file(path)
                     if not name: continue
                     rel_path = os.path.relpath(path, APPS_DIR)
-                    typ = "Vlastní" if is_custom else ("Wine Aplikace" if rel_path.startswith(f"wine{os.sep}") else "Systémový")
+                    typ = _("Custom") if is_custom else ("Wine Aplikace" if rel_path.startswith(f"wine{os.sep}") else _("System"))
                     apps_dict[f] = {"name": name, "icon": icon, "path": path, "typ": typ}
 
         sorted_keys = sorted(apps_dict.keys(), key=lambda x: apps_dict[x]["name"].lower())
@@ -196,13 +201,13 @@ class ShortcutApp(QMainWindow):
             try:
                 with open(data["path"], 'r', errors='ignore') as f: cb.setChecked("NoDisplay=true" not in f.read())
             except: pass
-            if "správce zástupců" in data["name"].lower(): cb.setEnabled(False); cb.setChecked(True)
+            if any(x in data["name"].lower() for x in ("správce zástupců", "shortcut manager")): cb.setEnabled(False); cb.setChecked(True)
             ck_layout.addWidget(cb); ck_layout.setAlignment(Qt.AlignCenter); ck_layout.setContentsMargins(0,0,0,0)
             self.table.setCellWidget(row, 0, ck_widget)
             item = QTableWidgetItem(data["name"]); item.setIcon(get_app_icon(data["icon"]))
             item.setFlags(item.flags() & ~Qt.ItemIsEditable); self.table.setItem(row, 1, item)
             typ_item = QTableWidgetItem(data["typ"]); typ_item.setFlags(typ_item.flags() & ~Qt.ItemIsEditable)
-            if data["typ"] == "Vlastní": typ_item.setForeground(Qt.blue)
+            if data["typ"] == _("Custom"): typ_item.setForeground(Qt.blue)
             elif data["typ"] == "Wine Aplikace": typ_item.setForeground(Qt.darkMagenta)
             self.table.setItem(row, 2, typ_item); self.table.setItem(row, 3, QTableWidgetItem(data["path"]))
 
@@ -211,8 +216,8 @@ class ShortcutApp(QMainWindow):
         if row < 0:
             self.delete_btn.setEnabled(False); self.edit_btn.setEnabled(False); return
         typ = self.table.item(row, 2).text()
-        self.delete_btn.setEnabled(typ in ["Vlastní", "Wine Aplikace"])
-        self.edit_btn.setEnabled(typ == "Vlastní")
+        self.delete_btn.setEnabled(typ in [_("Custom"), "Wine Aplikace"])
+        self.edit_btn.setEnabled(typ == _("Custom"))
 
     def edit_shortcut(self):
         row = self.table.currentRow(); path = self.table.item(row, 3).text()
@@ -232,7 +237,7 @@ class ShortcutApp(QMainWindow):
         self.icon_input.setText(icon); self.terminal_cb.setChecked(terminal)
         idx = self.category_input.findData(category)
         if idx >= 0: self.category_input.setCurrentIndex(idx)
-        self.editing_path = path; self.create_btn.setText("Uložit úpravy zástupce")
+        self.editing_path = path; self.create_btn.setText(_("Save shortcut changes"))
         self.tabs.setCurrentIndex(0)
 
     def create_shortcut(self):
@@ -289,10 +294,10 @@ class ShortcutApp(QMainWindow):
                 
             os.chmod(output_file, 0o755)
             self.load_applications(); self.refresh_system_menu()
-            QMessageBox.information(self, "Hotovo", "Uloženo.")
-            self.editing_path = None; self.create_btn.setText("Vytvořit zástupce v Menu")
+            QMessageBox.information(self, _("Done"), _("Saved."))
+            self.editing_path = None; self.create_btn.setText(_("Create menu shortcut"))
             for i in [self.name_input, self.exec_input, self.icon_input]: i.clear()
-        except Exception as e: QMessageBox.critical(self, "Chyba", str(e))
+        except Exception as e: QMessageBox.critical(self, _("Error"), str(e))
 
     def filter_apps(self, text):
         for i in range(self.table.rowCount()):
@@ -310,11 +315,11 @@ class ShortcutApp(QMainWindow):
                         if not line.startswith("NoDisplay="): f.write(line)
                     if not widget.isChecked(): f.write("NoDisplay=true\n")
             except: continue
-        self.refresh_system_menu(); QMessageBox.information(self, "Hotovo", "Změny uloženy.")
+        self.refresh_system_menu(); QMessageBox.information(self, _("Done"), _("Changes saved."))
 
     def delete_shortcut(self):
         row = self.table.currentRow(); path = self.table.item(row, 3).text()
-        if QMessageBox.question(self, "Smazat", "Opravdu smazat?") == QMessageBox.Yes:
+        if QMessageBox.question(self, _("Delete"), _("Really delete?")) == QMessageBox.Yes:
             try: os.remove(path); self.load_applications(); self.refresh_system_menu()
             except: pass
 
@@ -338,7 +343,7 @@ class ShortcutApp(QMainWindow):
     def extract_exe_icon(self):
         exe_path = self.exec_input.text()
         if not shutil.which("wrestool"):
-            QMessageBox.critical(self, "Chyba", "Nainstaluj icoutils!"); return
+            QMessageBox.critical(self, _("Error"), _("Install icoutils!")); return
         info = QFileInfo(exe_path); tmp_ico = f"/tmp/{info.baseName()}.ico"
         try:
             with open(tmp_ico, "wb") as f: subprocess.run(["wrestool", "-x", "-t", "14", exe_path], stdout=f)
@@ -349,7 +354,7 @@ class ShortcutApp(QMainWindow):
                 if pngs:
                     best = max(pngs, key=os.path.getsize); target = os.path.join(info.absolutePath(), f"{info.baseName()}.png")
                     shutil.copy(best, target); self.icon_input.setText(target)
-                    QMessageBox.information(self, "OK", "Ikona vytažena!")
+                    QMessageBox.information(self, "OK", _("Icon extracted!"))
         except: pass
 
     def pick_icon_file(self):

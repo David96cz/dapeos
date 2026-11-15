@@ -704,7 +704,7 @@ class QuickSettings(QWidget):
         self.night_row = QWidget()
         row = QHBoxLayout(self.night_row)
         row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(QLabel("Teplota"))
+        row.addWidget(QLabel(_("Temperature")))
         self.night_slider = FlatSlider(Qt.Horizontal)
         self.night_slider.setRange(1000, 6500)
         self.night_slider.setSingleStep(100)
@@ -819,7 +819,7 @@ class QuickSettings(QWidget):
             self.t_net.set_sub(s["net_name"] or "Wi-Fi")
             self.t_net.set_active(True)
         elif s["net_type"] == "ethernet":
-            self.t_net.set_sub(f"Kabel: {s['net_name']}")
+            self.t_net.set_sub(f"{_('Cable')}: {s['net_name']}")
             self.t_net.set_active(True)
         else:
             self.t_net.set_sub(_("Not connected"))
@@ -975,7 +975,7 @@ class QuickSettings(QWidget):
 
     def update_wifi_page(self, refresh_list=False):
         if self.state.get("net_type"):
-            self.net_info.setText(f"Připojeno: {self.state['net_name']} ({self.state['net_type']})")
+            self.net_info.setText(f"{_('Connected')}: {self.state['net_name']} ({self.state['net_type']})")
         else:
             self.net_info.setText(_("Not connected"))
         on = bool(self.state.get("wifi_on"))
@@ -1272,7 +1272,7 @@ class QuickSettings(QWidget):
             col.setSpacing(0)
             nm = QLabel(name)
             nm.setStyleSheet("font-weight: bold;")
-            st = QLabel(_("Connected") if connected else "Odpojeno")
+            st = QLabel(_("Connected") if connected else _("Disconnected"))
             st.setStyleSheet("font-size: 8.5pt; color: #9a9a9a;")
             col.addWidget(nm)
             col.addWidget(st)

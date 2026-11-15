@@ -10,6 +10,10 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QLabel, QLineEdit,
                              QPushButton, QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
+try:
+    from PyQt5.QtNetwork import QLocalServer, QLocalSocket
+except Exception:  # noqa: BLE001
+    QLocalServer = QLocalSocket = None
 
 try:
     from dapeos_i18n import _
@@ -208,10 +212,47 @@ class SettingsHub(QWidget):
                   scr.center().y() - self.height() // 2)
 
 
+SOCKET_NAME = "dapeos-settings-%d" % os.getuid()
+
+
+def raise_existing():
+    if QLocalSocket is None:
+        return False
+    sock = QLocalSocket()
+    sock.connectToServer(SOCKET_NAME)
+    if not sock.waitForConnected(250):
+        return False
+    sock.write(b"show")
+    sock.waitForBytesWritten(250)
+    sock.disconnectFromServer()
+    return True
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     QIcon.setThemeName("Papirus")
+
+    if raise_existing():
+        sys.exit(0)
+
     w = SettingsHub()
     w.center()
+
+    if QLocalServer is not None:
+        QLocalServer.removeServer(SOCKET_NAME)
+        server = QLocalServer()
+        server.listen(SOCKET_NAME)
+        app._settings_server = server
+
+        def bring_to_front():
+            while server.hasPendingConnections():
+                conn = server.nextPendingConnection()
+                conn.disconnectFromServer()
+            w.showNormal()
+            w.raise_()
+            w.activateWindow()
+
+        server.newConnection.connect(bring_to_front)
+
     w.show()
     sys.exit(app.exec_())

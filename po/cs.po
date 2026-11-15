@@ -326,3 +326,135 @@ msgstr "baterie"
 
 msgid "sound: muted"
 msgstr "zvuk: ztlumeno"
+
+msgid "Temperature"
+msgstr "Teplota"
+
+msgid "Cable"
+msgstr "Kabel"
+
+msgid "Disconnected"
+msgstr "Odpojeno"
+
+msgid "Show:"
+msgstr "Zobrazit:"
+
+msgid "Do you really want to permanently remove <b>{name}</b>?"
+msgstr "Opravdu chcete trvale odstranit program <b>{name}</b>?"
+
+msgid "Shortcut Manager"
+msgstr "Správce Zástupců"
+
+msgid "Shortcut settings"
+msgstr "Nastavení zástupce"
+
+msgid "Browse..."
+msgstr "Procházet..."
+
+msgid "Smart packaging (new shortcuts only)"
+msgstr "Inteligentní balení (jen pro nové)"
+
+msgid "Run in terminal"
+msgstr "Spustit v terminálu"
+
+msgid "Loading indicator (wrapper)"
+msgstr "Indikace načítání (Wrapper)"
+
+msgid "Choose..."
+msgstr "Vybrat..."
+
+msgid "Extract from EXE"
+msgstr "Vytáhnout z EXE"
+
+msgid "Create menu shortcut"
+msgstr "Vytvořit zástupce v Menu"
+
+msgid "Generator"
+msgstr "Generátor"
+
+msgid "Edit shortcuts"
+msgstr "Úprava zástupců"
+
+msgid "Save visibility"
+msgstr "Uložit viditelnost"
+
+msgid "Edit"
+msgstr "Upravit"
+
+msgid "Delete"
+msgstr "Smazat"
+
+msgid "Done"
+msgstr "Hotovo"
+
+msgid "Saved."
+msgstr "Uloženo."
+
+msgid "Changes saved."
+msgstr "Změny uloženy."
+
+msgid "Error"
+msgstr "Chyba"
+
+msgid "Really delete?"
+msgstr "Opravdu smazat?"
+
+msgid "Install icoutils!"
+msgstr "Nainstaluj icoutils!"
+
+msgid "Icon extracted!"
+msgstr "Ikona vytažena!"
+
+msgid "Application name:"
+msgstr "Název aplikace:"
+
+msgid "Command / path (required):"
+msgstr "Příkaz / Cesta (Povinné):"
+
+msgid "Save shortcut changes"
+msgstr "Uložit úpravy zástupce"
+
+msgid "Visible"
+msgstr "Viditelný"
+
+msgid "Custom"
+msgstr "Vlastní"
+
+msgid "Office"
+msgstr "Kancelář"
+
+msgid "Accessories"
+msgstr "Příslušenství"
+
+msgid "Development"
+msgstr "Vývoj"
+
+msgid "System tools"
+msgstr "Systémové nástroje"
+
+msgid "Available updates:"
+msgstr "Dostupné aktualizace:"
+
+msgid "security"
+msgstr "zabezpečovacích"
+
+msgid "updates available."
+msgstr "aktualizací k dispozici."
+
+msgid "Missing"
+msgstr "Chybí"
+
+msgid "Program"
+msgstr "Program"
+
+msgid "was successfully removed."
+msgstr "byl úspěšně odstraněn."
+
+msgid "Application"
+msgstr "Aplikace"
+
+msgid "Type"
+msgstr "Typ"
+
+msgid "Path"
+msgstr "Cesta"

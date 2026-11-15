@@ -128,7 +128,7 @@ class Updater(QWidget):
 
     # ------------------------------------------------------------------ UI
     def init_ui(self):
-        self.setWindowTitle("Aktualizace")
+        self.setWindowTitle(_("System Updates"))
         self.setFixedSize(660, 620)
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon.fromTheme(PKG_ICON))
@@ -164,7 +164,7 @@ class Updater(QWidget):
         layout.addWidget(self.sub)
 
         row = QHBoxLayout()
-        row.addWidget(QLabel("Zobrazit:"))
+        row.addWidget(QLabel(_("Show:")))
         self.filter = QComboBox()
         for label, _pred in FILTERS:
             self.filter.addItem(label)
@@ -221,7 +221,7 @@ class Updater(QWidget):
 
         self.tray.setContextMenu(menu)
         self.tray.activated.connect(self.on_tray_activated)
-        self.tray.setToolTip("Aktualizace")
+        self.tray.setToolTip(_("System Updates"))
 
         # ikona se ukáže, až když nějaké aktualizace existují
         self.tray.setVisible(False)
@@ -246,7 +246,7 @@ class Updater(QWidget):
                 f.write(
                     "[Desktop Entry]\n"
                     "Type=Application\n"
-                    "Name=Aktualizace\n"
+                    "Name=System Updates\nName[cs]=Aktualizace\n"
                     "Exec=dapeos-update --tray\n"
                     "Icon=system-software-update\n"
                     "Terminal=false\n"
@@ -338,8 +338,8 @@ class Updater(QWidget):
         else:
             sec = sum(1 for p in self.packages if p["security"])
             self.sub.setText(
-                f"Dostupné aktualizace: {total}"
-                + (f" (z toho {sec} zabezpečovacích)" if sec else "")
+                f"{_('Available updates:')} {total}"
+                + (f" ({sec} {_('security')})" if sec else "")
             )
         self.btn_all.setEnabled(total > 0 and not self.busy)
         self.btn_sel.setEnabled(total > 0 and not self.busy)
@@ -348,7 +348,7 @@ class Updater(QWidget):
     def update_tray(self):
         count = len(self.packages)
         if count:
-            self.tray.setToolTip(f"Aktualizace: {count}")
+            self.tray.setToolTip(f"{_('System Updates')}: {count}")
             self.tray.setIcon(QIcon.fromTheme("software-update-available"))
         else:
             self.tray.setToolTip(_("Updates: system is up to date"))
@@ -362,8 +362,8 @@ class Updater(QWidget):
         if time.time() < snooze_until:
             return
         self.tray.showMessage(
-            "Aktualizace",
-            f"Je k dispozici {len(packages)} aktualizací.",
+            _("System Updates"),
+            f"{len(packages)} {_('updates available.')}",
             QSystemTrayIcon.Information,
             8000,
         )
@@ -421,7 +421,7 @@ class Updater(QWidget):
             if item.checkState() == Qt.Checked:
                 names.append(item.data(Qt.UserRole))
         if not names:
-            QMessageBox.information(self, "Aktualizace", _("Select the packages you want to update."))
+            QMessageBox.information(self, _("System Updates"), _("Select the packages you want to update."))
             return
         self.start_install(names)
 
@@ -429,7 +429,7 @@ class Updater(QWidget):
         if self.busy:
             return
         if not os.path.exists(HELPER):
-            QMessageBox.critical(self, "Chyba", f"Chybí {HELPER}.")
+            QMessageBox.critical(self, _("Error"), f"{_('Missing')} {HELPER}.")
             return
 
         self.busy = True
@@ -492,11 +492,11 @@ class Updater(QWidget):
             if reboot:
                 self.status.setText(_("Done – a restart is required."))
                 QMessageBox.information(
-                    self, "Aktualizace",
+                    self, _("System Updates"),
                     _("Updates completed. A restart is required to finish."),
                 )
             else:
-                QMessageBox.information(self, "Aktualizace", _("Updates were installed successfully."))
+                QMessageBox.information(self, _("System Updates"), _("Updates were installed successfully."))
             self.reload()
         else:
             self.status.setText(_("Update failed."))
