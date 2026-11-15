@@ -258,6 +258,7 @@ whiskermenu_no_run_setup() {
         return 0
     fi
     log "Instaluji WhiskerMenu bez Run akce: $(basename "$deb")"
+    apt-mark unhold xfce4-whiskermenu-plugin >/dev/null 2>&1 || true
     apt-get install -y "$deb" || return 0
     apt-mark hold xfce4-whiskermenu-plugin >/dev/null 2>&1 || true
 }
