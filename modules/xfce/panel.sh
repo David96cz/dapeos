@@ -10,6 +10,12 @@ whisker_rename() {
     sed -i 's/msgstr "Nabídka Whisker"/msgstr "Nabídka Start"/' /tmp/wm.po
     msgfmt /tmp/wm.po -o "$mo" 2>/dev/null || true
     rm -f /tmp/wm.po
+
+    local desc="/usr/share/xfce4/panel/plugins/whiskermenu.desktop"
+    if [ -f "$desc" ]; then
+        sed -i 's/^Name=.*/Name=Nabídka Start/' "$desc"
+        sed -i 's/^Name\[cs\]=.*/Name[cs]=Nabídka Start/' "$desc"
+    fi
 }
 
 xfce_browser_launcher() {
