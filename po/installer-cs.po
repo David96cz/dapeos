@@ -20,3 +20,132 @@ msgstr "RESTART ZA 5 SEKUND..."
 
 msgid "Restarting now!"
 msgstr "Restartuji nyní!"
+
+msgid "Must be run as root (sudo)"
+msgstr "Nutno spustit jako root (sudo)"
+
+msgid "Detected system installation language:"
+msgstr "Detekován systémový jazyk instalace:"
+
+msgid "Installation will be performed for user:"
+msgstr "Instalace bude provedena pro uživatele:"
+
+msgid "1. Choose desktop environment"
+msgstr "1. Vyber desktopové prostředí"
+
+msgid "Enter number: "
+msgstr "Zadej číslo: "
+
+msgid "Invalid choice! Enter 1, 2, 3 or R."
+msgstr "Neplatná volba! Zadej 1, 2, 3 nebo R."
+
+msgid "2. Choose browser"
+msgstr "2. Vyber prohlížeč"
+
+msgid "Enter number (1-5): "
+msgstr "Zadej číslo (1 až 5): "
+
+msgid "Invalid choice! Enter 1-5 or R."
+msgstr "Neplatná volba! Zadej číslo 1 až 5 nebo R."
+
+msgid "3. Choose office suite"
+msgstr "3. Vyber kancelářský balík"
+
+msgid "Enter number (1-3): "
+msgstr "Zadej číslo (1 až 3): "
+
+msgid "Invalid choice! Enter 1-3 or R."
+msgstr "Neplatná volba! Zadej číslo 1 až 3 nebo R."
+
+msgid "4. Enable automatic login?"
+msgstr "4. Chceš nastavit automatické přihlašování?"
+
+msgid "Enter number (1 or 2): "
+msgstr "Zadej číslo (1 nebo 2): "
+
+msgid "Invalid choice! Enter 1, 2 or R."
+msgstr "Neplatná volba! Zadej 1, 2 nebo R."
+
+msgid "5. Choose computer security profile (passwords and permissions)"
+msgstr "5. Zvolte bezpečnostní profil počítače (Správa hesel a oprávnění)"
+
+msgid "1) Family PC / Windows style (NO PASSWORD)"
+msgstr "1) Rodinný PC / Windows styl (BEZ HESLA)"
+
+msgid "   - The computer boots straight to the desktop."
+msgstr "   - Počítač startuje rovnou na plochu."
+
+msgid "   - Sudo and app installation run silently or with a click (no password)."
+msgstr "   - Sudo a instalace programů se provádí tiše nebo jen kliknutím (bez zadávání hesla)."
+
+msgid "2) Personal PC (STANDARD LINUX)"
+msgstr "2) Osobní PC (STANDARDNÍ LINUX)"
+
+msgid "   - Requires the user password for login and sudo/installations."
+msgstr "   - Vyžaduje heslo uživatele pro přihlášení i pro sudo/instalace."
+
+msgid "3) Strict Administrator (SEPARATE PRIVILEGES)"
+msgstr "3) Přísný Administrátor (ODDĚLENÁ PRÁVA)"
+
+msgid "   - The user has their own password (or none) for login."
+msgstr "   - Uživatel má své heslo (nebo žádné) pro přihlášení."
+
+msgid "   - Installing apps and system changes always require the ROOT password."
+msgstr "   - Pro instalaci programů a zásahy do systému je vždy nutné zadat heslo ROOTa."
+
+msgid "3) Strict Administrator - UNAVAILABLE (ROOT password was not set during Debian installation)"
+msgstr "3) Přísný Administrátor - NEDOSTUPNÉ (Při instalaci Debianu nebylo nastaveno heslo ROOTa)"
+
+msgid "Enter profile number (1, 2 or 3): "
+msgstr "Zadej číslo profilu (1, 2 nebo 3): "
+
+msgid "This option requires a ROOT password."
+msgstr "Tato volba vyžaduje nastavené heslo ROOTa."
+
+msgid "Invalid choice!"
+msgstr "Neplatná volba!"
+
+msgid "5b. Remove the user login password? (Windows style - login with a click. Safe, sudo is protected by the ROOT password.)"
+msgstr "5b. Odstranit uživateli heslo pro přihlášení? (Windows styl - přihlášení jen kliknutím. Bezpečné, protože sudo už je chráněno ROOT heslem.)"
+
+msgid "1) Yes (remove the regular user password)"
+msgstr "1) Ano (Vymazat heslo běžného uživatele)"
+
+msgid "2) No (keep the user password)"
+msgstr "2) Ne (Ponechat uživateli heslo)"
+
+msgid "6. Install Wine and Winetricks for Windows applications?"
+msgstr "6. Chceš nainstalovat Wine a Winetricks pro Windows aplikace?"
+
+msgid "7. Install RustDesk (Remote Desktop)?"
+msgstr "7. Instalace RustDesk (Vzdálená plocha)?"
+
+msgid "   Lets you control this computer from another device, or vice versa."
+msgstr "   Umožňuje ovládat tento počítač z jiného zařízení nebo naopak."
+
+msgid "   Ideal for quick technical support or remote management."
+msgstr "   Ideální pro rychlou technickou pomoc nebo správu na dálku."
+
+msgid "1) Yes (install RustDesk)"
+msgstr "1) Ano (Nainstalovat RustDesk)"
+
+msgid "2) No (skip)"
+msgstr "2) Ne (Přeskočit)"
+
+msgid "SETTINGS SUMMARY"
+msgstr "SOUHRN NASTAVENÍ"
+
+msgid "Is this configuration correct?"
+msgstr "Je toto nastavení správné?"
+
+msgid "1) Yes (start installation)"
+msgstr "1) Ano (Spustit instalaci)"
+
+msgid "2) No (start over)"
+msgstr "2) Ne (Začít znovu)"
+
+msgid "Enter number (1 or 2, or R to restart): "
+msgstr "Zadej číslo (1 nebo 2, případně R pro restart): "
+
+msgid "(Type R at any time to reset and return to the beginning)"
+msgstr "(Kdykoliv zadej 'R' pro reset a návrat na začátek)"

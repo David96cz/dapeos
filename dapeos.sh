@@ -70,6 +70,9 @@ main() {
         shift
     done
 
+    init_script
+
+    setup_banner
     if [ -n "$lang_arg" ]; then
         DAPEOS_LANG="$lang_arg"
         export DAPEOS_LANG
@@ -77,8 +80,8 @@ main() {
     else
         choose_language
     fi
+    clear
 
-    init_script
     init_setup
     prepare_system
     install_packages

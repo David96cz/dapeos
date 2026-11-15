@@ -28,11 +28,20 @@ init_script() {
 }
 
 
+setup_banner() {
+    echo -e "\033[1;36m==================================================\033[0m"
+    echo -e "\033[1;36m                 DapeOS SETUP                     \033[0m"
+    echo -e "\033[1;36m==================================================\033[0m"
+    echo -e " \033[1;33m$(_ '(Type R at any time to reset and return to the beginning)')\033[0m"
+    echo -e "\033[1;36m--------------------------------------------------\033[0m"
+    echo ""
+}
+
 init_setup() {
-    [ "$EUID" -ne 0 ] && error "Nutno spustit jako root (sudo)"
+    [ "$EUID" -ne 0 ] && error "$(_ 'Must be run as root (sudo)')"
     
-    log "Detekován systémový jazyk instalace: $SYS_LANG_CODE"
-    log "Instalace bude provedena pro uživatele: $REAL_USER"
+    log "$(_ 'Detected system installation language:')"
+    log "$(_ 'Installation will be performed for user:')"
     sleep 1
 
     # Detekce stavu hesla ROOT
@@ -46,19 +55,14 @@ init_setup() {
     # HLAVNÍ INTERAKTIVNÍ SMYČKA
     while true; do
         clear
-        echo -e "\033[1;36m==================================================\033[0m"
-        echo -e "\033[1;36m                 DapeOS SETUP                     \033[0m"
-        echo -e "\033[1;36m==================================================\033[0m"
-        echo -e " \033[1;33m(Kdykoliv zadej 'R' pro reset a návrat na začátek)\033[0m"
-        echo -e "\033[1;36m--------------------------------------------------\033[0m"
-        echo ""
+        setup_banner
 
-        echo "1. Vyber desktopové prostředí"
+        echo "1. Choose desktop environment"
         while true; do
             echo "1) KDE Plasma"
             echo "2) LXQT"
             echo "3) XFCE"
-            read -p "Zadej číslo: " DISTRO_ANS
+            read -p "$(_ 'Enter number: ')" DISTRO_ANS
             case "$DISTRO_ANS" in
                 1) DESKTOP_ENV="PLASMA"; DESKTOP_STR="KDE Plasma"; break ;;
                 2) DESKTOP_ENV="LXQT"; DESKTOP_STR="LXQt"; break ;;
@@ -70,14 +74,14 @@ init_setup() {
 
 
         echo "--------------------------------------------------"
-        echo "2. Vyber prohlížeč"
+        echo "2. Choose browser"
         while true; do
             echo "1) Chrome"
             echo "2) Chromium"
             echo "3) Brave"
             echo "4) Firefox"
             echo "5) Nic"
-            read -p "Zadej číslo (1 až 5): " BROWSER_CHOICE
+            read -p "$(_ 'Enter number (1-5): ')" BROWSER_CHOICE
             case "$BROWSER_CHOICE" in
                 1) BROWSER_STR="Google Chrome"; break ;;
                 2) BROWSER_STR="Chromium"; break ;;
@@ -90,12 +94,12 @@ init_setup() {
         done
 
         echo "--------------------------------------------------"
-        echo "3. Vyber kancelářský balík"
+        echo "3. Choose office suite"
         while true; do
             echo "1) LibreOffice"
             echo "2) OnlyOffice"
             echo "3) Nic"
-            read -p "Zadej číslo (1 až 3): " OFFICE_CHOICE
+            read -p "$(_ 'Enter number (1-3): ')" OFFICE_CHOICE
             case "$OFFICE_CHOICE" in
                 1) OFFICE_STR="LibreOffice"; break ;;
                 2) OFFICE_STR="OnlyOffice"; break ;;
@@ -106,11 +110,11 @@ init_setup() {
         done
 
         echo "--------------------------------------------------"
-        echo "4. Chceš nastavit automatické přihlašování?"
+        echo "4. Enable automatic login?"
         while true; do
             echo "1) Ano"
             echo "2) Ne"
-            read -p "Zadej číslo (1 nebo 2): " AUTO_ANS
+            read -p "$(_ 'Enter number (1 or 2): ')" AUTO_ANS
             case "$AUTO_ANS" in
                 1) AUTOLOGIN_REQ="TRUE"; AUTOLOGIN_STR="Ano"; break ;;
                 2) AUTOLOGIN_REQ="FALSE"; AUTOLOGIN_STR="Ne"; break ;;
@@ -120,27 +124,27 @@ init_setup() {
         done
 
         echo "--------------------------------------------------"
-        echo "5. Zvolte bezpečnostní profil počítače (Správa hesel a oprávnění)"
+        echo "5. Choose computer security profile (passwords and permissions)"
         echo ""
         
         # Možnost 1 a 2 jsou dostupné vždy
-        echo "1) Rodinný PC / Windows styl (BEZ HESLA)"
-        echo "   - Počítač startuje rovnou na plochu."
-        echo "   - Sudo a instalace programů se provádí tiše nebo jen kliknutím (bez zadávání hesla)."
-        echo "2) Osobní PC (STANDARDNÍ LINUX)"
-        echo "   - Vyžaduje heslo uživatele pro přihlášení i pro sudo/instalace."
+        echo "1) Family PC / Windows style (NO PASSWORD)"
+        echo "   - The computer boots straight to the desktop."
+        echo "   - Sudo and app installation run silently or with a click (no password)."
+        echo "2) Personal PC (STANDARD LINUX)"
+        echo "   - Requires the user password for login and sudo/installations."
         
         # Možnost 3 je dostupná JEN pokud si uživatel nastavil heslo roota při instalaci
         if [ "$ROOT_LOCKED" == "FALSE" ]; then
-            echo "3) Přísný Administrátor (ODDĚLENÁ PRÁVA)"
-            echo "   - Uživatel má své heslo (nebo žádné) pro přihlášení."
-            echo "   - Pro instalaci programů a zásahy do systému je vždy nutné zadat heslo ROOTa."
+            echo "3) Strict Administrator (SEPARATE PRIVILEGES)"
+            echo "   - The user has their own password (or none) for login."
+            echo "   - Installing apps and system changes always require the ROOT password."
         else
             echo -e "\033[1;30m3) Přísný Administrátor - NEDOSTUPNÉ (Při instalaci Debianu nebylo nastaveno heslo ROOTa)\033[0m"
         fi
 
         while true; do
-            read -p "Zadej číslo profilu (1, 2 nebo 3): " SEC_ANS
+            read -p "$(_ 'Enter profile number (1, 2 or 3): ')" SEC_ANS
             case "$SEC_ANS" in
                 1)
                     SEC_PROFILE="FAMILY"
@@ -169,11 +173,11 @@ init_setup() {
         # Zeptáme se na smazání hesla JEN pokud je sudo kryté rootem
         if [ "$ROOT_ADMIN_ONLY" == "TRUE" ]; then
             echo "--------------------------------------------------"
-            echo "5b. Odstranit uživateli heslo pro přihlášení? (Windows styl - přihlášení jen kliknutím. Bezpečné, protože sudo už je chráněno ROOT heslem.)"
+            echo "5b. Remove the user login password? (Windows style - login with a click. Safe, sudo is protected by the ROOT password.)"
             while true; do
-                echo "1) Ano (Vymazat heslo běžného uživatele)"
-                echo "2) Ne (Ponechat uživateli heslo)"
-                read -p "Zadej číslo (1 nebo 2): " PASS_ANS
+                echo "1) Yes (remove the regular user password)"
+                echo "2) No (keep the user password)"
+                read -p "$(_ 'Enter number (1 or 2): ')" PASS_ANS
                 case "$PASS_ANS" in
                     1) REMOVE_PASS="TRUE"; REMOVE_PASS_STR="Ano (Bez hesla)"; break ;;
                     2) REMOVE_PASS="FALSE"; REMOVE_PASS_STR="Ne (S heslem)"; break ;;
@@ -184,11 +188,11 @@ init_setup() {
         fi
 
         echo "--------------------------------------------------"
-        echo "6. Chceš nainstalovat Wine a Winetricks pro Windows aplikace?"
+        echo "6. Install Wine and Winetricks for Windows applications?"
         while true; do
             echo "1) Ano"
             echo "2) Ne"
-            read -p "Zadej číslo (1 nebo 2): " WINE_ANS
+            read -p "$(_ 'Enter number (1 or 2): ')" WINE_ANS
             case "$WINE_ANS" in
                 1) WINE_REQ="TRUE"; WINE_STR="Ano"; break ;;
                 2) WINE_REQ="FALSE"; WINE_STR="Ne"; break ;;
@@ -198,13 +202,13 @@ init_setup() {
         done
 
         echo "--------------------------------------------------"
-        echo "7. Instalace RustDesk (Vzdálená plocha)?"
-        echo "   Umožňuje ovládat tento počítač z jiného zařízení nebo naopak."
-        echo "   Ideální pro rychlou technickou pomoc nebo správu na dálku."
+        echo "7. Install RustDesk (Remote Desktop)?"
+        echo "   Lets you control this computer from another device, or vice versa."
+        echo "   Ideal for quick technical support or remote management."
         while true; do
-            echo "1) Ano (Nainstalovat RustDesk)"
-            echo "2) Ne (Přeskočit)"
-            read -p "Zadej číslo (1 nebo 2): " RUSTDESK_ANS
+            echo "1) Yes (install RustDesk)"
+            echo "2) No (skip)"
+            read -p "$(_ 'Enter number (1 or 2): ')" RUSTDESK_ANS
             case "$RUSTDESK_ANS" in
                 1) RUSTDESK_REQ="TRUE"; RUSTDESK_STR="Ano"; break ;;
                 2) RUSTDESK_REQ="FALSE"; RUSTDESK_STR="Ne"; break ;;
@@ -226,11 +230,11 @@ init_setup() {
         echo " Wine podpora:     $WINE_STR"
         echo " RustDesk:         $RUSTDESK_STR"
         echo -e "\033[1;36m==================================================\033[0m"
-        echo "Je toto nastavení správné?"
+        echo "Is this configuration correct?"
         while true; do
-            echo "1) Ano (Spustit instalaci)"
-            echo "2) Ne (Začít znovu)"
-            read -p "Zadej číslo (1 nebo 2, případně R pro restart): " CONFIRM_ANS
+            echo "1) Yes (start installation)"
+            echo "2) No (start over)"
+            read -p "$(_ 'Enter number (1 or 2, or R to restart): ')" CONFIRM_ANS
             case "$CONFIRM_ANS" in
                 1) break 2 ;; 
                 2|r|R) continue 2 ;; 
