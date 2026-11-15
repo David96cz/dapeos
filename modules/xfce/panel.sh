@@ -22,6 +22,25 @@ whisker_rename() {
     rm -f /tmp/wm.po
 }
 
+xfce_clock_locale() {
+    local xml="$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
+    [ -f "$xml" ] || return 0
+    if [ "$SYS_LANG_CODE" != "en_US" ] && [ "${DAPEOS_LANG:-}" != "en" ]; then
+        return 0
+    fi
+    python3 - "$xml" <<'INNER'
+import re
+import sys
+path = sys.argv[1]
+data = open(path, encoding="utf-8").read()
+data = re.sub(r'(<property name="digital-time-format" type="string" value=")[^"]*(")',
+              r'\1%-I:%M %p\2', data)
+data = re.sub(r'(<property name="digital-date-format" type="string" value=")[^"]*(")',
+              r'\1 %a, %m/%d/%Y \2', data)
+open(path, "w", encoding="utf-8").write(data)
+INNER
+}
+
 xfce_browser_launcher() {
     local browser_id
     case "$BROWSER_CHOICE" in

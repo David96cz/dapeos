@@ -62,6 +62,7 @@ class ShortcutApp(QMainWindow):
         super().__init__()
         self.setWindowTitle(_("Shortcut Manager"))
         self.resize(850, 600)
+        self.center_on_screen()
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
         self.editing_path = None
         
@@ -74,6 +75,10 @@ class ShortcutApp(QMainWindow):
         self.init_creator_tab()
         self.init_manager_tab()
         
+    def center_on_screen(self):
+        screen = QApplication.primaryScreen().availableGeometry()
+        self.move(screen.center() - self.rect().center())
+
     def init_creator_tab(self):
         tab = QWidget()
         layout = QVBoxLayout(tab)

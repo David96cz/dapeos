@@ -8,6 +8,7 @@ configure_xfce() {
 
     albert_setup
     xfce_appearance          # xfce4 konfigurace + xfce_panel_icons
+    xfce_clock_locale
     xfce_deploy_scripts      # skripty + wrappery xfce4-panel / nm-applet
     xfce_setup_apps_and_defaults
     xfce_default_apps

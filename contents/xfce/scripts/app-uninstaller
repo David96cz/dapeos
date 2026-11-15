@@ -162,9 +162,14 @@ class AppUninstaller(QWidget):
                 blacklist = [line.strip().lower() for line in f if line.strip()]
         return blacklist
 
+    def center_on_screen(self):
+        screen = QApplication.primaryScreen().availableGeometry()
+        self.move(screen.center() - self.rect().center())
+
     def initUI(self):
         self.setWindowTitle(_("Uninstall Programs"))
         self.setFixedSize(550, 600)
+        self.center_on_screen()
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
         
         self.setStyleSheet("""

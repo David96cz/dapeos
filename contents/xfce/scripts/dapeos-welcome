@@ -124,9 +124,9 @@ def system_info_html():
         (_("System"), pretty),
         (_("Kernel"), platform.release()),
         (_("Desktop"), os.environ.get("XDG_CURRENT_DESKTOP", "XFCE")),
-        ("Procesor", cpu or "—"),
+        (_("Processor"), cpu or "—"),
         (_("Memory"), f"{mem_kb / 1024 / 1024:.1f} GB"),
-        ("Disk /", f"{used / 1024**3:.1f} z {total / 1024**3:.1f} GB"),
+        (_("Disk /"), f"{used / 1024**3:.1f} {_('of')} {total / 1024**3:.1f} GB"),
         ("Uptime", f"{hours} h {minutes} min"),
     ]
 
@@ -137,39 +137,23 @@ def system_info_html():
     return html
 
 
-HELP_HTML = """
-<h2>Nápověda</h2>
+HELP_HTML = (
+    _("<h2>Help</h2>")
+    + _("<h3>Where is the terminal and why don't I need it?</h3><p>Most things are done by clicking. You can find the terminal in the menu, but you won't need it for normal use.</p>")
+    + _("<h3>How do I install a program?</h3><p>Open <b>Package Installer</b> or <b>Updates</b>. Most programs can be installed from the menu without downloading from the internet.</p>")
+    + _("<h3>Why is it asking for a password?</h3><p>The password is only required for system changes (installation, updates, settings). It works like <b>User Accounts</b> in Windows.</p>")
+    + _("<h3>Windows applications</h3><p>Some Windows programs can run through Wine. Search for <b>Wine</b> in Help or use the Windows application support installer.</p>")
+    + _("<h3>Printer, Wi-Fi, Bluetooth</h3><p>Everything is in <b>Settings</b>. Printers are usually added automatically.</p>")
+)
 
-<h3>Kde je terminál a proč ho nepotřebuju?</h3>
-<p>Většinu věcí uděláš klikáním. Terminál najdeš v menu mezi aplikacemi,
-ale pro běžné používání ho potřebovat nebudeš.</p>
-
-<h3>Jak nainstalovat program?</h3>
-<p>Otevři <b>Instalátor balíků</b> nebo <b>Aktualizace</b>. Většina programů
-jde nainstalovat z nabídky, bez stahování z internetu.</p>
-
-<h3>Proč se po mně chce heslo?</h3>
-<p>Heslo se ptá jen u změn systému (instalace, aktualizace, nastavení).
-Je to stejné jako „Správce účtů“ ve Windows.</p>
-
-<h3>Windows aplikace</h3>
-<p>Některé programy pro Windows jdou spustit přes Wine. Zeptej se v nápovědě
-na „Wine“ nebo použij instalátor podpory Windows aplikací.</p>
-
-<h3>Tiskárna, Wi-Fi, Bluetooth</h3>
-<p>Vše najdeš v <b>Nastavení</b>. Tiskárny se obvykle přidají samy.</p>
-"""
-
-SHORTCUTS_HTML = """
-<h2>Klávesové zkratky</h2>
-<table cellspacing='8'>
-<tr><td><b>Win</b></td><td>otevře menu Start</td></tr>
-<tr><td><b>Ctrl + Alt + Del</b></td><td>zámek, změna hesla, správce úloh</td></tr>
-<tr><td><b>PrintScreen</b></td><td>snímek obrazovky</td></tr>
-<tr><td><b>Alt + Tab</b></td><td>přepínání oken</td></tr>
-<tr><td><b>Win + E</b></td><td>souborový manažer (pokud je nastaven)</td></tr>
-</table>
-"""
+SHORTCUTS_HTML = (
+    _("<h2>Keyboard shortcuts</h2>")
+    + _("<table cellspacing='8'><tr><td><b>Win</b></td><td>opens the Start menu</td></tr>"
+        "<tr><td><b>Ctrl + Alt + Del</b></td><td>lock, change password, task manager</td></tr>"
+        "<tr><td><b>PrintScreen</b></td><td>screenshot</td></tr>"
+        "<tr><td><b>Alt + Tab</b></td><td>switch windows</td></tr>"
+        "<tr><td><b>Win + E</b></td><td>file manager (if configured)</td></tr></table>")
+)
 
 
 class Welcome(QWidget):
@@ -226,7 +210,7 @@ class Welcome(QWidget):
             ("folder-download", _("Move data from Windows"),
              _("Documents, pictures and music from your old computer."),
              self.migrate),
-            ("system-software-update", "Updates",
+            ("system-software-update", _("Updates"),
              _("Install available system and application updates."),
              self.open_updates),
             ("help-browser", _("Help"),
@@ -269,12 +253,11 @@ class Welcome(QWidget):
     def migrate(self):
         InfoDialog(
             self, _("Move data from Windows"),
-            "<h2>Přesun dat z Windows</h2>"
-            "<p>Průvodce připojí váš disk s Windows (jen pro čtení) a nabídne "
-            "zkopírování složek <b>Dokumenty, Obrázky, Hudba, Videa a Stažené soubory</b> "
-            "do domovské složky.</p>"
-            "<p>V tuto chvíli je to v přípravě – data můžete zatím zkopírovat ručně "
-            "přes <b>Správce souborů</b>, váš disk s Windows uvidíte v levém panelu.</p>",
+            _("<h2>Moving data from Windows</h2>")
+            + _("<p>The wizard connects your Windows disk (read-only) and offers to copy "
+                "<b>Documents, Pictures, Music, Videos and Downloads</b> to your home folder.</p>")
+            + _("<p>This is currently in preparation – for now you can copy the data manually "
+                "through <b>File Manager</b>; your Windows disk appears in the left panel.</p>"),
         ).exec_()
 
     def open_updates(self):

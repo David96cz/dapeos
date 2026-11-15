@@ -530,3 +530,51 @@ msgstr "Tisk odeslán"
 
 msgid "Failed to send the print job."
 msgstr "Chyba při odesílání na tiskárnu."
+
+msgid "<h2>Help</h2>"
+msgstr "<h2>Nápověda</h2>"
+
+msgid "<h3>Where is the terminal and why don't I need it?</h3><p>Most things are done by clicking. You can find the terminal in the menu, but you won't need it for normal use.</p>"
+msgstr "<h3>Kde je terminál a proč ho nepotřebuju?</h3><p>Většinu věcí uděláš klikáním. Terminál najdeš v menu mezi aplikacemi, ale pro běžné používání ho potřebovat nebudeš.</p>"
+
+msgid "<h3>How do I install a program?</h3><p>Open <b>Package Installer</b> or <b>Updates</b>. Most programs can be installed from the menu without downloading from the internet.</p>"
+msgstr "<h3>Jak nainstalovat program?</h3><p>Otevři <b>Instalátor balíků</b> nebo <b>Aktualizace</b>. Většina programů jde nainstalovat z nabídky, bez stahování z internetu.</p>"
+
+msgid "<h3>Why is it asking for a password?</h3><p>The password is only required for system changes (installation, updates, settings). It works like <b>User Accounts</b> in Windows.</p>"
+msgstr "<h3>Proč se po mně chce heslo?</h3><p>Heslo se ptá jen u změn systému (instalace, aktualizace, nastavení). Je to stejné jako <b>Správce účtů</b> ve Windows.</p>"
+
+msgid "<h3>Windows applications</h3><p>Some Windows programs can run through Wine. Search for <b>Wine</b> in Help or use the Windows application support installer.</p>"
+msgstr "<h3>Windows aplikace</h3><p>Některé programy pro Windows jdou spustit přes Wine. Zeptej se v nápovědě na <b>Wine</b> nebo použij instalátor podpory Windows aplikací.</p>"
+
+msgid "<h3>Printer, Wi-Fi, Bluetooth</h3><p>Everything is in <b>Settings</b>. Printers are usually added automatically.</p>"
+msgstr "<h3>Tiskárna, Wi-Fi, Bluetooth</h3><p>Vše najdeš v <b>Nastavení</b>. Tiskárny se obvykle přidají samy.</p>"
+
+msgid "<h2>Keyboard shortcuts</h2>"
+msgstr "<h2>Klávesové zkratky</h2>"
+
+msgid "<table cellspacing='8'><tr><td><b>Win</b></td><td>opens the Start menu</td></tr><tr><td><b>Ctrl + Alt + Del</b></td><td>lock, change password, task manager</td></tr><tr><td><b>PrintScreen</b></td><td>screenshot</td></tr><tr><td><b>Alt + Tab</b></td><td>switch windows</td></tr><tr><td><b>Win + E</b></td><td>file manager (if configured)</td></tr></table>"
+msgstr "<table cellspacing='8'><tr><td><b>Win</b></td><td>otevře menu Start</td></tr><tr><td><b>Ctrl + Alt + Del</b></td><td>zámek, změna hesla, správce úloh</td></tr><tr><td><b>PrintScreen</b></td><td>snímek obrazovky</td></tr><tr><td><b>Alt + Tab</b></td><td>přepínání oken</td></tr><tr><td><b>Win + E</b></td><td>souborový manažer (pokud je nastaven)</td></tr></table>"
+
+msgid "<h2>Moving data from Windows</h2>"
+msgstr "<h2>Přesun dat z Windows</h2>"
+
+msgid "<p>The wizard connects your Windows disk (read-only) and offers to copy <b>Documents, Pictures, Music, Videos and Downloads</b> to your home folder.</p>"
+msgstr "<p>Průvodce připojí váš disk s Windows (jen pro čtení) a nabídne zkopírování složek <b>Dokumenty, Obrázky, Hudba, Videa a Stažené soubory</b> do domovské složky.</p>"
+
+msgid "<p>This is currently in preparation – for now you can copy the data manually through <b>File Manager</b>; your Windows disk appears in the left panel.</p>"
+msgstr "<p>V tuto chvíli je to v přípravě – data můžete zatím zkopírovat ručně přes <b>Správce souborů</b>, váš disk s Windows uvidíte v levém panelu.</p>"
+
+msgid "Updates"
+msgstr "Aktualizace"
+
+msgid "Processor"
+msgstr "Procesor"
+
+msgid "Disk /"
+msgstr "Disk /"
+
+msgid "of"
+msgstr "z"
+
+msgid "Uptime"
+msgstr "Uptime"
