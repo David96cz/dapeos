@@ -194,3 +194,6 @@ msgstr "Ne"
 
 msgid "None"
 msgstr "Žádný"
+
+msgid "Nothing"
+msgstr "Nic"

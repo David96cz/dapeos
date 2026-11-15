@@ -99,12 +99,12 @@ init_setup() {
         while true; do
             echo "1) LibreOffice"
             echo "2) OnlyOffice"
-            echo "3) Nic"
+            echo "3) $(_ 'Nothing')"
             read -p "$(_ 'Enter number (1-3): ')" OFFICE_CHOICE
             case "$OFFICE_CHOICE" in
                 1) OFFICE_STR="LibreOffice"; break ;;
                 2) OFFICE_STR="OnlyOffice"; break ;;
-                3) OFFICE_STR="$(_ 'None')"; break ;;
+                3) OFFICE_STR="$(_ 'Nothing')"; break ;;
                 r|R) continue 2 ;;
                 *) echo -e "\033[1;31m$(_ 'Invalid choice! Enter 1-3 or R.')\033[0m" ;;
             esac
@@ -227,13 +227,13 @@ init_setup() {
         echo -e "\033[1;36m==================================================\033[0m"
         echo -e "\033[1;36m                 $(_ 'SETTINGS SUMMARY')                 \033[0m"
         echo -e "\033[1;36m==================================================\033[0m"
-        echo "$(_ 'Target user:') $REAL_USER"
-        echo "$(_ 'Desktop:') $DESKTOP_STR"
-        echo "$(_ 'Browser:') $BROWSER_STR"
-        echo "$(_ 'Office:') $OFFICE_STR"
-        echo "$(_ 'Security:') $SEC_STR"
-        echo "$(_ 'Wine support:') $WINE_STR"
-        echo "$(_ 'RustDesk:') $RUSTDESK_STR"
+        printf "%-18s %s\n" "$(_ 'Target user:')" "$REAL_USER"
+        printf "%-18s %s\n" "$(_ 'Desktop:')" "$DESKTOP_STR"
+        printf "%-18s %s\n" "$(_ 'Browser:')" "$BROWSER_STR"
+        printf "%-18s %s\n" "$(_ 'Office:')" "$OFFICE_STR"
+        printf "%-18s %s\n" "$(_ 'Security:')" "$SEC_STR"
+        printf "%-18s %s\n" "$(_ 'Wine support:')" "$WINE_STR"
+        printf "%-18s %s\n" "$(_ 'RustDesk:')" "$RUSTDESK_STR"
         echo -e "\033[1;36m==================================================\033[0m"
         echo "Is this configuration correct?"
         while true; do
