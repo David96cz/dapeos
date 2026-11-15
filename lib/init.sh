@@ -54,7 +54,7 @@ init_setup() {
 
     # HLAVNÍ INTERAKTIVNÍ SMYČKA
     while true; do
-        clear
+        clear_screen
         setup_banner
 
         echo "1. Choose desktop environment"
@@ -73,7 +73,7 @@ init_setup() {
         done
 
 
-        clear
+        clear_screen
         setup_banner
         echo "2. Choose browser"
         while true; do
@@ -93,7 +93,7 @@ init_setup() {
             esac
         done
 
-        clear
+        clear_screen
         setup_banner
         echo "3. Choose office suite"
         while true; do
@@ -110,7 +110,7 @@ init_setup() {
             esac
         done
 
-        clear
+        clear_screen
         setup_banner
         echo "4. Enable automatic login?"
         while true; do
@@ -125,7 +125,7 @@ init_setup() {
             esac
         done
 
-        clear
+        clear_screen
         setup_banner
         echo "5. Choose computer security profile (passwords and permissions)"
         echo ""
@@ -190,7 +190,7 @@ init_setup() {
             done
         fi
 
-        clear
+        clear_screen
         setup_banner
         echo "6. Install Wine and Winetricks for Windows applications?"
         while true; do
@@ -205,7 +205,7 @@ init_setup() {
             esac
         done
 
-        clear
+        clear_screen
         setup_banner
         echo "7. Install RustDesk (Remote Desktop)?"
         echo "   Lets you control this computer from another device, or vice versa."
@@ -223,7 +223,7 @@ init_setup() {
         done
 
         # SOUHRN A POTVRZENÍ
-        clear
+        clear_screen
         echo -e "\033[1;36m==================================================\033[0m"
         echo -e "\033[1;36m                 SOUHRN NASTAVENÍ                 \033[0m"
         echo -e "\033[1;36m==================================================\033[0m"

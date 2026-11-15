@@ -72,6 +72,7 @@ main() {
 
     init_script
 
+    clear_screen
     setup_banner
     if [ -n "$lang_arg" ]; then
         DAPEOS_LANG="$lang_arg"
@@ -80,7 +81,7 @@ main() {
     else
         choose_language
     fi
-    clear
+    clear_screen
 
     init_setup
     prepare_system

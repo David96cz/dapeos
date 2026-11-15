@@ -11,3 +11,7 @@ if command -v gettext >/dev/null 2>&1; then
 else
     _() { printf '%s' "$1"; }
 fi
+
+clear_screen() {
+    printf "\033[2J\033[3J\033[H"
+}
