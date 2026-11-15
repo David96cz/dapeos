@@ -27,6 +27,7 @@ NO_MENU = {
     "albert.desktop",
     "blueman-adapters.desktop",
     "blueman-manager.desktop",
+    "org.gnome.FileRoller.desktop",
     "kdesystemsettings.desktop",
     "light-locker-settings.desktop",
     "lightdm-settings.desktop",
