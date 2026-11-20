@@ -219,10 +219,17 @@ static gboolean
 on_event (GIOChannel *channel, GIOCondition condition, gpointer data)
 {
     DapeosStatus *st = data;
+
+    if (condition & (G_IO_HUP | G_IO_ERR | G_IO_NVAL))
+        return FALSE;
+
     gchar buf[512];
     gsize read = 0;
-    g_io_channel_read_chars (channel, buf, sizeof (buf) - 1, &read, NULL);
-    read_state (st);
+    GIOStatus status = g_io_channel_read_chars (channel, buf, sizeof (buf) - 1, &read, NULL);
+    if (status == G_IO_STATUS_EOF || read == 0)
+        return FALSE;
+
+    read_volume (st);
     update_image (st);
     return TRUE;
 }
