@@ -339,7 +339,8 @@ clipman16_setup() {
 
 templates_setup() {
     local src="$CONTENTS_DIR/xfce/Templates/en" f
-    if [ "$SYS_LANG_CODE" = "cs" ] || [ "${DAPEOS_LANG:-}" = "cs" ]; then
+    case "$SYS_LANG_CODE" in cs*) src="$CONTENTS_DIR/xfce/Templates/cs" ;; esac
+    if [ "${DAPEOS_LANG:-}" = "cs" ]; then
         src="$CONTENTS_DIR/xfce/Templates/cs"
     fi
     [ -d "$src" ] || return 0
