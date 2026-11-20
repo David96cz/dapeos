@@ -308,10 +308,11 @@ xfce_theme_cleanup() {
     apt-get install -y gnome-themes-extra >/dev/null 2>&1 || true
     apt-get purge -y arc-theme >/dev/null 2>&1 || true
     rm -rf /usr/share/themes/Arc /usr/share/themes/Arc-Dark \
-           /usr/share/themes/Arc-Darker /usr/share/themes/Arc-Lighter 2>/dev/null || true
+           /usr/share/themes/Arc-Darker /usr/share/themes/Arc-Lighter \
+           /usr/share/themes/HighContrast /usr/share/themes/HighContrastInverse 2>/dev/null || true
 
     local idx
-    for pair in "Adwaita:Light" "Adwaita-dark:Dark"; do
+    for pair in "Adwaita:Light Mode" "Adwaita-dark:Dark Mode"; do
         idx="/usr/share/themes/${pair%%:*}/index.theme"
         [ -f "$idx" ] || continue
         sed -i "s/^Name=.*/Name=${pair##*:}/" "$idx"
