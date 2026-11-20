@@ -171,6 +171,7 @@ static gboolean
 on_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 {
     DapeosStatus *st = data;
+    g_print ("DAPEOS: draw\n");
     GString *svg = build_svg (st);
     GError *error = NULL;
     RsvgHandle *handle = rsvg_handle_new_from_data ((const guint8 *) svg->str, svg->len, &error);
@@ -237,6 +238,7 @@ on_click (GtkWidget *widget, GdkEventButton *event, gpointer data)
 static void
 dapeos_status_construct (XfcePanelPlugin *plugin)
 {
+    g_print ("DAPEOS: construct\n");
     DapeosStatus *st = g_new0 (DapeosStatus, 1);
     read_state (st);
 
@@ -253,7 +255,7 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     gtk_container_add (GTK_CONTAINER (button), st->area);
     gtk_container_add (GTK_CONTAINER (plugin), button);
 
-    xfce_panel_plugin_set_small (plugin, TRUE);
+    /* xfce_panel_plugin_set_small (plugin, TRUE); */
 
     spawn_monitor (st, "pactl subscribe", &st->pactl_pid);
     spawn_monitor (st, "nmcli monitor", &st->nm_pid);
