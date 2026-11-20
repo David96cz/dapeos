@@ -450,14 +450,16 @@ int main (int argc, char **argv)
 {
     gtk_init (&argc, &argv);
     build_ui ();
+    g_printerr ("DAPEOS-QS: built\n");
     gtk_widget_show_all (window);
+    g_printerr ("DAPEOS-QS: shown\n");
     position_window ();
     gtk_window_present (GTK_WINDOW (window));
     gint dw = 0, dh = 0;
     gtk_window_get_size (GTK_WINDOW (window), &dw, &dh);
     gint px = 0, py = 0;
     gtk_window_get_position (GTK_WINDOW (window), &px, &py);
-    g_print ("DAPEOS-QS: visible=%d mapped=%d size=%dx%d pos=%d,%d\n",
+    g_printerr ("DAPEOS-QS: visible=%d mapped=%d size=%dx%d pos=%d,%d\n",
              gtk_widget_get_visible (window), gtk_widget_get_mapped (window), dw, dh, px, py);
     g_timeout_add (1000, refresh_bg, NULL);
     gtk_main ();
