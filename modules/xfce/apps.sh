@@ -56,7 +56,7 @@ flameshot_setup() {
 
 xfce_default_apps() {
     command -v gthumb >/dev/null 2>&1 || return 0
-    local mimes="image/png image/jpeg image/gif image/webp image/bmp image/tiff image/x-icon"
+    local mimes="image/png image/jpeg image/gif image/webp image/bmp image/tiff image/x-icon image/svg+xml image/heic image/avif"
     sudo -u "$REAL_USER" xdg-mime default gthumb.desktop $mimes 2>/dev/null || true
     sudo -u "$REAL_USER" xdg-mime default gdebi.desktop application/vnd.debian.binary-package 2>/dev/null || true
     sudo -u "$REAL_USER" dconf write /org/gnome/file-roller/dialogs/new/default-extension "'zip'" 2>/dev/null || true

@@ -67,7 +67,12 @@ def parse(path):
     if not exec_line:
         return None
     cat = categories
-    if "HardwareSettings" in cat:
+    base = os.path.basename(path)
+    if base in ("lightdm-settings.desktop",):
+        group = "Personal"
+    elif base in ("user-manager.desktop", "thunar-settings.desktop"):
+        group = "System"
+    elif "HardwareSettings" in cat:
         group = "Hardware"
     elif "PersonalSettings" in cat:
         group = "Personal"
@@ -129,6 +134,7 @@ class SettingsHub(QWidget):
         self.search = QLineEdit()
         self.search.setPlaceholderText(_("Search settings…"))
         self.search.setStyleSheet("padding: 8px; border: 1px solid #bbb; border-radius: 6px;")
+        self.search.setClearButtonEnabled(True)
         self.search.textChanged.connect(self.filter)
         root.addWidget(self.search)
 
@@ -153,7 +159,8 @@ class SettingsHub(QWidget):
             b = QPushButton(item["name"])
             b.setIcon(QIcon.fromTheme(item["icon"]))
             b.setIconSize(QSize(26, 26))
-            b.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            b.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            b.setFixedWidth(260)
             b.setMinimumWidth(0)
             b.setStyleSheet("""
                 QPushButton { text-align: left; padding: 8px 10px; border: 1px solid #ccc;

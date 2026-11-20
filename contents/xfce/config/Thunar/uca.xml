@@ -16,4 +16,17 @@
 	<text-files/>
 	<video-files/>
 </action>
+<action>
+	<icon>preferences-desktop-theme</icon>
+	<name>Appearance</name>
+	<name xml:lang="cs">Vzhled</name>
+	<submenu></submenu>
+	<unique-id>dapeos-appearance</unique-id>
+	<command>xfce4-appearance-settings</command>
+	<description>Change theme, icons and wallpaper</description>
+	<description xml:lang="cs">Změna motivu, ikon a tapety</description>
+	<range></range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
 </actions>
