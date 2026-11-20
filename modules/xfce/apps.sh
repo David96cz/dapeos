@@ -262,3 +262,21 @@ whiskermenu_no_run_setup() {
     apt-get install -y "$deb" || return 0
     apt-mark hold xfce4-whiskermenu-plugin >/dev/null 2>&1 || true
 }
+
+
+thunar_no_root_setup() {
+    local arch tdeb ddeb
+    arch="$(dpkg --print-architecture)"
+    tdeb="$(find "$BASE_DIR/packages/thunar-no-root" -maxdepth 1 \
+        -name "thunar_*_${arch}.deb" 2>/dev/null | head -n1)"
+    ddeb="$(find "$BASE_DIR/packages/thunar-no-root" -maxdepth 1 \
+        -name "thunar-data_*_${arch}.deb" 2>/dev/null | head -n1)"
+    if [ -z "$tdeb" ] || [ -z "$ddeb" ]; then
+        log "Patchnutý Thunar pro $arch není k dispozici, ponechávám stock."
+        return 0
+    fi
+    log "Instaluji Thunar bez File System: $(basename "$tdeb")"
+    apt-mark unhold thunar thunar-data >/dev/null 2>&1 || true
+    apt-get install -y "$tdeb" "$ddeb" || return 0
+    apt-mark hold thunar thunar-data >/dev/null 2>&1 || true
+}

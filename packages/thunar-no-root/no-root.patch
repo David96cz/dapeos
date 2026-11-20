@@ -1,0 +1,19 @@
+--- th-a/thunar/thunar-shortcuts-model.c	2026-11-20 12:09:25
++++ th-b/thunar/thunar-shortcuts-model.c	2026-11-20 12:09:30
+@@ -1024,16 +1024,6 @@
+   shortcut = g_slice_new0 (ThunarShortcut);
+   shortcut->group = THUNAR_SHORTCUT_GROUP_DEVICES_HEADER;
+   shortcut->name = g_strdup (_("Devices"));
+-  thunar_shortcuts_model_add_shortcut (model, shortcut);
+-
+-  /* the filesystem entry */
+-  shortcut = g_slice_new0 (ThunarShortcut);
+-  shortcut->group = THUNAR_SHORTCUT_GROUP_DEVICES_FILESYSTEM;
+-  shortcut->name = g_strdup (_("File System"));
+-  shortcut->tooltip = g_strdup (_("Browse the file system"));
+-  shortcut->file = thunar_file_get_for_uri ("file:///", NULL);
+-  shortcut->gicon = g_themed_icon_new ("drive-harddisk");
+-  shortcut->hidden = thunar_shortcuts_model_get_hidden (model, shortcut);
+   thunar_shortcuts_model_add_shortcut (model, shortcut);
+ 
+   /* connect to the device monitor */

@@ -16,6 +16,7 @@ configure_xfce() {
     xfce_browser_launcher
     whiskermenu_no_run_setup
     whisker_rename
+    thunar_no_root_setup
     xfce_app_names
     xfce_actions_config
     xfce_keyboard_shortcuts
