@@ -270,7 +270,11 @@ thunar_no_root_setup() {
     tdeb="$(find "$BASE_DIR/packages/thunar-no-root" -maxdepth 1 \
         -name "thunar_*_${arch}.deb" 2>/dev/null | head -n1)"
     ddeb="$(find "$BASE_DIR/packages/thunar-no-root" -maxdepth 1 \
-        -name "thunar-data_*_${arch}.deb" 2>/dev/null | head -n1)"
+        -name "thunar-data_*_all.deb" 2>/dev/null | head -n1)"
+    if [ -z "$ddeb" ]; then
+        ddeb="$(find "$BASE_DIR/packages/thunar-no-root" -maxdepth 1 \
+            -name "thunar-data_*_${arch}.deb" 2>/dev/null | head -n1)"
+    fi
     if [ -z "$tdeb" ] || [ -z "$ddeb" ]; then
         log "Patchnutý Thunar pro $arch není k dispozici, ponechávám stock."
         return 0

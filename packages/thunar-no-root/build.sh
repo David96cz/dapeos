@@ -55,6 +55,7 @@ dpkg-buildpackage -b -uc -us -j"$(nproc)"
 for pkg in thunar thunar-data; do
     DEB="$(find "$WORK" -maxdepth 1 -name "${pkg}_${NEWVER}_${ARCH}.deb" | head -n1)"
     [ -n "$DEB" ] || DEB="$(find "$WORK" -maxdepth 1 -name "${pkg}_*_${ARCH}.deb" | head -n1)"
+    [ -n "$DEB" ] || DEB="$(find "$WORK" -maxdepth 1 -name "${pkg}_*_all.deb" | head -n1)"
     [ -n "$DEB" ] || { echo "Built $pkg .deb not found" >&2; exit 1; }
     cp -v "$DEB" "$OUT/"
 done
