@@ -70,11 +70,11 @@ def sh(cmd, timeout=4):
 
 
 def touch_status_trigger():
-    path = os.path.expanduser("~/.cache/dapeos/status.trigger")
     try:
+        path = os.path.expanduser("~/.cache/dapeos/volume")
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "a", encoding="utf-8"):
-            pass
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(f"{self.state.get('vol', 0)}\n{1 if self.state.get('mute') else 0}\n")
     except OSError:
         pass
 
@@ -825,7 +825,6 @@ class QuickSettings(QWidget):
 
     def apply(self, s):
         save_cache(s)
-        touch_status_trigger()
         if s.get("dark") is not None and s["dark"] != self.state.get("dark"):
             self.apply_theme(s["dark"])
         old = self.state
@@ -838,6 +837,7 @@ class QuickSettings(QWidget):
             self.state = s
             return
         self.state = s
+        touch_status_trigger()
 
         if s["net_type"] == "wifi":
             self.t_net.set_sub(s["net_name"] or "Wi-Fi")

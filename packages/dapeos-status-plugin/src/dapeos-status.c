@@ -317,6 +317,51 @@ on_size_changed (XfcePanelPlugin *plugin, gint size, gpointer data)
 }
 
 static void
+volume_file_changed (GFileMonitor *monitor, GFile *file, GFile *other,
+                     GFileMonitorEvent event, gpointer data)
+{
+    DapeosStatus *st = data;
+    if (event != G_FILE_MONITOR_EVENT_CHANGED &&
+        event != G_FILE_MONITOR_EVENT_CREATED &&
+        event != G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT)
+        return;
+
+    gchar *path = g_build_filename (g_get_user_cache_dir (), "dapeos", "volume", NULL);
+    gchar *text = NULL;
+    if (g_file_get_contents (path, &text, NULL, NULL)) {
+        gchar **parts = g_strsplit (text, "\n", -1);
+        if (parts[0] && *parts[0]) st->vol = atoi (parts[0]);
+        if (parts[1] && *parts[1]) st->mute = (atoi (parts[1]) != 0);
+        g_strfreev (parts);
+        update_image (st);
+    }
+    g_free (text);
+    g_free (path);
+}
+
+static void
+install_volume_monitor (XfcePanelPlugin *plugin, DapeosStatus *st)
+{
+    gchar *dir = g_build_filename (g_get_user_cache_dir (), "dapeos", NULL);
+    gchar *path = g_build_filename (dir, "volume", NULL);
+    g_mkdir_with_parents (dir, 0700);
+    if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
+        gchar *initial = g_strdup_printf ("%d\n%d\n", st->vol, st->mute ? 1 : 0);
+        g_file_set_contents (path, initial, -1, NULL);
+        g_free (initial);
+    }
+    GFile *file = g_file_new_for_path (path);
+    GFileMonitor *monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
+    if (monitor) {
+        g_signal_connect (monitor, "changed", G_CALLBACK (volume_file_changed), st);
+        g_object_set_data_full (G_OBJECT (plugin), "dapeos-volume-monitor", monitor, g_object_unref);
+    }
+    g_object_unref (file);
+    g_free (path);
+    g_free (dir);
+}
+
+static void
 dapeos_status_construct (XfcePanelPlugin *plugin)
 {
     DapeosStatus *st = g_new0 (DapeosStatus, 1);
@@ -344,7 +389,7 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
 
     g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
 
-    spawn_monitor (st, "pactl subscribe", &st->pactl_pid);
+    install_volume_monitor (plugin, st);
 
     xfce_panel_plugin_set_small (plugin, TRUE);
     gtk_widget_show_all (GTK_WIDGET (plugin));
