@@ -426,6 +426,7 @@ class QuickSettings(QWidget):
             self.setAttribute(Qt.WA_X11BypassWindowManagerHint, True)
             self.setAttribute(Qt.WA_TranslucentBackground, True)
         dbg(f"mode={mode}")
+        QApplication.instance().installEventFilter(self)
         self._xdpy = None
         if mode == "bypass":
             try:
@@ -1429,6 +1430,16 @@ class QuickSettings(QWidget):
         self.show_main()
         self.show()
         dbg(f"shown in {int((time.time() - t0) * 1000)} ms")
+
+    def eventFilter(self, obj, event):
+        if self.isVisible() and event.type() == QEvent.MouseButtonPress:
+            try:
+                inside = self.rect().contains(self.mapFromGlobal(event.globalPos()))
+            except Exception:
+                inside = True
+            if not inside:
+                self.hide()
+        return super().eventFilter(obj, event)
 
     def showEvent(self, event):
         super().showEvent(event)
