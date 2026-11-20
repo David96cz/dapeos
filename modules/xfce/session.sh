@@ -45,6 +45,13 @@ xfce_skel_snapshot() {
 dapeos_session_setup() {
     log "Doplňuji session nastavení (jas, tray appleti, network-online)..."
 
+    install -d -m 755 /usr/share/dapeos/panel-default
+    install -m 644 "$CONTENTS_DIR/xfce/config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml" \
+        /usr/share/dapeos/panel-default/xfce4-panel.xml
+    rm -rf /usr/share/dapeos/panel-default/panel
+    cp -a "$CONTENTS_DIR/xfce/config/xfce4/panel" /usr/share/dapeos/panel-default/panel 2>/dev/null || true
+    chown -R root:root /usr/share/dapeos/panel-default 2>/dev/null || true
+
     install -d -m 755 /etc/tmpfiles.d
     : > /etc/tmpfiles.d/dapeos-backlight.conf
     local bl

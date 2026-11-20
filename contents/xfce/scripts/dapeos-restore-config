@@ -70,6 +70,14 @@ class RestoreDialog(QWidget):
             f"mkdir -p {cfg} {loc}; "
             f"cp -a /etc/skel/.config/. {cfg}/; "
             f"cp -a /etc/skel/.local/. {loc}/; "
+            "if [ -f /usr/share/dapeos/panel-default/xfce4-panel.xml ]; then "
+            "  install -d -m 755 " + shlex.quote(home + '/.config/xfce4/xfconf/xfce-perchannel-xml') + "; "
+            "  cp -f /usr/share/dapeos/panel-default/xfce4-panel.xml "
+            + shlex.quote(home + '/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml') + "; "
+            "  rm -rf " + shlex.quote(home + '/.config/xfce4/panel') + "; "
+            "  cp -a /usr/share/dapeos/panel-default/panel "
+            + shlex.quote(home + '/.config/xfce4/panel') + "; "
+            "fi; "
             f"chown -R {shlex.quote(user)}:{shlex.quote(user)} {cfg} {loc}"
         )
         rc = subprocess.call(["pkexec", "bash", "-c", cmd])
