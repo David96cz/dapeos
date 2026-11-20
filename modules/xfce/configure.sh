@@ -22,6 +22,7 @@ configure_xfce() {
     xfdesktop_menu_setup
     xfce_app_names
     xfce_actions_config
+    templates_setup
     xfce_keyboard_shortcuts
     update_manager_setup
     welcome_setup

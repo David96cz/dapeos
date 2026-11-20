@@ -11,7 +11,7 @@ except Exception:  # noqa: BLE001
 import json
 
 CONF = os.path.expanduser("~/.config/dapeos/tray.json")
-DEFAULTS = {"icon_size": 22, "gap": 4, "pad_left": 0, "pad_right": 0}
+DEFAULTS = {"icon_size": 26, "gap": 5, "pad_left": 4, "pad_right": 0}
 
 
 def load_style():
@@ -21,9 +21,9 @@ def load_style():
             cfg.update(json.load(f))
     except Exception:  # noqa: BLE001
         pass
-    size = max(12, min(48, int(cfg.get("icon_size", 22))))
-    gap = max(0, min(24, int(cfg.get("gap", 4))))
-    left = max(0, min(48, int(cfg.get("pad_left", 0))))
+    size = max(12, min(48, int(cfg.get("icon_size", 26))))
+    gap = max(0, min(24, int(cfg.get("gap", 5))))
+    left = max(0, min(48, int(cfg.get("pad_left", 4))))
     right = max(0, min(48, int(cfg.get("pad_right", 0))))
     return size, size, gap, left, right
 

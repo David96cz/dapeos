@@ -333,3 +333,17 @@ clipman16_setup() {
     apt-get install -y "$deb" || return 0
     apt-mark hold xfce4-clipman-plugin >/dev/null 2>&1 || true
 }
+
+
+templates_setup() {
+    local src="$CONTENTS_DIR/xfce/Templates" f
+    [ -d "$src" ] || return 0
+    install -d -m 755 "$USER_HOME/Templates"
+    for f in "$src"/*; do
+        [ -f "$f" ] || continue
+        if [ ! -e "$USER_HOME/Templates/$(basename "$f")" ]; then
+            install -m 644 "$f" "$USER_HOME/Templates/$(basename "$f")"
+        fi
+    done
+    chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/Templates" 2>/dev/null || true
+}

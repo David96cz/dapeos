@@ -14,8 +14,8 @@ except Exception:  # noqa: BLE001
     _ = lambda s: s
 
 CONF = os.path.expanduser("~/.config/dapeos/tray.json")
-DEFAULTS = {"icon_size": 22, "gap": 4, "pad_left": 0, "pad_right": 0, "clipman_size": 16}
-SYS_DEFAULT = 16
+DEFAULTS = {"icon_size": 26, "gap": 5, "pad_left": 4, "pad_right": 0, "clipman_size": 20}
+SYS_DEFAULT = 24
 
 
 def load_conf():
@@ -92,7 +92,7 @@ class TraySettings(QWidget):
 
         self.clip_spin = QSpinBox()
         self.clip_spin.setRange(12, 32)
-        self.clip_spin.setValue(int(self.cfg.get("clipman_size", 16)))
+        self.clip_spin.setValue(int(self.cfg.get("clipman_size", 20)))
         self.spins["clipman_size"] = self.clip_spin
         if clipman_on_panel():
             form.addRow(_("Clipman icon size"), self.clip_spin)

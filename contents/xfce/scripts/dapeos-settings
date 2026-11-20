@@ -122,6 +122,7 @@ class SettingsHub(QWidget):
         self.items = collect()
         self.buttons = []
         self.button_map = {}
+        self._visible = []
 
         root = QVBoxLayout(self)
         root.setContentsMargins(18, 18, 18, 18)
@@ -136,6 +137,7 @@ class SettingsHub(QWidget):
         self.search.setStyleSheet("padding: 8px; border: 1px solid #bbb; border-radius: 6px;")
         self.search.setClearButtonEnabled(True)
         self.search.textChanged.connect(self.filter)
+        self.search.returnPressed.connect(self.open_single)
         root.addWidget(self.search)
 
         area = QScrollArea()
@@ -185,6 +187,7 @@ class SettingsHub(QWidget):
         for lbl in self.header_labels.values():
             lbl.hide()
 
+        self._visible = []
         row = 0
         for group in GROUPS:
             items = [it for it, _b in self.buttons
@@ -200,6 +203,7 @@ class SettingsHub(QWidget):
                 b = self.button_map[id(item)]
                 self.grid.addWidget(b, row, col)
                 b.show()
+                self._visible.append(b)
                 col += 1
                 if col == 3:
                     col = 0
@@ -207,6 +211,10 @@ class SettingsHub(QWidget):
             if col:
                 row += 1
         self.grid.setRowStretch(row, 1)
+
+    def open_single(self):
+        if len(self._visible) == 1:
+            self._visible[0].click()
 
     def launch(self, command):
         args = [a for a in shlex.split(command) if not a.startswith("%")]
