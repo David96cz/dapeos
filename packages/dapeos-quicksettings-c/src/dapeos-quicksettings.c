@@ -413,8 +413,9 @@ static void build_ui (void)
     gtk_box_pack_start (GTK_BOX (outer), footer, FALSE, FALSE, 0);
 
     apply_css ();
-    update_volume_ui ();
-    update_tiles ();
+    gtk_label_set_text (GTK_LABEL (vol_label), "--%");
+    gtk_label_set_text (GTK_LABEL (bt_label), "--");
+    gtk_label_set_text (GTK_LABEL (night_label), "--");
     gchar *bat = get_battery ();
     gtk_label_set_text (GTK_LABEL (battery_label), bat);
     g_free (bat);
@@ -453,6 +454,8 @@ int main (int argc, char **argv)
     g_printerr ("DAPEOS-QS: built\n");
     gtk_widget_show_all (window);
     g_printerr ("DAPEOS-QS: shown\n");
+    g_timeout_add (100, update_volume_cb, NULL);
+    g_timeout_add (400, update_tiles_cb, NULL);
     position_window ();
     gtk_window_present (GTK_WINDOW (window));
     gint dw = 0, dh = 0;
