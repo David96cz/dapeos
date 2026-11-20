@@ -28,6 +28,25 @@ def load_conf():
     return cfg
 
 
+def clipman_on_panel():
+    try:
+        paths = subprocess.check_output(
+            ["xfconf-query", "-c", "xfce4-panel", "-l"], text=True, timeout=3).splitlines()
+        for path in paths:
+            if not path.endswith("/items") and "/plugins/plugin-" in path and path.count("/") == 2:
+                try:
+                    val = subprocess.check_output(
+                        ["xfconf-query", "-c", "xfce4-panel", "-p", path],
+                        text=True, timeout=3).strip()
+                except Exception:  # noqa: BLE001
+                    continue
+                if val == "xfce4-clipman-plugin":
+                    return True
+    except Exception:  # noqa: BLE001
+        pass
+    return False
+
+
 def get_systray_size():
     try:
         out = subprocess.check_output(
@@ -75,7 +94,14 @@ class TraySettings(QWidget):
         self.clip_spin.setRange(12, 32)
         self.clip_spin.setValue(int(self.cfg.get("clipman_size", 16)))
         self.spins["clipman_size"] = self.clip_spin
-        form.addRow(_("Clipman icon size"), self.clip_spin)
+        if clipman_on_panel():
+            form.addRow(_("Clipman icon size"), self.clip_spin)
+        else:
+            self.clip_spin.setEnabled(False)
+            form.addRow(_("Clipman icon size"), self.clip_spin)
+            self.clip_note = QLabel(_("Clipman plugin is not put on the panel."))
+            self.clip_note.setStyleSheet("color: #888;")
+            form.addRow("", self.clip_note)
 
         self.sys_spin = QSpinBox()
         self.sys_spin.setRange(16, 48)

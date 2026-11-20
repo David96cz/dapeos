@@ -614,3 +614,6 @@ msgstr "Velikost ikony clipmanu"
 
 msgid "Saved. Panel restarts to apply the clipman size."
 msgstr "Uloženo. Panel se restartuje kvůli velikosti clipmanu."
+
+msgid "Clipman plugin is not put on the panel."
+msgstr "Plugin clipman není na panelu."
