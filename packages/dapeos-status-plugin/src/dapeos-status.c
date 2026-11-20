@@ -376,6 +376,8 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     GtkWidget *eventbox = gtk_event_box_new ();
     gtk_event_box_set_visible_window (GTK_EVENT_BOX (eventbox), FALSE);
     gtk_widget_show (eventbox);
+    gtk_widget_add_events (eventbox, GDK_BUTTON_PRESS_MASK);
+    g_signal_connect (eventbox, "button-press-event", G_CALLBACK (on_click), st);
     gtk_container_add (GTK_CONTAINER (plugin), eventbox);
     xfce_panel_plugin_add_action_widget (plugin, eventbox);
 
