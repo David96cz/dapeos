@@ -92,7 +92,7 @@ def svg(color, net_type, vol, mute, cap):
     parts = []
     x = PAD_LEFT
     if net_type == "ethernet":
-        parts.append(f'<g transform="translate({x},1.5)" fill="{color}">')
+        parts.append(f'<g transform="translate({x},-0.5)" fill="{color}">')
         parts.append('<rect x="4" y="8" width="14" height="8" rx="2"/>')
         parts.append('<rect x="6" y="4" width="2" height="5" rx="1"/>')
         parts.append('<rect x="10" y="4" width="2" height="5" rx="1"/>')
@@ -114,7 +114,7 @@ def svg(color, net_type, vol, mute, cap):
     else:
         fillw = max(2, min(10, int(10 * cap / 100)))
         fill = "#4caf50" if cap > 30 else ("#ff9800" if cap > 15 else "#f44336")
-        parts.append(f'<g transform="translate({x},0)">')
+        parts.append(f'<g transform="translate({x},-1)">')
         parts.append(f'<rect x="3" y="7" width="14" height="9" rx="2" fill="none" stroke="{color}" stroke-width="1.5"/>')
         parts.append(f'<rect x="5" y="9" width="{fillw}" height="5" rx="1" fill="{fill}"/>')
         parts.append(f'<rect x="18" y="9.5" width="2" height="4" rx="1" fill="{color}"/>')
