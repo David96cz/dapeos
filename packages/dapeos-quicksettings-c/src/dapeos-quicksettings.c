@@ -31,6 +31,9 @@ static gboolean bt_is_on (void)
     return on;
 }
 
+static gboolean update_volume_cb (gpointer data) { (void) data; update_volume_ui (); return FALSE; }
+static gboolean update_tiles_cb (gpointer data) { (void) data; update_tiles (); return FALSE; }
+
 static void update_tiles (void)
 {
     gboolean bt = bt_is_on ();
@@ -45,7 +48,7 @@ static void on_bt_clicked (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     run_async (bt_is_on () ? "bluetoothctl power off" : "bluetoothctl power on");
-    g_timeout_add (400, (GSourceFunc) update_tiles, NULL);
+    g_timeout_add (400, update_tiles_cb, NULL);
 }
 
 static void primary_output (gchar *out, gsize len)
@@ -278,7 +281,7 @@ static void on_mute_clicked (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     run_async ("pactl set-sink-mute @DEFAULT_SINK@ toggle");
-    g_timeout_add (80, (GSourceFunc) update_volume_ui, NULL);
+    g_timeout_add (80, update_volume_cb, NULL);
 }
 
 static void on_settings_clicked (GtkButton *button, gpointer data)
