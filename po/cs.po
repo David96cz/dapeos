@@ -617,3 +617,123 @@ msgstr "Uloženo. Panel se restartuje kvůli velikosti clipmanu."
 
 msgid "Clipman plugin is not put on the panel."
 msgstr "Plugin clipman není na panelu."
+
+msgid "Group settings"
+msgstr "Nastavení skupin"
+
+msgid "+ Add"
+msgstr "+ Přidat"
+
+msgid "- Delete"
+msgstr "- Smazat"
+
+msgid "New group"
+msgstr "Nová skupina"
+
+msgid "Enter the new group name:"
+msgstr "Zadejte název nové skupiny:"
+
+msgid "Confirmation"
+msgstr "Potvrzení"
+
+msgid "Really delete group {}?"
+msgstr "Opravdu smazat skupinu {}?"
+
+msgid "User settings"
+msgstr "Nastavení uživatelů"
+
+msgid "Administrator (sudo)"
+msgstr "Správce (Sudo)"
+
+msgid "Standard"
+msgstr "Standardní"
+
+msgid "Account type: Standard"
+msgstr "Typ účtu: Standardní"
+
+msgid "Grant admin rights"
+msgstr "Přidat admin práva"
+
+msgid "Remove admin rights"
+msgstr "Odebrat admin práva"
+
+msgid "Change password / autologin"
+msgstr "Změnit heslo / Autologin"
+
+msgid "Rename"
+msgstr "Přejmenovat"
+
+msgid "Rename user"
+msgstr "Přejmenovat uživatele"
+
+msgid "New display name:"
+msgstr "Nové zobrazované jméno:"
+
+msgid "Enter full name (e.g. John Smith):"
+msgstr "Zadejte celé jméno (např. Jan Novák):"
+
+msgid "Select a user"
+msgstr "Vyberte uživatele"
+
+msgid "New user"
+msgstr "Nový uživatel"
+
+msgid "Enter login name (e.g. smith):"
+msgstr "Zadejte přihlašovací jméno (login, např. novak):"
+
+msgid "System error"
+msgstr "Chyba systému"
+
+msgid "Warning"
+msgstr "Varování"
+
+msgid "You cannot delete the user you are logged in as."
+msgstr "Nemůžete smazat uživatele, pod kterým jste právě přihlášeni."
+
+msgid "Change permissions"
+msgstr "Změnit oprávnění"
+
+msgid "Login and session security"
+msgstr "Zabezpečení přihlášení a relace"
+
+msgid "Lockscreen settings"
+msgstr "Nastavení zamykací obrazovky"
+
+msgid "<b>Login screen manager</b><br>Customize the look of your lockscreen."
+msgstr "<b>Správce přihlašovací obrazovky</b><br>Nastavte si vzhled vašeho lockscreenu."
+
+msgid "Solid background color (while loading):"
+msgstr "Jednolitá barva pozadí (při načítání):"
+
+msgid "Change background dynamically per selected user"
+msgstr "Měnit pozadí dynamicky podle vybraného uživatele"
+
+msgid "Save and apply settings"
+msgstr "Uložit nastavení a aplikovat"
+
+msgid "Applying settings..."
+msgstr "Aplikuji nastavení..."
+
+msgid "Settings saved successfully."
+msgstr "Nastavení bylo úspěšně uloženo."
+
+msgid "Failed to save configuration (permission error)."
+msgstr "Nepodařilo se uložit konfiguraci (chyba oprávnění)."
+
+msgid "Please enter a wallpaper path."
+msgstr "Prosím, zadejte cestu k tapetě."
+
+msgid "The selected wallpaper file does not exist."
+msgstr "Zvolený soubor s tapetou neexistuje."
+
+msgid "Graphical password prompt tool is missing!"
+msgstr "Chybí grafický nástroj pro zadání hesla správce!"
+
+msgid "Images (*.png *.jpg *.jpeg *.svg)"
+msgstr "Obrázky (*.png *.jpg *.jpeg *.svg)"
+
+msgid "Success"
+msgstr "Úspěch"
+
+msgid "Write error: "
+msgstr "Chyba zápisu: "

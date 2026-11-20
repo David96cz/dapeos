@@ -184,7 +184,7 @@ class AppUninstaller(QWidget):
             QListWidget { background-color: palette(base); border: 1px solid #ccc; border-radius: 5px; outline: 0; }
             QListWidget::item { border-bottom: 1px solid #e0e0e0; padding: 10px; color: palette(text); }
             QListWidget::item:last { border-bottom: none; }
-            QListWidget::item:hover { background-color: #e3f2fd; }
+            QListWidget::item:hover { background-color: #1f5f9e; color: #ffffff; }
             QListWidget::item:selected { background-color: #2a7fca; color: white; border-radius: 3px; }
             QPushButton#btnUninstall { background-color: #d32f2f; color: white; padding: 15px; font-weight: bold; border-radius: 5px; font-size: 12pt; }
             QPushButton#btnUninstall:hover { background-color: #b71c1c; }

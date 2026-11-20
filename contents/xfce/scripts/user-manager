@@ -10,6 +10,15 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt5.QtCore import Qt, QSize, QThread, pyqtSignal
 from PyQt5.QtGui import QFont
 
+try:
+    from dapeos_i18n import _
+except Exception:  # noqa: BLE001
+    _ = lambda s: s
+try:
+    from dapeos_theme import apply_theme
+except Exception:  # noqa: BLE001
+    apply_theme = lambda app=None: False
+
 # --- VLÁKNO PRO SYSTÉMOVÉ PŘÍKAZY S PRÁVY ROOT ---
 class SysAdminWorker(QThread):
     finished = pyqtSignal(int, str, str)
@@ -31,7 +40,7 @@ class SysAdminWorker(QThread):
 class GroupManagerDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Nastavení skupin")
+        self.setWindowTitle(_("Group settings"))
         self.setFixedSize(380, 420)
         self.worker = None
         self.initUI()
@@ -67,7 +76,7 @@ class GroupManagerDialog(QDialog):
         self.group_list.addItems(all_groups)
 
     def add_group(self):
-        name, ok = QInputDialog.getText(self, "Nová skupina", "Zadejte název nové skupiny:")
+        name, ok = QInputDialog.getText(self, _("New group"), _("Enter the new group name:"))
         if ok and name.strip():
             self.run_command(f"groupadd {name.strip()}", "add_group")
 
@@ -152,7 +161,7 @@ class UserManagerApp(QWidget):
         
         # 1. Sekce Jméno
         name_box = QVBoxLayout()
-        self.lbl_realname = QLabel("Vyberte uživatele")
+        self.lbl_realname = QLabel(_("Select a user"))
         self.lbl_realname.setFont(QFont("sans-serif", 14, QFont.Bold))
         self.lbl_login = QLabel("")
         self.lbl_login.setStyleSheet("color: #666;")
@@ -160,7 +169,7 @@ class UserManagerApp(QWidget):
         name_box.addWidget(self.lbl_login)
         right_layout.addLayout(name_box)
         
-        self.btn_edit_name = QPushButton("Přejmenovat uživatele")
+        self.btn_edit_name = QPushButton(_("Rename user"))
         self.btn_edit_name.setCursor(Qt.PointingHandCursor)
         right_layout.addWidget(self.btn_edit_name, 0, Qt.AlignLeft)
         self.btn_edit_name.clicked.connect(self.edit_real_name)
@@ -173,11 +182,11 @@ class UserManagerApp(QWidget):
 
         # 2. Sekce Typ účtu (Sudo)
         type_box = QVBoxLayout()
-        self.lbl_type = QLabel("Typ účtu: Standardní")
+        self.lbl_type = QLabel(_("Account type: Standard"))
         type_box.addWidget(self.lbl_type)
         right_layout.addLayout(type_box)
         
-        self.btn_toggle_sudo = QPushButton("Změnit oprávnění")
+        self.btn_toggle_sudo = QPushButton(_("Change permissions"))
         self.btn_toggle_sudo.setCursor(Qt.PointingHandCursor)
         right_layout.addWidget(self.btn_toggle_sudo, 0, Qt.AlignLeft)
         self.btn_toggle_sudo.clicked.connect(self.toggle_sudo)
@@ -190,11 +199,11 @@ class UserManagerApp(QWidget):
 
         # 3. Sekce Heslo
         pass_box = QVBoxLayout()
-        lbl_pass_title = QLabel("Zabezpečení přihlášení a relace")
+        lbl_pass_title = QLabel(_("Login and session security"))
         pass_box.addWidget(lbl_pass_title)
         right_layout.addLayout(pass_box)
         
-        self.btn_change_pass = QPushButton("Změnit heslo / Autologin")
+        self.btn_change_pass = QPushButton(_("Change password / autologin"))
         self.btn_change_pass.setCursor(Qt.PointingHandCursor)
         right_layout.addWidget(self.btn_change_pass, 0, Qt.AlignLeft)
         self.btn_change_pass.clicked.connect(self.launch_password_script)
@@ -233,15 +242,15 @@ class UserManagerApp(QWidget):
             
             is_admin = self.current_user in grp.getgrnam('sudo').gr_mem
             self.lbl_type.setText(f"Typ účtu: <b>{'Správce (Sudo)' if is_admin else 'Standardní'}</b>")
-            self.btn_toggle_sudo.setText("Odebrat admin práva" if is_admin else "Přidat admin práva")
+            self.btn_toggle_sudo.setText(_("Remove admin rights") if is_admin else _("Grant admin rights"))
         except:
             pass
 
     def add_user(self):
-        login, ok1 = QInputDialog.getText(self, "Nový uživatel", "Zadejte přihlašovací jméno (login, např. novak):")
+        login, ok1 = QInputDialog.getText(self, _("New user"), _("Enter login name (e.g. smith):"))
         if not ok1 or not login.strip(): return
         
-        real_name, ok2 = QInputDialog.getText(self, "Nový uživatel", "Zadejte celé jméno (např. Jan Novák):")
+        real_name, ok2 = QInputDialog.getText(self, _("New user"), _("Enter full name (e.g. John Smith):"))
         if not ok2: return
         
         login_clean = login.strip()
@@ -253,7 +262,7 @@ class UserManagerApp(QWidget):
     def delete_user(self):
         if not self.current_user: return
         if self.current_user == pwd.getpwuid(os.getuid()).pw_name:
-            QMessageBox.warning(self, "Chyba", "Nemůžete smazat uživatele, pod kterým jste právě přihlášeni.")
+            QMessageBox.warning(self, "Chyba", _("You cannot delete the user you are logged in as."))
             return
             
         reply = QMessageBox.question(self, 'Varování', 
@@ -266,7 +275,7 @@ class UserManagerApp(QWidget):
     def edit_real_name(self):
         if not self.current_user: return
         curr_name = pwd.getpwnam(self.current_user).pw_gecos.split(',')[0]
-        new_name, ok = QInputDialog.getText(self, "Přejmenovat", "Nové zobrazované jméno:", text=curr_name)
+        new_name, ok = QInputDialog.getText(self, _("Rename"), _("New display name:"), text=curr_name)
         if ok and new_name.strip():
             self.run_command(f"usermod -c '{new_name.strip()}' {self.current_user}", "edit_name")
 
@@ -315,11 +324,12 @@ class UserManagerApp(QWidget):
             elif action == "toggle_sudo":
                 self.on_user_selected()
         else:
-            QMessageBox.critical(self, "Chyba systému", f"Příkaz selhal:\n\n{err}")
+            QMessageBox.critical(self, _("System error"), f"Příkaz selhal:\n\n{err}")
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    apply_theme(app)
     window = UserManagerApp()
     window.show()
     sys.exit(app.exec_())

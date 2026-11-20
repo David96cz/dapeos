@@ -8,6 +8,15 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QCheckBox, QFileDialog, QColorDialog)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
+try:
+    from dapeos_i18n import _
+except Exception:  # noqa: BLE001
+    _ = lambda s: s
+try:
+    from dapeos_theme import apply_theme
+except Exception:  # noqa: BLE001
+    apply_theme = lambda app=None: False
+
 # Cesta pro ukládání stavu aplikace do uživatelského profilu
 CONFIG_FILE = os.path.expanduser("~/.config/lightdm-wallpaper-setter.conf")
 DEFAULT_WALLPAPER = "/usr/share/backgrounds/wallpaper.png"
@@ -87,7 +96,7 @@ class LightDMWorker(QThread):
                 break
                 
         if not sudo_bin:
-            self.finished.emit(1, "Chybí grafický nástroj pro zadání hesla správce!")
+            self.finished.emit(1, _("Graphical password prompt tool is missing!"))
             return
 
         result = subprocess.run([sudo_bin, "bash", "-c", cmd])
@@ -131,7 +140,7 @@ class LightDMWallpaperSetter(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
         
-        lbl_info = QLabel("<b>Správce přihlašovací obrazovky</b><br>Nastavte si vzhled vašeho lockscreenu.")
+        lbl_info = QLabel(_("<b>Login screen manager</b><br>Customize the look of your lockscreen."))
         lbl_info.setStyleSheet("font-size: 12pt;")
         layout.addWidget(lbl_info)
 
@@ -140,7 +149,7 @@ class LightDMWallpaperSetter(QWidget):
         self.txt_path = QLineEdit()
         self.txt_path.setPlaceholderText("Cesta k souboru s tapetou...")
         
-        self.btn_browse = QPushButton("Procházet...")
+        self.btn_browse = QPushButton(_("Browse..."))
         self.btn_browse.setCursor(Qt.PointingHandCursor)
         self.btn_browse.clicked.connect(self.browse_wallpaper)
         
@@ -150,7 +159,7 @@ class LightDMWallpaperSetter(QWidget):
 
         # Výběr podkladové barvy
         layout_color = QHBoxLayout()
-        lbl_color_text = QLabel("Jednolitá barva pozadí (při načítání):")
+        lbl_color_text = QLabel(_("Solid background color (while loading):"))
         lbl_color_text.setStyleSheet("font-size: 11pt;")
         
         self.btn_color = QPushButton("Vybrat barvu")
@@ -163,7 +172,7 @@ class LightDMWallpaperSetter(QWidget):
         layout.addLayout(layout_color)
 
         # Vykreslovat tapety uživatelů
-        self.chk_draw_user = QCheckBox("Měnit pozadí dynamicky podle vybraného uživatele")
+        self.chk_draw_user = QCheckBox(_("Change background dynamically per selected user"))
         self.chk_draw_user.setChecked(self.draw_user_state)
         layout.addWidget(self.chk_draw_user)
 
@@ -227,7 +236,7 @@ class LightDMWallpaperSetter(QWidget):
 
         # 3. Otevřeme dialog se správnou počáteční cestou (start_dir)
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Vybrat tapetu pro LightDM", start_dir, "Obrázky (*.png *.jpg *.jpeg *.svg)"
+            self, "Vybrat tapetu pro LightDM", start_dir, _("Images (*.png *.jpg *.jpeg *.svg)")
         )
         
         if file_path:
@@ -244,15 +253,15 @@ class LightDMWallpaperSetter(QWidget):
         path = self.txt_path.text().strip()
         
         if not path:
-            QMessageBox.warning(self, "Chyba", "Prosím, zadejte cestu k tapetě.")
+            QMessageBox.warning(self, "Chyba", _("Please enter a wallpaper path."))
             return
             
         if not os.path.exists(path):
-            QMessageBox.warning(self, "Chyba", "Zvolený soubor s tapetou neexistuje.")
+            QMessageBox.warning(self, "Chyba", _("The selected wallpaper file does not exist."))
             return
             
         self.btn_save.setDisabled(True)
-        self.btn_save.setText("Aplikuji nastavení...")
+        self.btn_save.setText(_("Applying settings..."))
         
         # Uložíme si stav aplikace lokálně
         self.save_app_state()
@@ -264,16 +273,17 @@ class LightDMWallpaperSetter(QWidget):
 
     def on_save_finished(self, returncode, error_msg):
         self.btn_save.setDisabled(False)
-        self.btn_save.setText("Uložit nastavení a aplikovat")
+        self.btn_save.setText(_("Save and apply settings"))
         
         if returncode == 0:
-            QMessageBox.information(self, "Úspěch", "Nastavení bylo úspěšně uloženo.")
+            QMessageBox.information(self, _("Success"), _("Settings saved successfully."))
         else:
-            msg = error_msg if error_msg else "Nepodařilo se uložit konfiguraci (chyba oprávnění)."
+            msg = error_msg if error_msg else _("Failed to save configuration (permission error).")
             QMessageBox.critical(self, "Chyba", msg)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    apply_theme(app)
     ex = LightDMWallpaperSetter()
     ex.show()
     sys.exit(app.exec_())
