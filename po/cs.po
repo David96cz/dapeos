@@ -767,3 +767,18 @@ msgstr "Vybrat barvu"
 
 msgid "Manage groups"
 msgstr "Spravovat skupiny"
+
+msgid "Restore default configuration"
+msgstr "Obnovit výchozí nastavení"
+
+msgid "This replaces ~/.config and ~/.local with the DapeOS snapshot created during installation. Your personal files are not touched."
+msgstr "Toto nahradí ~/.config a ~/.local snapshotem DapeOS vytvořeným při instalaci. Vaše osobní soubory zůstanou nedotčeny."
+
+msgid "Restore now"
+msgstr "Obnovit nyní"
+
+msgid "Default configuration restored. Log out and back in to apply it."
+msgstr "Výchozí nastavení bylo obnoveno. Odhlaste se a přihlaste pro projevení změn."
+
+msgid "Restore failed."
+msgstr "Obnovení se nezdařilo."

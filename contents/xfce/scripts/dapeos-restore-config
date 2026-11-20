@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+import getpass
+import os
+import shlex
+import subprocess
+import sys
+
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QApplication, QLabel, QMessageBox, QPushButton,
+                             QVBoxLayout, QWidget)
+
+try:
+    from dapeos_i18n import _
+except Exception:  # noqa: BLE001
+    _ = lambda s: s
+try:
+    from dapeos_theme import apply_theme
+except Exception:  # noqa: BLE001
+    apply_theme = lambda app=None: False
+
+
+def config_missing():
+    return not os.path.isdir(os.path.expanduser("~/.config/xfce4/xfconf"))
+
+
+class RestoreDialog(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle(_("Restore default configuration"))
+        self.setFixedWidth(460)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(20, 20, 20, 20)
+        root.setSpacing(14)
+
+        title = QLabel(_("Restore default configuration"))
+        title.setStyleSheet("font-size: 15pt; font-weight: bold;")
+        root.addWidget(title)
+
+        text = QLabel(_("This replaces ~/.config and ~/.local with the DapeOS snapshot created during installation. Your personal files are not touched."))
+        text.setWordWrap(True)
+        root.addWidget(text)
+
+        restore = QPushButton(_("Restore now"))
+        restore.clicked.connect(self.restore)
+        root.addWidget(restore)
+
+        close = QPushButton(_("Cancel"))
+        close.clicked.connect(self.close)
+        root.addWidget(close)
+
+        self.status = QLabel("")
+        self.status.setWordWrap(True)
+        root.addWidget(self.status)
+
+    def center(self):
+        scr = QApplication.primaryScreen().availableGeometry()
+        self.move(scr.center() - self.rect().center())
+
+    def restore(self):
+        home = os.path.expanduser("~")
+        user = getpass.getuser()
+        cmd = (
+            f"mkdir -p {shlex.quote(home + '/.config')} {shlex.quote(home + '/.local')}; "
+            f"cp -a /etc/skel/.config/. {shlex.quote(home + '/.config/')}; "
+            f"cp -a /etc/skel/.local/. {shlex.quote(home + '/.local/')}; "
+            f"chown -R {shlex.quote(user)}:{shlex.quote(user)} "
+            f"{shlex.quote(home + '/.config')} {shlex.quote(home + '/.local')}"
+        )
+        rc = subprocess.call(["pkexec", "bash", "-c", cmd])
+        if rc == 0:
+            QMessageBox.information(
+                self, _("Done"),
+                _("Default configuration restored. Log out and back in to apply it."))
+            self.close()
+        else:
+            self.status.setText(_("Restore failed."))
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    apply_theme(app)
+    if "--check" in sys.argv and not config_missing():
+        sys.exit(0)
+    w = RestoreDialog()
+    w.show()
+    w.center()
+    sys.exit(app.exec_())
