@@ -35,6 +35,12 @@ run_cmd (const gchar *cmd)
 }
 
 static void
+read_volume (DapeosStatus *st)
+{
+    read_volume (st);
+}
+
+static void
 read_state (DapeosStatus *st)
 {
     g_free (st->net_name);
@@ -286,7 +292,8 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
 
     g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
 
-    /* Event monitors are enabled after the static version is verified. */
+    spawn_monitor (st, "pactl subscribe", &st->pactl_pid);
+
     xfce_panel_plugin_set_small (plugin, TRUE);
     gtk_widget_show_all (GTK_WIDGET (plugin));
 }
