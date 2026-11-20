@@ -284,17 +284,18 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     gtk_widget_add_events (st->area, GDK_BUTTON_PRESS_MASK);
     g_signal_connect (st->area, "button-press-event", G_CALLBACK (on_click), st);
 
-    GtkWidget *button = xfce_panel_create_button ();
-    gtk_widget_set_size_request (button, 74, 22);
-    gtk_container_add (GTK_CONTAINER (button), st->area);
-    gtk_container_add (GTK_CONTAINER (plugin), button);
-    gtk_widget_set_size_request (GTK_WIDGET (plugin), 74, 22);
-    gtk_widget_set_size_request (button, 74, 22);
-    gtk_widget_show (button);
-    gtk_widget_set_size_request (GTK_WIDGET (plugin), 74, 22);
-    GtkWidget *parent = gtk_widget_get_parent (GTK_WIDGET (plugin));
-    if (parent != NULL)
-        gtk_widget_set_size_request (parent, 74, 22);
+    GtkWidget *eventbox = gtk_event_box_new ();
+    gtk_event_box_set_visible_window (GTK_EVENT_BOX (eventbox), FALSE);
+    gtk_widget_show (eventbox);
+    gtk_container_add (GTK_CONTAINER (plugin), eventbox);
+    xfce_panel_plugin_add_action_widget (plugin, eventbox);
+
+    GtkWidget *box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_show (box);
+    gtk_container_add (GTK_CONTAINER (eventbox), box);
+    gtk_box_pack_start (GTK_BOX (box), st->area, FALSE, FALSE, 0);
+    gtk_widget_set_size_request (eventbox, 74, 22);
+    gtk_widget_set_size_request (box, 74, 22);
     update_image (st);
 
     g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
