@@ -14,6 +14,4 @@
   <property name="last-sort-column" type="string" value="THUNAR_COLUMN_NAME"/>
   <property name="last-sort-order" type="string" value="GTK_SORT_ASCENDING"/>
   <property name="misc-show-thumbnails" type="bool" value="true"/>
-  <property name="misc-show-file-system" type="bool" value="false"/>
-  <property name="misc-show-computer" type="bool" value="false"/>
 </channel>
