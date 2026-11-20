@@ -217,7 +217,7 @@ static void build_ui (void)
     gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
     gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
-    gtk_window_set_default_size (GTK_WINDOW (window), 360, 340);
+    gtk_window_set_default_size (GTK_WINDOW (window), 420, 340);
     g_signal_connect (window, "key-press-event", G_CALLBACK (on_key_press), NULL);
     g_signal_connect (window, "focus-out-event", G_CALLBACK (on_focus_out), NULL);
 
@@ -297,10 +297,14 @@ static void position_window (void)
     if (!monitor) monitor = gdk_display_get_monitor (display, 0);
     GdkRectangle geo;
     gdk_monitor_get_workarea (monitor, &geo);
-    GtkRequisition req;
-    gtk_widget_get_preferred_size (window, NULL, &req);
-    gint x = geo.x + geo.width - req.width - 20;
-    gint y = geo.y + geo.height - req.height - 12;
+    gint w = 0, h = 0;
+    gtk_window_get_size (GTK_WINDOW (window), &w, &h);
+    if (w <= 0) w = 420;
+    if (h <= 0) h = 340;
+    gint x = geo.x + geo.width - w - 20;
+    gint y = geo.y + geo.height - h - 12;
+    if (x < geo.x + 8) x = geo.x + 8;
+    if (y < geo.y + 8) y = geo.y + 8;
     gtk_window_move (GTK_WINDOW (window), x, y);
 }
 
