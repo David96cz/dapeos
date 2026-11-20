@@ -291,7 +291,10 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     gtk_widget_set_size_request (GTK_WIDGET (plugin), 74, 22);
     gtk_widget_set_size_request (button, 74, 22);
     gtk_widget_show (button);
-    xfce_panel_plugin_set_small (plugin, TRUE);
+    gtk_widget_set_size_request (GTK_WIDGET (plugin), 74, 22);
+    GtkWidget *parent = gtk_widget_get_parent (GTK_WIDGET (plugin));
+    if (parent != NULL)
+        gtk_widget_set_size_request (parent, 74, 22);
     update_image (st);
 
     g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
