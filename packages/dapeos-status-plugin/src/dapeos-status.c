@@ -14,8 +14,6 @@ typedef struct {
     gboolean dark;
     GtkWidget *area;
     GPid pactl_pid, nm_pid, upower_pid;
-    GMutex lock;
-    gint pending;
 } DapeosStatus;
 
 static gchar *
@@ -212,42 +210,14 @@ update_image (DapeosStatus *st)
 }
 
 static gboolean
-apply_state_idle (gpointer data)
-{
-    DapeosStatus *st = data;
-    g_mutex_lock (&st->lock);
-    update_image (st);
-    g_mutex_unlock (&st->lock);
-    g_atomic_int_set (&st->pending, 0);
-    return FALSE;
-}
-
-static gpointer
-refresh_thread (gpointer data)
-{
-    DapeosStatus *st = data;
-    g_mutex_lock (&st->lock);
-    read_state (st);
-    g_mutex_unlock (&st->lock);
-    g_idle_add (apply_state_idle, st);
-    return NULL;
-}
-
-static void
-schedule_refresh (DapeosStatus *st)
-{
-    if (g_atomic_int_compare_and_exchange (&st->pending, 0, 1))
-        g_thread_new ("dapeos-status-refresh", refresh_thread, st);
-}
-
-static gboolean
 on_event (GIOChannel *channel, GIOCondition condition, gpointer data)
 {
     DapeosStatus *st = data;
     gchar buf[512];
     gsize read = 0;
     g_io_channel_read_chars (channel, buf, sizeof (buf) - 1, &read, NULL);
-    schedule_refresh (st);
+    read_state (st);
+    update_image (st);
     return TRUE;
 }
 
@@ -284,9 +254,7 @@ on_size_changed (XfcePanelPlugin *plugin, gint size, gpointer data)
     DapeosStatus *st = data;
     gtk_widget_set_size_request (st->area, 74, 22);
     gtk_widget_set_size_request (GTK_WIDGET (plugin), 74, 22);
-    g_mutex_lock (&st->lock);
     update_image (st);
-    g_mutex_unlock (&st->lock);
     return TRUE;
 }
 
@@ -294,7 +262,6 @@ static void
 dapeos_status_construct (XfcePanelPlugin *plugin)
 {
     DapeosStatus *st = g_new0 (DapeosStatus, 1);
-    g_mutex_init (&st->lock);
     read_state (st);
 
     st->area = gtk_image_new ();
@@ -319,8 +286,7 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
 
     g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
 
-    spawn_monitor (st, "pactl subscribe", &st->pactl_pid);
-
+    /* Event monitors are enabled after the static version is verified. */
     xfce_panel_plugin_set_small (plugin, TRUE);
     gtk_widget_show_all (GTK_WIDGET (plugin));
 }
