@@ -31,6 +31,9 @@ static gboolean bt_is_on (void)
     return on;
 }
 
+static void update_volume_ui (void);
+static void update_tiles (void);
+
 static gboolean update_volume_cb (gpointer data) { (void) data; update_volume_ui (); return FALSE; }
 static gboolean update_tiles_cb (gpointer data) { (void) data; update_tiles (); return FALSE; }
 
