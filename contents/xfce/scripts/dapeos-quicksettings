@@ -539,7 +539,10 @@ class QuickSettings(QWidget):
         grid.addWidget(self.t_night, 0, 2)
         self.main_lay.addLayout(grid)
 
-        row = QHBoxLayout()
+        sliders = QGridLayout()
+        sliders.setHorizontalSpacing(8)
+        sliders.setVerticalSpacing(10)
+
         self.mute_btn = QPushButton()
         self.mute_btn.setObjectName("flat")
         self.mute_btn.setFixedSize(36, 36)
@@ -547,36 +550,38 @@ class QuickSettings(QWidget):
         self.mute_btn.setToolTip(_("Mute / unmute"))
         self.mute_btn.setIcon(QIcon("/usr/local/share/dapeos/panel/audio-volume-high.svg"))
         self.mute_btn.clicked.connect(self.toggle_mute)
-        row.addWidget(self.mute_btn)
+        sliders.addWidget(self.mute_btn, 0, 0)
+
         self.vol = FlatSlider(Qt.Horizontal)
         self.vol.setRange(0, 100)
         self.vol.valueChanged.connect(self.on_volume_change)
         self.style_slider(self.vol)
-        row.addWidget(self.vol, 1)
+        sliders.addWidget(self.vol, 0, 1)
+
         self.vol_lbl = QLabel("")
         self.vol_lbl.setFixedWidth(44)
         self.vol_lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        row.addWidget(self.vol_lbl)
-        self.main_lay.addLayout(row)
+        sliders.addWidget(self.vol_lbl, 0, 2)
 
-        row = QHBoxLayout()
         self.bri_icon = QLabel()
         self.bri_icon.setPixmap(QIcon("/usr/local/share/dapeos/panel/brightness.svg").pixmap(24, 24))
         self.bri_icon.setFixedSize(36, 36)
         self.bri_icon.setAlignment(Qt.AlignCenter)
-        row.addWidget(self.bri_icon)
+        sliders.addWidget(self.bri_icon, 1, 0)
+
         self.bri = FlatSlider(Qt.Horizontal)
         self.bri.setRange(1, 100)
         self.bri.valueChanged.connect(self.on_brightness_change)
         self.style_slider(self.bri)
-        row.addWidget(self.bri, 1)
+        sliders.addWidget(self.bri, 1, 1)
+
         self.bri_lbl = QLabel("")
         self.bri_lbl.setFixedWidth(44)
         self.bri_lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        row.addWidget(self.bri_lbl)
-        self.bri_row = QWidget()
-        self.bri_row.setLayout(row)
-        self.main_lay.addWidget(self.bri_row)
+        sliders.addWidget(self.bri_lbl, 1, 2)
+
+        sliders.setColumnStretch(1, 1)
+        self.main_lay.addLayout(sliders)
 
         foot = QHBoxLayout()
         self.batt = QLabel("")
@@ -587,10 +592,11 @@ class QuickSettings(QWidget):
         mix.setFixedHeight(30)
         mix.clicked.connect(lambda: subprocess.Popen(["pavucontrol"]))
         foot.addWidget(mix)
-        gear = QPushButton("\u2699")
+        gear = QPushButton()
         gear.setObjectName("flat")
-        gear.setStyleSheet("font-size: 15pt;")
-        gear.setFixedSize(42, 32)
+        gear.setIcon(QIcon.fromTheme("preferences-system"))
+        gear.setIconSize(QSize(22, 22))
+        gear.setFixedSize(36, 36)
         gear.setToolTip(_("Settings"))
         gear.clicked.connect(lambda: subprocess.Popen(["dapeos-settings"]))
         foot.addWidget(gear)
@@ -825,7 +831,7 @@ class QuickSettings(QWidget):
             self.t_net.set_sub(s["net_name"] or "Wi-Fi")
             self.t_net.set_active(True)
         elif s["net_type"] == "ethernet":
-            self.t_net.set_sub(f"{_('Cable')}: {s['net_name']}")
+            self.t_net.set_sub(f"{_('Ethernet')}: {s['net_name']}")
             self.t_net.set_active(True)
         else:
             self.t_net.set_sub(_("Not connected"))
@@ -852,14 +858,16 @@ class QuickSettings(QWidget):
             self.vol_lbl.setText(f"{s['vol']}%")
         if time.time() - self._bri_hold > 1.5:
             if s["bri_max"]:
-                self.bri_row.show()
+                for w in (self.bri_icon, self.bri, self.bri_lbl):
+                    w.setVisible(True)
                 pct = max(1, int(s["bri"] * 100 / s["bri_max"]))
                 self.bri.blockSignals(True)
                 self.bri.setValue(pct)
                 self.bri.blockSignals(False)
                 self.bri_lbl.setText(f"{max(1, pct)}%")
             else:
-                self.bri_row.hide()
+                for w in (self.bri_icon, self.bri, self.bri_lbl):
+                    w.setVisible(False)
 
         st_map = {"Charging": _("charging"), "Discharging": _("discharging"),
                   "Full": _("full"), "Not charging": _("not charging")}

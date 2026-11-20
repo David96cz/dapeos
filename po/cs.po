@@ -578,3 +578,6 @@ msgstr "z"
 
 msgid "Uptime"
 msgstr "Uptime"
+
+msgid "Ethernet"
+msgstr "Kabel"
