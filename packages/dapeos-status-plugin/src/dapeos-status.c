@@ -14,6 +14,7 @@ typedef struct {
     gboolean dark;
     GtkWidget *area;
     GPid pactl_pid, nm_pid, upower_pid;
+    gboolean volume_busy;
 } DapeosStatus;
 
 static gchar *
@@ -215,6 +216,51 @@ update_image (DapeosStatus *st)
     g_free (tip);
 }
 
+static void
+volume_done (GObject *source, GAsyncResult *res, gpointer data)
+{
+    DapeosStatus *st = data;
+    GSubprocess *proc = G_SUBPROCESS (source);
+    gchar *out = NULL;
+    GError *error = NULL;
+
+    if (g_subprocess_communicate_utf8_finish (proc, res, &out, NULL, &error)) {
+        st->vol = 0;
+        for (gchar *p = out; p && *p; p++) {
+            if (*p == '%') {
+                gchar *start = p;
+                while (start > out && g_ascii_isdigit (start[-1])) start--;
+                st->vol = atoi (start);
+                break;
+            }
+        }
+        update_image (st);
+    }
+    if (error) g_error_free (error);
+    g_free (out);
+
+    st->volume_busy = FALSE;
+}
+
+static void
+schedule_volume_refresh (DapeosStatus *st)
+{
+    if (st->volume_busy)
+        return;
+    st->volume_busy = TRUE;
+
+    const gchar *argv[] = { "pactl", "get-sink-volume", "@DEFAULT_SINK@", NULL };
+    GError *error = NULL;
+    GSubprocess *proc = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE, NULL, &error);
+    if (proc == NULL) {
+        st->volume_busy = FALSE;
+        if (error) g_error_free (error);
+        return;
+    }
+    g_subprocess_communicate_utf8_async (proc, NULL, NULL, volume_done, st);
+    g_object_unref (proc);
+}
+
 static gboolean
 on_event (GIOChannel *channel, GIOCondition condition, gpointer data)
 {
@@ -229,8 +275,7 @@ on_event (GIOChannel *channel, GIOCondition condition, gpointer data)
     if (status == G_IO_STATUS_EOF || read == 0)
         return FALSE;
 
-    read_volume (st);
-    update_image (st);
+    schedule_volume_refresh (st);
     return TRUE;
 }
 
