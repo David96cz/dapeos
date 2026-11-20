@@ -1,0 +1,22 @@
+#!/bin/bash
+# Root helper: refresh /etc/skel from a fully started user session.
+set -e
+home="$1"
+user="${2:-$(basename "$home")}"
+
+[ -d "$home/.config" ] || exit 1
+[ -f "$home/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml" ] || exit 1
+
+for d in .config .local; do
+    [ -d "$home/$d" ] || continue
+    rm -rf "/etc/skel/$d"
+    mkdir -p "/etc/skel/$d"
+    cp -a "$home/$d/." "/etc/skel/$d/"
+    rm -rf "/etc/skel/$d/share/Trash" \
+           "/etc/skel/$d/share/recently-used.xbel" \
+           "/etc/skel/$d/lib/panel-icons.so" 2>/dev/null || true
+done
+
+sync
+chown -R root:root /etc/skel
+chmod -R u+rwX,go+rX /etc/skel

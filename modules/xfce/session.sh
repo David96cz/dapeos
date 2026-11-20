@@ -66,6 +66,10 @@ dapeos_session_setup() {
         install -d -m 755 /etc/polkit-1/rules.d
         install -m 644 "$CONTENTS_DIR/xfce/config/polkit/60-rustdesk.rules" /etc/polkit-1/rules.d/60-rustdesk.rules
     fi
+    if [ -f "$CONTENTS_DIR/xfce/config/polkit/60-dapeos-skel.rules" ]; then
+        install -d -m 755 /etc/polkit-1/rules.d
+        install -m 644 "$CONTENTS_DIR/xfce/config/polkit/60-dapeos-skel.rules" /etc/polkit-1/rules.d/60-dapeos-skel.rules
+    fi
 
     if [ -f "$CONTENTS_DIR/xfce/config/apt/99dapeos-app-names" ]; then
         install -m 644 "$CONTENTS_DIR/xfce/config/apt/99dapeos-app-names" /etc/apt/apt.conf.d/99dapeos-app-names
