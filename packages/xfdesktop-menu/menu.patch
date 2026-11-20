@@ -1,0 +1,46 @@
+--- a/src/xfdesktop-file-icon-manager.c
++++ b/src/xfdesktop-file-icon-manager.c
+@@ -1356,6 +1356,12 @@
+     }
+ 
+     g_free(cmd);
++}
++
++
++static void
++dapeos_appearance_launch(GtkWidget *w, MonitorData *mdata) {
++    g_spawn_command_line_async("xfce4-appearance-settings", NULL);
+ }
+ 
+ static void
+@@ -1754,16 +1760,6 @@
+                 if(file_icon == fmanager->desktop_icon) {
+                     /* Menu on the root desktop window */
+ 
+-                    /* create launcher item */
+-                    GtkWidget *create_launcher_mi = add_menu_item(menu,
+-                                                                  _("Create _Launcher..."),
+-                                                                  g_themed_icon_new("application-x-executable"),
+-                                                                  G_CALLBACK(xfdesktop_file_icon_menu_create_launcher),
+-                                                                  mdata);
+-                    g_object_set_data(G_OBJECT(create_launcher_mi), LAUNCHER_TYPE_KEY, "Application");
+-                    g_object_set_data(G_OBJECT(create_launcher_mi), DEST_ROW_KEY, GINT_TO_POINTER(dest_row));
+-                    g_object_set_data(G_OBJECT(create_launcher_mi), DEST_COL_KEY, GINT_TO_POINTER(dest_col));
+-
+                     /* create link item */
+                     GtkWidget *create_url_mi = add_menu_item(menu,
+                                                              _("Create _URL Link..."),
+@@ -2123,6 +2119,13 @@
+ 
+             add_menu_separator(menu);
+ 
++            /* Appearance settings */
++            add_menu_item(menu,
++                          _("_Appearance..."),
++                          g_themed_icon_new("preferences-desktop-theme"),
++                          G_CALLBACK(dapeos_appearance_launch),
++                          mdata);
++
+             /* Desktop settings window */
+             add_menu_item(menu,
+                           _("Desktop _Settings..."),

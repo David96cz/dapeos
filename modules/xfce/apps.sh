@@ -284,3 +284,21 @@ thunar_no_root_setup() {
     apt-get install -y "$tdeb" "$ddeb" || return 0
     apt-mark hold thunar thunar-data >/dev/null 2>&1 || true
 }
+
+
+xfdesktop_menu_setup() {
+    local arch xdeb ddeb
+    arch="$(dpkg --print-architecture)"
+    xdeb="$(find "$BASE_DIR/packages/xfdesktop-menu" -maxdepth 1 \
+        -name "xfdesktop4_*_${arch}.deb" 2>/dev/null | head -n1)"
+    ddeb="$(find "$BASE_DIR/packages/xfdesktop-menu" -maxdepth 1 \
+        -name "xfdesktop4-data_*_all.deb" 2>/dev/null | head -n1)"
+    if [ -z "$xdeb" ] || [ -z "$ddeb" ]; then
+        log "Patchnutý xfdesktop pro $arch není k dispozici, ponechávám stock."
+        return 0
+    fi
+    log "Instaluji xfdesktop s upraveným menu: $(basename "$xdeb")"
+    apt-mark unhold xfdesktop4 xfdesktop4-data >/dev/null 2>&1 || true
+    apt-get install -y "$xdeb" "$ddeb" || return 0
+    apt-mark hold xfdesktop4 xfdesktop4-data >/dev/null 2>&1 || true
+}
