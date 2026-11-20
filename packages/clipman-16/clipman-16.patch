@@ -1,13 +1,43 @@
 --- a/panel-plugin/main-panel-plugin.c
 +++ b/panel-plugin/main-panel-plugin.c
-@@ -146,8 +146,9 @@
+@@ -137,6 +137,29 @@
+                     G_CALLBACK (cb_menu_deactivate), my_plugin);
+ 
+   gtk_widget_show_all (GTK_WIDGET (panel_plugin));
++}
++
++
++static gint
++dapeos_clipman_icon_size (void)
++{
++  gchar *path = g_build_filename (g_get_user_config_dir (), "dapeos", "tray.json", NULL);
++  gchar *data = NULL;
++  gint size = 16;
++
++  if (g_file_get_contents (path, &data, NULL, NULL))
++    {
++      gchar *p = strstr (data, "\"clipman_size\"");
++      if (p != NULL)
++        {
++          p = strchr (p, ':');
++          if (p != NULL)
++            size = atoi (p + 1);
++        }
++    }
++  g_free (data);
++  g_free (path);
++  return CLAMP (size, 12, 32);
+ }
+ 
+ static gboolean
+@@ -146,8 +169,9 @@
    gint icon_size;
  
    size /= xfce_panel_plugin_get_nrows (plugin->panel_plugin);
-+  size = MIN (size, 16);
++  size = MIN (size, dapeos_clipman_icon_size ());
    gtk_widget_set_size_request (GTK_WIDGET (plugin->button), size, size);
 -  icon_size = xfce_panel_plugin_get_icon_size (XFCE_PANEL_PLUGIN (plugin->panel_plugin));
-+  icon_size = MIN (xfce_panel_plugin_get_icon_size (XFCE_PANEL_PLUGIN (plugin->panel_plugin)), 16);
++  icon_size = MIN (xfce_panel_plugin_get_icon_size (XFCE_PANEL_PLUGIN (plugin->panel_plugin)), dapeos_clipman_icon_size ());
    gtk_image_set_pixel_size (GTK_IMAGE (plugin->image), icon_size);
  
    return TRUE;

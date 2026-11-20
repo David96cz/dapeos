@@ -608,3 +608,9 @@ msgstr "Uložit"
 
 msgid "Saved. GenMon refreshes within 2 seconds."
 msgstr "Uloženo. GenMon se obnoví do 2 sekund."
+
+msgid "Clipman icon size"
+msgstr "Velikost ikony clipmanu"
+
+msgid "Saved. Panel restarts to apply the clipman size."
+msgstr "Uloženo. Panel se restartuje kvůli velikosti clipmanu."

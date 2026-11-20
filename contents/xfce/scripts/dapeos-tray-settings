@@ -14,7 +14,7 @@ except Exception:  # noqa: BLE001
     _ = lambda s: s
 
 CONF = os.path.expanduser("~/.config/dapeos/tray.json")
-DEFAULTS = {"icon_size": 22, "gap": 4, "pad_left": 0, "pad_right": 0}
+DEFAULTS = {"icon_size": 22, "gap": 4, "pad_left": 0, "pad_right": 0, "clipman_size": 16}
 SYS_DEFAULT = 16
 
 
@@ -71,6 +71,12 @@ class TraySettings(QWidget):
             self.spins[key] = spin
             form.addRow(label, spin)
 
+        self.clip_spin = QSpinBox()
+        self.clip_spin.setRange(12, 32)
+        self.clip_spin.setValue(int(self.cfg.get("clipman_size", 16)))
+        self.spins["clipman_size"] = self.clip_spin
+        form.addRow(_("Clipman icon size"), self.clip_spin)
+
         self.sys_spin = QSpinBox()
         self.sys_spin.setRange(16, 48)
         self.sys_spin.setValue(get_systray_size())
@@ -92,14 +98,18 @@ class TraySettings(QWidget):
 
     def save(self):
         cfg = {k: self.spins[k].value()
-               for k in ("icon_size", "gap", "pad_left", "pad_right")}
+               for k in ("icon_size", "gap", "pad_left", "pad_right", "clipman_size")}
         os.makedirs(os.path.dirname(CONF), exist_ok=True)
         with open(CONF, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2)
         subprocess.Popen(
             ["xfconf-query", "-c", "xfce4-panel", "-p",
              "/plugins/plugin-8/icon-size", "-s", str(self.spins["systray"].value())])
-        self.status.setText(_("Saved. GenMon refreshes within 2 seconds."))
+        subprocess.Popen(
+            ["sh", "-c",
+             "pkill -x xfce4-panel; sleep 0.3; "
+             "setsid /usr/local/bin/xfce4-panel >/dev/null 2>&1 < /dev/null &"])
+        self.status.setText(_("Saved. Panel restarts to apply the clipman size."))
 
 
 def main():

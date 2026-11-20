@@ -37,7 +37,7 @@ cd "$SRCDIR"
 patch -p1 --forward < "$HERE/clipman-16.patch"
 
 BASEVER="$(dpkg-parsechangelog -SVersion)"
-NEWVER="${BASEVER}+dapeos1"
+NEWVER="${BASEVER}+dapeos2"
 export DEBEMAIL="dapeos@localhost"
 export DEBFULLNAME="DapeOS"
 dch --newversion "$NEWVER" --distribution trixie \
