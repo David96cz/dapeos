@@ -19,8 +19,9 @@
         <value type="int" value="6"/>
         <value type="int" value="7"/>
         <value type="int" value="8"/>
-        <value type="int" value="5"/>
         <value type="int" value="12"/>
+        <value type="int" value="5"/>
+        <value type="int" value="9"/>
         <value type="int" value="2"/>
       </property>
       <property name="icon-size" type="uint" value="32"/>
@@ -40,7 +41,6 @@
       <property name="menu-width" type="int" value="450"/>
       <property name="menu-height" type="int" value="450"/>
       <property name="recent" type="array">
-        <value type="string" value="xfce4-clipman.desktop"/>
         <value type="string" value="dapeos-settings.desktop"/>
         <value type="string" value="xfce4-terminal.desktop"/>
         <value type="string" value="dapeos-welcome.desktop"/>
@@ -62,9 +62,9 @@
       <property name="command-settings" type="string" value="dapeos-settings"/>
     </property>
     <property name="plugin-2" type="string" value="clock">
-      <property name="digital-date-format" type="string" value=" %a, %d.%m.%Y "/>
+      <property name="digital-date-format" type="string" value=" %a, %m/%d/%Y "/>
       <property name="digital-layout" type="uint" value="1"/>
-      <property name="digital-time-format" type="string" value="%_H:%M"/>
+      <property name="digital-time-format" type="string" value="%-I:%M %p"/>
       <property name="digital-date-font" type="string" value="Sans 10"/>
       <property name="digital-time-font" type="string" value="Sans Bold 10"/>
     </property>
@@ -124,6 +124,9 @@
         <property name="popup-at-pointer" type="bool" value="false"/>
         <property name="inhibit" type="bool" value="false"/>
       </property>
+    </property>
+    <property name="plugin-9" type="string" value="separator">
+      <property name="style" type="uint" value="0"/>
     </property>
   </property>
 </channel>
