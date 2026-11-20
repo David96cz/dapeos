@@ -69,6 +69,16 @@ def sh(cmd, timeout=4):
         return ""
 
 
+def touch_status_trigger():
+    path = os.path.expanduser("~/.cache/dapeos/status.trigger")
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "a", encoding="utf-8"):
+            pass
+    except OSError:
+        pass
+
+
 def panel_dark():
     props = sh(["xfconf-query", "-c", "xfce4-panel", "-l"])
     for prop in props.splitlines():
@@ -815,6 +825,7 @@ class QuickSettings(QWidget):
 
     def apply(self, s):
         save_cache(s)
+        touch_status_trigger()
         if s.get("dark") is not None and s["dark"] != self.state.get("dark"):
             self.apply_theme(s["dark"])
         old = self.state

@@ -1,0 +1,46 @@
+--- a/panel-plugin/main.c
++++ b/panel-plugin/main.c
+@@ -1233,6 +1233,35 @@
+ 
+ 
+ /**************************************************************/
++
++static void
++genmon_trigger_changed (GFileMonitor *monitor, GFile *file, GFile *other,
++                        GFileMonitorEvent event, gpointer data)
++{
++    genmon_t *genmon = data;
++    if (event == G_FILE_MONITOR_EVENT_CHANGED ||
++        event == G_FILE_MONITOR_EVENT_CREATED ||
++        event == G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT)
++        DisplayCmdOutput (genmon);
++}
++
++static void
++genmon_install_trigger (XfcePanelPlugin *plugin, genmon_t *genmon)
++{
++    gchar *dir = g_build_filename (g_get_user_cache_dir (), "dapeos", NULL);
++    gchar *path = g_build_filename (dir, "status.trigger", NULL);
++    g_mkdir_with_parents (dir, 0700);
++    GFile *file = g_file_new_for_path (path);
++    GFileMonitor *monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
++    if (monitor != NULL)
++        {
++            g_signal_connect (monitor, "changed", G_CALLBACK (genmon_trigger_changed), genmon);
++            g_object_set_data_full (G_OBJECT (plugin), "dapeos-trigger-monitor", monitor, g_object_unref);
++        }
++    g_object_unref (file);
++    g_free (path);
++    g_free (dir);
++}
+ 
+ static void genmon_construct (XfcePanelPlugin *plugin)
+ {
+@@ -1280,6 +1309,7 @@
+ 
+     DisplayCmdOutput (genmon);
+     SetTimer (genmon);
++    genmon_install_trigger (plugin, genmon);
+ }
+ 
+ XFCE_PANEL_PLUGIN_REGISTER (genmon_construct)

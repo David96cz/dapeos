@@ -16,7 +16,7 @@ configure_xfce() {
     flameshot_setup
     xfce_browser_launcher
     clipman16_setup
-    dapeos_status_plugin_setup
+    genmon_event_setup
     whiskermenu_no_run_setup
     whisker_rename
     thunar_no_root_setup

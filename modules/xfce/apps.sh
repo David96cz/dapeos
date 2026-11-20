@@ -390,3 +390,19 @@ dapeos_status_plugin_setup() {
         sed -i 's|name="plugin-12" type="string" value="genmon"|name="plugin-12" type="string" value="dapeos-status"|' "$xml"
     fi
 }
+
+
+genmon_event_setup() {
+    local arch deb
+    arch="$(dpkg --print-architecture)"
+    deb="$(find "$BASE_DIR/packages/genmon-event" -maxdepth 1 \
+        -name "xfce4-genmon-plugin_*_${arch}.deb" 2>/dev/null | head -n1)"
+    if [ -z "$deb" ]; then
+        log "Event GenMon pro $arch není k dispozici, ponechávám stock."
+        return 0
+    fi
+    log "Instaluji event GenMon: $(basename "$deb")"
+    apt-mark unhold xfce4-genmon-plugin >/dev/null 2>&1 || true
+    apt-get install -y "$deb" || return 0
+    apt-mark hold xfce4-genmon-plugin >/dev/null 2>&1 || true
+}
