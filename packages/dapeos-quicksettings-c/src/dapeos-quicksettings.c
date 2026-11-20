@@ -28,8 +28,8 @@ static gchar *night_state_path (const gchar *name)
 
 static gboolean bt_is_on (void)
 {
-    gchar *out = run_cmd ("bluetoothctl show 2>/dev/null");
-    gboolean on = strstr (out, "Powered: yes") != NULL;
+    gchar *out = run_cmd ("rfkill list bluetooth 2>/dev/null");
+    gboolean on = strstr (out, "Soft blocked: no") != NULL;
     g_free (out);
     return on;
 }
