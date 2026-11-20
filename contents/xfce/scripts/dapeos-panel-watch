@@ -7,6 +7,7 @@ restart_panel() {
     local reopen=0
     pgrep -f 'xfce4-panel --settings' >/dev/null 2>&1 && reopen=1
     pkill -x xfce4-panel 2>/dev/null
+    pkill -x xfce4-clipman 2>/dev/null
     pkill -x nm-applet 2>/dev/null
     pkill -x blueman-applet 2>/dev/null
     sleep 0.5
