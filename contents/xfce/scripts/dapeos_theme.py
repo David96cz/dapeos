@@ -60,7 +60,6 @@ def install_theme_watch(app=None):
     proc = QProcess(app)
     proc.setProcessChannelMode(QProcess.MergedChannels)
     proc.start("xfconf-query", ["-c", "xsettings", "-m"])
-    proc.waitForStarted(1000)
 
     pending = {"timer": None}
 
