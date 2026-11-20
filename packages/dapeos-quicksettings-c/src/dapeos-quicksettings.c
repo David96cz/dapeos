@@ -347,7 +347,6 @@ static void build_ui (void)
     gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
     gtk_window_set_default_size (GTK_WINDOW (window), 420, 250);
     g_signal_connect (window, "key-press-event", G_CALLBACK (on_key_press), NULL);
-    g_signal_connect (window, "focus-out-event", G_CALLBACK (on_focus_out), NULL);
 
     GtkWidget *outer = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
     gtk_container_set_border_width (GTK_CONTAINER (outer), 16);
