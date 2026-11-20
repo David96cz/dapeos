@@ -15,7 +15,12 @@ restart_panel() {
 watch_channel() {
     xfconf-query -c "$1" -m 2>/dev/null | while IFS= read -r line; do
         case "$line" in
-            *dark-mode*|*ThemeName*|*IconThemeName*)
+            *ThemeName*)
+                dapeos-theme-sync
+                sleep 0.4
+                restart_panel
+                ;;
+            *dark-mode*|*IconThemeName*)
                 sleep 0.4
                 restart_panel
                 ;;

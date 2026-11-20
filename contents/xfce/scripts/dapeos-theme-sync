@@ -1,0 +1,13 @@
+#!/bin/sh
+# Sync Papirus icon theme and panel dark mode with the GTK theme.
+theme="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || echo Adwaita)"
+case "$theme" in
+    *[Dd]ark*) dark=true; icon="Papirus-Dark" ;;
+    *)         dark=false; icon="Papirus-Light" ;;
+esac
+
+xfconf-query -c xsettings -p /Net/IconThemeName -s "$icon" 2>/dev/null || true
+
+for prop in $(xfconf-query -c xfce4-panel -l 2>/dev/null | grep '/dark-mode$'); do
+    xfconf-query -c xfce4-panel -p "$prop" -s "$dark" 2>/dev/null || true
+done

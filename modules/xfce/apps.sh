@@ -302,3 +302,18 @@ xfdesktop_menu_setup() {
     apt-get install -y "$xdeb" "$ddeb" || return 0
     apt-mark hold xfdesktop4 xfdesktop4-data >/dev/null 2>&1 || true
 }
+
+
+xfce_theme_cleanup() {
+    apt-get purge -y arc-theme >/dev/null 2>&1 || true
+    rm -rf /usr/share/themes/Arc /usr/share/themes/Arc-Dark \
+           /usr/share/themes/Arc-Darker /usr/share/themes/Arc-Lighter 2>/dev/null || true
+
+    local idx
+    for pair in "Adwaita:Light" "Adwaita-dark:Dark"; do
+        idx="/usr/share/themes/${pair%%:*}/index.theme"
+        [ -f "$idx" ] || continue
+        sed -i "s/^Name=.*/Name=${pair##*:}/" "$idx"
+        sed -i "s/^Name\[cs\]=.*/Name[cs]=${pair##*:}/" "$idx" 2>/dev/null || true
+    done
+}
