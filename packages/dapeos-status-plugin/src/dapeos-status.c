@@ -307,7 +307,7 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     gtk_widget_show_all (GTK_WIDGET (plugin));
     g_print ("DAPEOS: now plugin=%d child=%d area=%d parent=%p children=%u visible=%d mapped=%d\n",
              gtk_widget_get_allocated_width (GTK_WIDGET (plugin)),
-             gtk_widget_get_allocated_width (button),
+             gtk_widget_get_allocated_width (eventbox),
              gtk_widget_get_allocated_width (st->area),
              gtk_widget_get_parent (st->area),
              g_list_length (gtk_container_get_children (GTK_CONTAINER (plugin))),
