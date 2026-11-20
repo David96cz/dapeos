@@ -87,7 +87,7 @@
       </property>
       <property name="hidden-legacy-items" type="array">
       </property>
-      <property name="icon-size" type="int" value="0"/>
+      <property name="icon-size" type="int" value="16"/>
       <property name="square-icons" type="bool" value="true"/>
       <property name="single-row" type="bool" value="true"/>
       <property name="known-items" type="array">
