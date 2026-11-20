@@ -554,6 +554,8 @@ class QuickSettings(QWidget):
         self.style_slider(self.vol)
         row.addWidget(self.vol, 1)
         self.vol_lbl = QLabel("")
+        self.vol_lbl.setFixedWidth(44)
+        self.vol_lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         row.addWidget(self.vol_lbl)
         self.main_lay.addLayout(row)
 
@@ -569,8 +571,12 @@ class QuickSettings(QWidget):
         self.style_slider(self.bri)
         row.addWidget(self.bri, 1)
         self.bri_lbl = QLabel("")
+        self.bri_lbl.setFixedWidth(44)
+        self.bri_lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         row.addWidget(self.bri_lbl)
-        self.main_lay.addLayout(row)
+        self.bri_row = QWidget()
+        self.bri_row.setLayout(row)
+        self.main_lay.addWidget(self.bri_row)
 
         foot = QHBoxLayout()
         self.batt = QLabel("")
@@ -852,8 +858,7 @@ class QuickSettings(QWidget):
                 self.bri.blockSignals(False)
                 self.bri_lbl.setText(f"{max(1, pct)}%")
             else:
-                self.bri.setEnabled(False)
-                self.bri_lbl.setText(_("unavailable"))
+                self.bri_row.hide()
 
         st_map = {"Charging": _("charging"), "Discharging": _("discharging"),
                   "Full": _("full"), "Not charging": _("not charging")}
