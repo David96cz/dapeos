@@ -21,7 +21,12 @@ run_cmd (const gchar *cmd)
 {
     gchar *out = NULL;
     gint status = 0;
-    if (!g_spawn_command_line_sync (cmd, &out, NULL, &status, NULL))
+    gchar *quoted = g_shell_quote (cmd);
+    gchar *shell_cmd = g_strdup_printf ("sh -c %s", quoted);
+    gboolean ok = g_spawn_command_line_sync (shell_cmd, &out, NULL, &status, NULL);
+    g_free (shell_cmd);
+    g_free (quoted);
+    if (!ok)
         return g_strdup ("");
     if (out == NULL)
         return g_strdup ("");
@@ -235,6 +240,15 @@ on_click (GtkWidget *widget, GdkEventButton *event, gpointer data)
     return FALSE;
 }
 
+static gboolean
+on_size_changed (XfcePanelPlugin *plugin, gint size, gpointer data)
+{
+    DapeosStatus *st = data;
+    gtk_widget_set_size_request (st->area, 74, 22);
+    gtk_widget_queue_draw (st->area);
+    return TRUE;
+}
+
 static void
 dapeos_status_construct (XfcePanelPlugin *plugin)
 {
@@ -255,7 +269,7 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     gtk_container_add (GTK_CONTAINER (button), st->area);
     gtk_container_add (GTK_CONTAINER (plugin), button);
 
-    /* xfce_panel_plugin_set_small (plugin, TRUE); */
+    g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
 
     spawn_monitor (st, "pactl subscribe", &st->pactl_pid);
     spawn_monitor (st, "nmcli monitor", &st->nm_pid);
