@@ -172,33 +172,42 @@ build_svg (DapeosStatus *st)
     return s;
 }
 
-static gboolean
-on_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
+static void
+update_image (DapeosStatus *st)
 {
-    DapeosStatus *st = data;
-    g_print ("DAPEOS: draw\n");
     GString *svg = build_svg (st);
     GError *error = NULL;
     RsvgHandle *handle = rsvg_handle_new_from_data ((const guint8 *) svg->str, svg->len, &error);
+    cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 74, 22);
+    cairo_t *cr = cairo_create (surface);
+
     if (handle) {
         rsvg_handle_render_cairo (handle, cr);
         g_object_unref (handle);
     } else {
-        /* Visible fallback so a broken SVG is obvious. */
         cairo_set_source_rgb (cr, 0.9, 0.2, 0.2);
         cairo_rectangle (cr, 0, 0, 22, 22);
         cairo_fill (cr);
     }
     if (error) g_error_free (error);
+    cairo_destroy (cr);
     g_string_free (svg, TRUE);
+
+    GdkPixbuf *pix = gdk_pixbuf_get_from_surface (surface, 0, 0, 74, 22);
+    cairo_surface_destroy (surface);
+    if (pix) {
+        gtk_image_set_from_pixbuf (GTK_IMAGE (st->area), pix);
+        g_object_unref (pix);
+    } else {
+        g_print ("DAPEOS: pixbuf null\n");
+    }
 
     gchar *tip = g_strdup_printf ("%s%s | sound: %d%% | battery: %s",
         st->net_type == 1 ? "Ethernet: " : (st->net_type == 2 ? "Wi-Fi: " : ""),
         st->net_name, st->vol,
         st->cap < 0 ? "none" : st->bat_status);
-    gtk_widget_set_tooltip_text (widget, tip);
+    gtk_widget_set_tooltip_text (st->area, tip);
     g_free (tip);
-    return FALSE;
 }
 
 static gboolean
@@ -209,7 +218,7 @@ on_event (GIOChannel *channel, GIOCondition condition, gpointer data)
     gsize read = 0;
     g_io_channel_read_chars (channel, buf, sizeof (buf) - 1, &read, NULL);
     read_state (st);
-    gtk_widget_queue_draw (st->area);
+    update_image (st);
     return TRUE;
 }
 
@@ -245,7 +254,7 @@ on_size_changed (XfcePanelPlugin *plugin, gint size, gpointer data)
 {
     DapeosStatus *st = data;
     gtk_widget_set_size_request (st->area, 74, 22);
-    gtk_widget_queue_draw (st->area);
+    update_image (st);
     return TRUE;
 }
 
@@ -256,12 +265,10 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     DapeosStatus *st = g_new0 (DapeosStatus, 1);
     read_state (st);
 
-    st->area = gtk_drawing_area_new ();
+    st->area = gtk_image_new ();
     gtk_widget_set_size_request (st->area, 74, 22);
-    gtk_widget_set_hexpand (st->area, TRUE);
     gtk_widget_show (st->area);
     gtk_widget_add_events (st->area, GDK_BUTTON_PRESS_MASK);
-    g_signal_connect (st->area, "draw", G_CALLBACK (on_draw), st);
     g_signal_connect (st->area, "button-press-event", G_CALLBACK (on_click), st);
 
     GtkWidget *button = xfce_panel_create_button ();
@@ -271,6 +278,7 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     gtk_widget_set_size_request (GTK_WIDGET (plugin), 74, 22);
     gtk_widget_set_size_request (button, 74, 22);
     gtk_widget_show (button);
+    update_image (st);
 
     g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
 
