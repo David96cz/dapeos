@@ -1,7 +1,7 @@
 """Shared DapeOS Qt theme helper."""
 import subprocess
 
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QProcess, QTimer
 from PyQt5.QtGui import QColor, QIcon, QPalette
 from PyQt5.QtWidgets import QApplication
 
@@ -54,16 +54,15 @@ def apply_theme(app=None):
 
 
 def install_theme_watch(app=None):
-    """Repaint running widgets when the GTK theme changes."""
+    """Listen to xfconf events and repaint when the GTK theme changes."""
     app = app or QApplication.instance()
-    timer = QTimer(app)
-    state = {"dark": is_dark()}
 
-    def tick():
-        dark = is_dark()
-        if dark == state["dark"]:
-            return
-        state["dark"] = dark
+    proc = QProcess(app)
+    proc.start("xfconf-query", ["-c", "xsettings", "-m"])
+
+    pending = {"timer": None}
+
+    def refresh():
         apply_theme(app)
         for w in app.allWidgets():
             try:
@@ -73,6 +72,17 @@ def install_theme_watch(app=None):
             except Exception:  # noqa: BLE001
                 pass
 
-    timer.timeout.connect(tick)
-    timer.start(1500)
-    return timer
+    def on_output():
+        data = bytes(proc.readAllStandardOutput()).decode("utf-8", "ignore")
+        if "ThemeName" not in data and "IconThemeName" not in data:
+            return
+        if pending["timer"] is not None:
+            pending["timer"].stop()
+        pending["timer"] = QTimer(app)
+        pending["timer"].setSingleShot(True)
+        pending["timer"].timeout.connect(refresh)
+        pending["timer"].start(120)
+
+    proc.readyReadStandardOutput.connect(on_output)
+    app._dapeos_theme_proc = proc
+    return proc
