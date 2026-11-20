@@ -70,8 +70,11 @@ def sh(cmd, timeout=4):
 
 
 def panel_dark():
-    theme = sh(["xfconf-query", "-c", "xsettings", "-p", "/Net/ThemeName"])
-    return "dark" in theme.lower()
+    props = sh(["xfconf-query", "-c", "xfce4-panel", "-l"])
+    for prop in props.splitlines():
+        if prop.endswith("/dark-mode"):
+            return sh(["xfconf-query", "-c", "xfce4-panel", "-p", prop]) == "true"
+    return True
 
 
 def panel_height():
