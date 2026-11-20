@@ -14,6 +14,7 @@ configure_xfce() {
     xfce_setup_apps_and_defaults
     xfce_default_apps
     flameshot_setup
+    panel_noenv_setup
     xfce_browser_launcher
     clipman16_setup
     whiskermenu_no_run_setup

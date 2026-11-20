@@ -349,3 +349,21 @@ templates_setup() {
     done
     chown -R "$REAL_USER:$REAL_USER" "$USER_HOME/Templates" 2>/dev/null || true
 }
+
+
+panel_noenv_setup() {
+    local arch deb lib
+    arch="$(dpkg --print-architecture)"
+    deb="$(find "$BASE_DIR/packages/panel-no-gtk-env" -maxdepth 1 \
+        -name "xfce4-panel_*_${arch}.deb" 2>/dev/null | head -n1)"
+    lib="$(find "$BASE_DIR/packages/panel-no-gtk-env" -maxdepth 1 \
+        -name "libxfce4panel-2.0-4_*_${arch}.deb" 2>/dev/null | head -n1)"
+    if [ -z "$deb" ] || [ -z "$lib" ]; then
+        log "Patchnutý xfce4-panel pro $arch není k dispozici, ponechávám stock."
+        return 0
+    fi
+    log "Instaluji xfce4-panel bez dědění GTK_THEME."
+    apt-mark unhold xfce4-panel libxfce4panel-2.0-4 >/dev/null 2>&1 || true
+    apt-get install -y "$lib" "$deb" || return 0
+    apt-mark hold xfce4-panel libxfce4panel-2.0-4 >/dev/null 2>&1 || true
+}

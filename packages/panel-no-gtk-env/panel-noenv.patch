@@ -1,0 +1,21 @@
+--- a/panel/main.c
++++ b/panel/main.c
+@@ -20,6 +20,8 @@
+ #ifdef HAVE_CONFIG_H
+ #include "config.h"
+ #endif
++
++#include <stdlib.h>
+ #ifdef HAVE_XFCE_REVISION_H
+ #include "xfce-revision.h"
+ #endif
+@@ -257,6 +259,9 @@
+   /* we need to do this right now to be able to determine the windowing system used below */
+   gtk_init (&argc, &argv);
+ 
++  /* DapeOS: keep GTK_THEME for the panel, but never for launched apps */
++  unsetenv ("GTK_THEME");
++
+   /* parse context options */
+   context = g_option_context_new (_("[ARGUMENTS...]"));
+   g_option_context_add_main_entries (context, option_entries, GETTEXT_PACKAGE);
