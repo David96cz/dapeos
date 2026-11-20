@@ -1,0 +1,24 @@
+#!/bin/sh
+# Event-driven volume bridge: PulseAudio -> ~/.cache/dapeos/volume
+DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dapeos"
+FILE="$DIR/volume"
+TMP="$FILE.tmp"
+mkdir -p "$DIR" 2>/dev/null || exit 0
+command -v pactl >/dev/null 2>&1 || exit 0
+
+write_state() {
+    vol=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null \
+        | grep -oE '[0-9]+%' | head -n1 | tr -d '%')
+    mute=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null \
+        | grep -q 'yes' && echo 1 || echo 0)
+    [ -n "$vol" ] || vol=0
+    printf '%s\n%s\n' "$vol" "$mute" > "$TMP" 2>/dev/null || return
+    mv -f "$TMP" "$FILE" 2>/dev/null || true
+}
+
+write_state
+pactl subscribe 2>/dev/null | while IFS= read -r line; do
+    case "$line" in
+        *"on sink"*|*"on server"*) write_state ;;
+    esac
+done
