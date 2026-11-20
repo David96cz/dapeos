@@ -59,12 +59,17 @@ class RestoreDialog(QWidget):
     def restore(self):
         home = os.path.expanduser("~")
         user = getpass.getuser()
+        cfg = shlex.quote(home + '/.config')
+        loc = shlex.quote(home + '/.local')
         cmd = (
-            f"mkdir -p {shlex.quote(home + '/.config')} {shlex.quote(home + '/.local')}; "
-            f"cp -a /etc/skel/.config/. {shlex.quote(home + '/.config/')}; "
-            f"cp -a /etc/skel/.local/. {shlex.quote(home + '/.local/')}; "
-            f"chown -R {shlex.quote(user)}:{shlex.quote(user)} "
-            f"{shlex.quote(home + '/.config')} {shlex.quote(home + '/.local')}"
+            "pkill -x xfce4-panel 2>/dev/null || true; "
+            "pkill -x xfconfd 2>/dev/null || true; sleep 0.5; "
+            f"rm -rf {cfg} {loc}; "
+            f"mkdir -p {cfg} {loc}; "
+            f"cp -a /etc/skel/.config/. {cfg}/; "
+            f"cp -a /etc/skel/.local/. {loc}/; "
+            f"chown -R {shlex.quote(user)}:{shlex.quote(user)} {cfg} {loc}; "
+            "setsid /usr/local/bin/xfce4-panel >/dev/null 2>&1 < /dev/null &"
         )
         rc = subprocess.call(["pkexec", "bash", "-c", cmd])
         if rc == 0:

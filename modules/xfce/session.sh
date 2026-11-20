@@ -6,6 +6,11 @@ xfce_skel_snapshot() {
     log "Aktualizuji /etc/skel podle hotového profilu..."
     local d
 
+    # Flush xfconf to disk before copying
+    pkill -x xfce4-panel 2>/dev/null || true
+    pkill -x xfconfd 2>/dev/null || true
+    sleep 1
+
     for d in .config .local; do
         if [ ! -d "$USER_HOME/$d" ]; then
             log "VAROVÁNÍ: $USER_HOME/$d neexistuje, přeskakuji."
@@ -24,9 +29,15 @@ xfce_skel_snapshot() {
                "/etc/skel/$d/lib/panel-icons.so" 2>/dev/null || true
     done
 
+    sync
     chown -R root:root /etc/skel
     chmod -R u+rwX,go+rX /etc/skel
-    log "Skeleton aktualizován."
+
+    if [ ! -f /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml ]; then
+        log "CHYBA: snapshot neobsahuje xfce4-panel.xml!"
+    else
+        log "Skeleton aktualizován (panel.xml ověřen)."
+    fi
 }
 
 
