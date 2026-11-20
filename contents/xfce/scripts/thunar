@@ -1,0 +1,18 @@
+#!/bin/bash
+# DapeOS: protect top-level XDG folders from GUI deletion/move/trash.
+# Only Thunar runs in this mount namespace; the terminal is unaffected.
+REAL="/usr/bin/thunar"
+DIRS=(Desktop Documents Downloads Music Pictures Public Templates Videos)
+
+if ! command -v bwrap >/dev/null 2>&1; then
+    exec "$REAL" "$@"
+fi
+
+ARGS=(--bind / /)
+for d in "${DIRS[@]}"; do
+    if [ -d "$HOME/$d" ]; then
+        ARGS+=(--bind "$HOME/$d" "$HOME/$d")
+    fi
+done
+
+exec bwrap "${ARGS[@]}" -- "$REAL" "$@"
