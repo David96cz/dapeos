@@ -55,11 +55,11 @@ class GroupManagerDialog(QDialog):
         
         btn_layout = QVBoxLayout()
         
-        self.btn_add = QPushButton('+ Přidat')
+        self.btn_add = QPushButton(_("+ Add"))
         self.btn_add.setCursor(Qt.PointingHandCursor)
         self.btn_add.clicked.connect(self.add_group)
         
-        self.btn_del = QPushButton('- Smazat')
+        self.btn_del = QPushButton(_("- Delete"))
         self.btn_del.setCursor(Qt.PointingHandCursor)
         self.btn_del.clicked.connect(self.del_group)
         
@@ -110,19 +110,19 @@ class UserManagerApp(QWidget):
         self.load_users()
 
     def initUI(self):
-        self.setWindowTitle('Nastavení uživatelů')
+        self.setWindowTitle(_("User settings"))
         self.setFixedSize(720, 500) # Zvětšeno pro lepší přehlednost
         
         self.setStyleSheet("""
-            QWidget { background-color: #f5f5f5; font-family: sans-serif; }
-            QLabel { color: #333; font-size: 11pt; }
-            QListWidget { background-color: white; border: 1px solid #ccc; border-radius: 5px; outline: 0; font-size: 11pt; }
-            QListWidget::item { padding: 10px; color: #222; }
-            QListWidget::item:hover { background-color: #e3f2fd; }
-            QListWidget::item:selected { background-color: #2a7fca; color: white; border-radius: 3px; }
-            QPushButton { background-color: #e0e0e0; color: #222; padding: 8px 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 10pt; min-width: 120px; }
-            QPushButton:hover { background-color: #d5d5d5; }
-            QPushButton:disabled { background-color: #e0e0e0; color: #9e9e9e; border: 1px solid #d5d5d5; }
+            QWidget { background-color: palette(window); color: palette(text); font-family: sans-serif; }
+            QLabel { color: palette(text); font-size: 11pt; }
+            QListWidget { background-color: palette(base); color: palette(text); border: 1px solid palette(mid); border-radius: 5px; outline: 0; font-size: 11pt; }
+            QListWidget::item { padding: 10px; color: palette(text); }
+            QListWidget::item:hover { background-color: palette(midlight); }
+            QListWidget::item:selected { background-color: palette(highlight); color: palette(highlighted-text); border-radius: 3px; }
+            QPushButton { background-color: palette(button); color: palette(button-text); padding: 8px 15px; border: 1px solid palette(mid); border-radius: 5px; font-size: 10pt; min-width: 120px; }
+            QPushButton:hover { background-color: palette(midlight); }
+            QPushButton:disabled { background-color: palette(button); color: palette(mid); border: 1px solid palette(mid); }
         """)
 
         main_layout = QHBoxLayout()
@@ -136,17 +136,17 @@ class UserManagerApp(QWidget):
         left_layout.addWidget(self.user_list)
 
         btn_row_1 = QHBoxLayout()
-        self.btn_add = QPushButton('+ Přidat')
+        self.btn_add = QPushButton(_("+ Add"))
         self.btn_add.setCursor(Qt.PointingHandCursor)
         self.btn_add.clicked.connect(self.add_user)
-        self.btn_del = QPushButton('- Smazat')
+        self.btn_del = QPushButton(_("- Delete"))
         self.btn_del.setCursor(Qt.PointingHandCursor)
         self.btn_del.clicked.connect(self.delete_user)
         btn_row_1.addWidget(self.btn_add)
         btn_row_1.addWidget(self.btn_del)
         left_layout.addLayout(btn_row_1)
 
-        self.btn_groups = QPushButton('Spravovat skupiny')
+        self.btn_groups = QPushButton(_("Manage groups"))
         self.btn_groups.setCursor(Qt.PointingHandCursor)
         self.btn_groups.clicked.connect(self.open_groups)
         left_layout.addWidget(self.btn_groups)
@@ -164,7 +164,7 @@ class UserManagerApp(QWidget):
         self.lbl_realname = QLabel(_("Select a user"))
         self.lbl_realname.setFont(QFont("sans-serif", 14, QFont.Bold))
         self.lbl_login = QLabel("")
-        self.lbl_login.setStyleSheet("color: #666;")
+        self.lbl_login.setStyleSheet("color: palette(mid);")
         name_box.addWidget(self.lbl_realname)
         name_box.addWidget(self.lbl_login)
         right_layout.addLayout(name_box)
@@ -177,7 +177,7 @@ class UserManagerApp(QWidget):
         # Oddělovač
         line1 = QFrame()
         line1.setFrameShape(QFrame.HLine)
-        line1.setStyleSheet("color: #ddd;")
+        line1.setStyleSheet("color: palette(mid);")
         right_layout.addWidget(line1)
 
         # 2. Sekce Typ účtu (Sudo)
@@ -194,7 +194,7 @@ class UserManagerApp(QWidget):
         # Oddělovač
         line2 = QFrame()
         line2.setFrameShape(QFrame.HLine)
-        line2.setStyleSheet("color: #ddd;")
+        line2.setStyleSheet("color: palette(mid);")
         right_layout.addWidget(line2)
 
         # 3. Sekce Heslo
@@ -238,10 +238,10 @@ class UserManagerApp(QWidget):
             user_info = pwd.getpwnam(self.current_user)
             real_name = user_info.pw_gecos.split(',')[0] or self.current_user
             self.lbl_realname.setText(real_name)
-            self.lbl_login.setText(f"Login: {self.current_user}  |  Domovská složka: {user_info.pw_dir}")
+            self.lbl_login.setText(f"{_('Login:')} {self.current_user}  |  {_('Home folder:')} {user_info.pw_dir}")
             
             is_admin = self.current_user in grp.getgrnam('sudo').gr_mem
-            self.lbl_type.setText(f"Typ účtu: <b>{'Správce (Sudo)' if is_admin else 'Standardní'}</b>")
+            self.lbl_type.setText(f"{_('Account type:')} <b>{_('Administrator (sudo)') if is_admin else _('Standard')}</b>")
             self.btn_toggle_sudo.setText(_("Remove admin rights") if is_admin else _("Grant admin rights"))
         except:
             pass
@@ -265,8 +265,8 @@ class UserManagerApp(QWidget):
             QMessageBox.warning(self, "Chyba", _("You cannot delete the user you are logged in as."))
             return
             
-        reply = QMessageBox.question(self, 'Varování', 
-            f"Opravdu chcete trvale smazat uživatele <b>{self.current_user}</b>?<br><br>Tato akce nekompromisně smaže i celou jeho domovskou složku (/home/{self.current_user}).",
+        reply = QMessageBox.question(self, _("Warning"), 
+            f"{_('Do you really want to permanently delete user')} <b>{self.current_user}</b>?<br><br>{_('This will also permanently delete their home folder')} (/home/{self.current_user}).",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             
         if reply == QMessageBox.Yes:
@@ -304,7 +304,7 @@ class UserManagerApp(QWidget):
         try:
             subprocess.Popen(["python3", target_path], env=env)
         except Exception as e:
-            QMessageBox.critical(self, "Chyba", f"Nepodařilo se spustit modul hesla:\n{e}")
+            QMessageBox.critical(self, _("Error"), f"{_('Failed to start password module:')}\n{e}")
 
     def open_groups(self):
         dlg = GroupManagerDialog(self)
@@ -324,7 +324,7 @@ class UserManagerApp(QWidget):
             elif action == "toggle_sudo":
                 self.on_user_selected()
         else:
-            QMessageBox.critical(self, _("System error"), f"Příkaz selhal:\n\n{err}")
+            QMessageBox.critical(self, _("System error"), f"{_('Command failed:')}\n\n{err}")
 
 
 if __name__ == '__main__':

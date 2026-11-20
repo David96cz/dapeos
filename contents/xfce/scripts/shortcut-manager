@@ -373,5 +373,6 @@ class ShortcutApp(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv); app.setStyle("Fusion")
+    apply_theme(app)
     QIcon.setThemeName("Papirus"); window = ShortcutApp(); window.show()
     sys.exit(app.exec_())

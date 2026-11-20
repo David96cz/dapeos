@@ -737,3 +737,33 @@ msgstr "Úspěch"
 
 msgid "Write error: "
 msgstr "Chyba zápisu: "
+
+msgid "Login:"
+msgstr "Login:"
+
+msgid "Home folder:"
+msgstr "Domovská složka:"
+
+msgid "Account type:"
+msgstr "Typ účtu:"
+
+msgid "Do you really want to permanently delete user"
+msgstr "Opravdu chcete trvale smazat uživatele"
+
+msgid "This will also permanently delete their home folder"
+msgstr "Tato akce nekompromisně smaže i celou jeho domovskou složku"
+
+msgid "Failed to start password module:"
+msgstr "Nepodařilo se spustit modul hesla:"
+
+msgid "Command failed:"
+msgstr "Příkaz selhal:"
+
+msgid "Path to wallpaper file..."
+msgstr "Cesta k souboru s tapetou..."
+
+msgid "Choose color"
+msgstr "Vybrat barvu"
+
+msgid "Manage groups"
+msgstr "Spravovat skupiny"
