@@ -5,6 +5,9 @@
 #include <string.h>
 #include <math.h>
 
+static gchar *run_cmd (const gchar *cmd);
+static void run_async (const gchar *cmd);
+
 static GtkWidget *window;
 static GtkWidget *vol_scale;
 static GtkWidget *vol_label;
