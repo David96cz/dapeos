@@ -1,11 +1,9 @@
---- th-a/thunar/thunar-shortcuts-model.c	2026-11-20 12:09:25
-+++ th-b/thunar/thunar-shortcuts-model.c	2026-11-20 12:09:30
-@@ -1024,16 +1024,6 @@
-   shortcut = g_slice_new0 (ThunarShortcut);
-   shortcut->group = THUNAR_SHORTCUT_GROUP_DEVICES_HEADER;
+--- a/thunar/thunar-shortcuts-model.c
++++ b/thunar/thunar-shortcuts-model.c
+@@ -1026,16 +1026,6 @@
    shortcut->name = g_strdup (_("Devices"));
--  thunar_shortcuts_model_add_shortcut (model, shortcut);
--
+   thunar_shortcuts_model_add_shortcut (model, shortcut);
+ 
 -  /* the filesystem entry */
 -  shortcut = g_slice_new0 (ThunarShortcut);
 -  shortcut->group = THUNAR_SHORTCUT_GROUP_DEVICES_FILESYSTEM;
@@ -14,6 +12,28 @@
 -  shortcut->file = thunar_file_get_for_uri ("file:///", NULL);
 -  shortcut->gicon = g_themed_icon_new ("drive-harddisk");
 -  shortcut->hidden = thunar_shortcuts_model_get_hidden (model, shortcut);
-   thunar_shortcuts_model_add_shortcut (model, shortcut);
- 
+-  thunar_shortcuts_model_add_shortcut (model, shortcut);
+-
    /* connect to the device monitor */
+   model->device_monitor = thunar_device_monitor_get ();
+ 
+@@ -1169,19 +1159,6 @@
+   if (model->bookmarks_idle_id == 0)
+     model->bookmarks_idle_id = g_idle_add_full (G_PRIORITY_DEFAULT, thunar_shortcuts_model_load_bookmarks, model, NULL);
+ 
+-  /* append the computer icon if browsing the computer is supported */
+-  if (thunar_g_vfs_is_uri_scheme_supported ("computer"))
+-    {
+-      shortcut = g_slice_new0 (ThunarShortcut);
+-      shortcut->group = THUNAR_SHORTCUT_GROUP_PLACES_COMPUTER;
+-      shortcut->name = g_strdup (_("Computer"));
+-      shortcut->tooltip = g_strdup (_("Browse the computer"));
+-      shortcut->location = thunar_g_file_new_for_computer ();
+-      shortcut->gicon = g_themed_icon_new ("computer");
+-      shortcut->hidden = thunar_shortcuts_model_get_hidden (model, shortcut);
+-      thunar_shortcuts_model_add_shortcut (model, shortcut);
+-    }
+-
+   /* append the recent icon if browsing recent is supported */
+   if (thunar_g_vfs_is_uri_scheme_supported ("recent"))
+     {
