@@ -371,3 +371,22 @@ panel_noenv_setup() {
     apt-get install -y "$lib" "$deb" || return 0
     apt-mark hold xfce4-panel libxfce4panel-2.0-4 >/dev/null 2>&1 || true
 }
+
+
+dapeos_status_plugin_setup() {
+    local arch deb xml
+    arch="$(dpkg --print-architecture)"
+    deb="$(find "$BASE_DIR/packages/dapeos-status-plugin" -maxdepth 1 \
+        -name "dapeos-status-plugin_*_${arch}.deb" 2>/dev/null | head -n1)"
+    if [ -z "$deb" ]; then
+        log "C status plugin pro $arch není k dispozici, ponechávám GenMon."
+        return 0
+    fi
+    log "Instaluji DapeOS status plugin: $(basename "$deb")"
+    apt-get install -y "$deb" || return 0
+
+    xml="$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
+    if [ -f "$xml" ]; then
+        sed -i 's|name="plugin-12" type="string" value="genmon"|name="plugin-12" type="string" value="dapeos-status"|' "$xml"
+    fi
+}
