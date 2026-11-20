@@ -196,6 +196,7 @@ update_image (DapeosStatus *st)
     GdkPixbuf *pix = gdk_pixbuf_get_from_surface (surface, 0, 0, 74, 22);
     cairo_surface_destroy (surface);
     if (pix) {
+        g_print ("DAPEOS: pixbuf %dx%d\n", gdk_pixbuf_get_width (pix), gdk_pixbuf_get_height (pix));
         gtk_image_set_from_pixbuf (GTK_IMAGE (st->area), pix);
         g_object_unref (pix);
     } else {
@@ -255,7 +256,18 @@ on_size_changed (XfcePanelPlugin *plugin, gint size, gpointer data)
     DapeosStatus *st = data;
     gtk_widget_set_size_request (st->area, 74, 22);
     update_image (st);
-    return TRUE;
+    return FALSE;
+}
+
+static gboolean
+print_alloc (gpointer data)
+{
+    DapeosStatus *st = data;
+    g_print ("DAPEOS: alloc plugin=%d area=%d visible=%d\n",
+             gtk_widget_get_allocated_width (gtk_widget_get_parent (st->area)),
+             gtk_widget_get_allocated_width (st->area),
+             gtk_widget_get_visible (st->area));
+    return FALSE;
 }
 
 static void
@@ -287,6 +299,7 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     spawn_monitor (st, "upower --monitor", &st->upower_pid);
 
     gtk_widget_show_all (GTK_WIDGET (plugin));
+    g_idle_add (print_alloc, st);
 }
 
 XFCE_PANEL_PLUGIN_REGISTER (dapeos_status_construct)
