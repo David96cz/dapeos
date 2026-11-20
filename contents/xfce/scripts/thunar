@@ -1,0 +1,4 @@
+#!/bin/sh
+# Never inherit the panel's GTK_THEME.
+unset GTK_THEME
+exec /usr/bin/thunar "$@"
