@@ -2,6 +2,7 @@
 #include <gio/gio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 static GtkWidget *window;
 static GtkWidget *vol_scale;
@@ -9,10 +10,104 @@ static GtkWidget *vol_label;
 static GtkWidget *mute_button;
 static GtkWidget *battery_label;
 static GtkWidget *bt_label;
+static GtkWidget *night_label;
 static GtkWidget *net_label;
 static gboolean updating = FALSE;
 static guint vol_timeout = 0;
 static guint bg_timeout = 0;
+static gboolean night_on = FALSE;
+
+static gchar *night_state_path (const gchar *name)
+{
+    return g_build_filename (g_get_user_cache_dir (), "dapeos", name, NULL);
+}
+
+static gboolean bt_is_on (void)
+{
+    gchar *out = run_cmd ("bluetoothctl show 2>/dev/null");
+    gboolean on = strstr (out, "Powered: yes") != NULL;
+    g_free (out);
+    return on;
+}
+
+static void update_tiles (void)
+{
+    gboolean bt = bt_is_on ();
+    gtk_button_set_label (GTK_BUTTON (bt_label), bt ? "On" : "Off");
+    gchar *nightfile = night_state_path ("nightlight_on");
+    night_on = g_file_test (nightfile, G_FILE_TEST_EXISTS);
+    g_free (nightfile);
+    gtk_button_set_label (GTK_BUTTON (night_label), night_on ? "On" : "Off");
+}
+
+static void on_bt_clicked (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    run_async (bt_is_on () ? "bluetoothctl power off" : "bluetoothctl power on");
+    g_timeout_add (400, (GSourceFunc) update_tiles, NULL);
+}
+
+static void primary_output (gchar *out, gsize len)
+{
+    gchar *list = run_cmd ("xrandr --query 2>/dev/null");
+    gchar **lines = g_strsplit (list, "\n", -1);
+    out[0] = 0;
+    for (guint i = 0; lines[i]; i++) {
+        if (strstr (lines[i], " connected")) {
+            g_strlcpy (out, lines[i], len);
+            gchar *space = strchr (out, ' ');
+            if (space) *space = 0;
+            break;
+        }
+    }
+    g_strfreev (lines);
+    g_free (list);
+}
+
+static void apply_gamma (gint temp)
+{
+    gchar output[64];
+    primary_output (output, sizeof output);
+    if (!output[0]) return;
+    gdouble r, g, b;
+    if (temp <= 0) { r = g = b = 1.0; }
+    else {
+        gdouble t = temp / 100.0;
+        if (t <= 66) {
+            r = 255.0;
+            g = 99.4708025861 * log (t) - 161.1195681661;
+            b = (t <= 19) ? 0.0 : 138.5177312231 * log (t - 10) - 305.0447927307;
+        } else {
+            r = 329.698727446 * pow (t - 60, -0.1332047592);
+            g = 288.1221695283 * pow (t - 60, -0.0755148492);
+            b = 255.0;
+        }
+        r = MAX (0.0, MIN (255.0, r)) / 255.0;
+        g = MAX (0.0, MIN (255.0, g)) / 255.0;
+        b = MAX (0.0, MIN (255.0, b)) / 255.0;
+    }
+    gchar *cmd = g_strdup_printf ("xrandr --output %s --gamma %.3f:%.3f:%.3f", output, r, g, b);
+    run_async (cmd);
+    g_free (cmd);
+}
+
+static void on_night_clicked (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    gchar *dir = g_build_filename (g_get_user_cache_dir (), "dapeos", NULL);
+    gchar *onfile = night_state_path ("nightlight_on");
+    g_mkdir_with_parents (dir, 0700);
+    if (night_on) {
+        g_unlink (onfile);
+        apply_gamma (0);
+    } else {
+        g_file_set_contents (onfile, "", 0, NULL);
+        apply_gamma (4000);
+    }
+    night_on = !night_on;
+    gtk_button_set_label (GTK_BUTTON (night_label), night_on ? "On" : "Off");
+    g_free (onfile); g_free (dir);
+}
 
 static gchar *run_cmd (const gchar *cmd)
 {
@@ -83,8 +178,23 @@ static gchar *get_battery (void)
 
 static gboolean is_dark (void)
 {
-    gchar *out = run_cmd ("xfconf-query -c xfce4-panel -p /panels/panel-2/dark-mode 2>/dev/null");
+    gchar *out = run_cmd ("xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null");
     gboolean dark = g_strcmp0 (out, "true") == 0;
+    if (!dark && out && *out == 0) {
+        gchar *list = run_cmd ("xfconf-query -c xfce4-panel -l 2>/dev/null");
+        gchar **lines = g_strsplit (list, "\n", -1);
+        for (guint i = 0; lines[i]; i++) {
+            if (g_str_has_suffix (lines[i], "/dark-mode")) {
+                gchar *cmd = g_strdup_printf ("xfconf-query -c xfce4-panel -p '%s' 2>/dev/null", lines[i]);
+                gchar *val = run_cmd (cmd);
+                dark = g_strcmp0 (val, "true") == 0;
+                g_free (val); g_free (cmd);
+                break;
+            }
+        }
+        g_strfreev (lines);
+        g_free (list);
+    }
     g_free (out);
     return dark;
 }
@@ -254,7 +364,9 @@ static void build_ui (void)
     gtk_grid_set_row_spacing (GTK_GRID (grid), 8);
     GtkWidget *net = make_tile ("Network", "Ethernet", &net_label);
     GtkWidget *bt = make_tile ("Bluetooth", "Off", &bt_label);
-    GtkWidget *night = make_tile ("Night light", "Off", NULL);
+    GtkWidget *night = make_tile ("Night light", "Off", &night_label);
+    g_signal_connect (bt, "clicked", G_CALLBACK (on_bt_clicked), NULL);
+    g_signal_connect (night, "clicked", G_CALLBACK (on_night_clicked), NULL);
     gtk_widget_set_hexpand (net, TRUE);
     gtk_widget_set_hexpand (bt, TRUE);
     gtk_widget_set_hexpand (night, TRUE);
@@ -293,6 +405,7 @@ static void build_ui (void)
 
     apply_css ();
     update_volume_ui ();
+    update_tiles ();
     gchar *bat = get_battery ();
     gtk_label_set_text (GTK_LABEL (battery_label), bat);
     g_free (bat);
