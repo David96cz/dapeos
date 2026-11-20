@@ -9,6 +9,11 @@ try:
 except Exception:  # noqa: BLE001
     _ = lambda s: s
 
+
+try:
+    from dapeos_theme import apply_theme
+except Exception:  # noqa: BLE001
+    apply_theme = lambda app=None: False
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QTabWidget, QLabel, QLineEdit, 
                              QPushButton, QCheckBox, QComboBox, QFileDialog, 

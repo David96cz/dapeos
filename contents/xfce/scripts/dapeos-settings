@@ -20,6 +20,11 @@ try:
 except Exception:  # noqa: BLE001
     _ = lambda s: s
 
+
+try:
+    from dapeos_theme import apply_theme
+except Exception:  # noqa: BLE001
+    apply_theme = lambda app=None: False
 DIRS = [os.path.expanduser("~/.local/share/applications"), "/usr/share/applications"]
 HIDE_CONF = "/usr/share/dapeos/settings-hide.conf"
 
@@ -153,7 +158,7 @@ class SettingsHub(QWidget):
         self.header_labels = {}
         for group in GROUPS:
             lbl = QLabel(_(group))
-            lbl.setStyleSheet("font-size: 11pt; font-weight: bold; color: #444; padding-top: 8px;")
+            lbl.setStyleSheet("font-size: 11pt; font-weight: bold; padding-top: 8px;")
             lbl.hide()
             self.header_labels[group] = lbl
 
@@ -166,8 +171,8 @@ class SettingsHub(QWidget):
             b.setMinimumWidth(0)
             b.setStyleSheet("""
                 QPushButton { text-align: left; padding: 8px 10px; border: 1px solid #ccc;
-                              border-radius: 8px; background: #fff; font-size: 9.5pt; }
-                QPushButton:hover { background: #eef4fb; border-color: #2a7fca; }
+                              border-radius: 8px; background: palette(base); color: palette(text); font-size: 9.5pt; }
+                QPushButton:hover { border-color: #2a7fca; }
             """)
             b.setFixedHeight(58)
             b.clicked.connect(lambda _=False, e=item["exec"]: self.launch(e))
@@ -245,6 +250,7 @@ def raise_existing():
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    apply_theme(app)
     QIcon.setThemeName("Papirus")
 
     if raise_existing():

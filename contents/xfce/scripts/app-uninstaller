@@ -11,6 +11,11 @@ try:
 except Exception:  # noqa: BLE001
     _ = lambda s: s
 
+
+try:
+    from dapeos_theme import apply_theme
+except Exception:  # noqa: BLE001
+    apply_theme = lambda app=None: False
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                              QLineEdit, QPushButton, QMessageBox, QListWidget,
                              QListWidgetItem, QLabel)
@@ -173,11 +178,11 @@ class AppUninstaller(QWidget):
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
         
         self.setStyleSheet("""
-            QWidget { background-color: #f5f5f5; font-family: sans-serif; }
-            QLabel { color: #333; }
-            QLineEdit { padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: white; font-size: 11pt; }
-            QListWidget { background-color: white; border: 1px solid #ccc; border-radius: 5px; outline: 0; }
-            QListWidget::item { border-bottom: 1px solid #e0e0e0; padding: 10px; color: #222; }
+            QWidget { background-color: palette(window); font-family: sans-serif; }
+            QLabel { color: palette(text); }
+            QLineEdit { padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: palette(base); font-size: 11pt; }
+            QListWidget { background-color: palette(base); border: 1px solid #ccc; border-radius: 5px; outline: 0; }
+            QListWidget::item { border-bottom: 1px solid #e0e0e0; padding: 10px; color: palette(text); }
             QListWidget::item:last { border-bottom: none; }
             QListWidget::item:hover { background-color: #e3f2fd; }
             QListWidget::item:selected { background-color: #2a7fca; color: white; border-radius: 3px; }
@@ -500,6 +505,7 @@ class AppUninstaller(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    apply_theme(app)
     QIcon.setThemeName("Papirus")
     QIcon.setFallbackThemeName("hicolor")
     window = AppUninstaller()

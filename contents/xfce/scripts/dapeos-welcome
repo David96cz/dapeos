@@ -20,6 +20,11 @@ try:
 except Exception:  # noqa: BLE001
     _ = lambda s: s
 
+
+try:
+    from dapeos_theme import apply_theme
+except Exception:  # noqa: BLE001
+    apply_theme = lambda app=None: False
 from PyQt5.QtWidgets import (
     QApplication, QCheckBox, QDialog, QFrame, QGridLayout,
     QHBoxLayout, QLabel, QPushButton, QTextBrowser, QVBoxLayout,
@@ -171,15 +176,15 @@ class Welcome(QWidget):
         self.setWindowIcon(QIcon(LOGO) if os.path.exists(LOGO) else QIcon.fromTheme("distributor-logo"))
 
         self.setStyleSheet("""
-            QWidget { background: #f5f5f5; font-family: sans-serif; }
+            QWidget { background: palette(window); color: palette(text); font-family: sans-serif; }
             QLabel#title { font-size: 24pt; font-weight: bold; color: #1f4e79; }
             QLabel#sub { font-size: 11pt; color: #555; }
-            QFrame#card { background: white; border: 1px solid #e2e2e2; border-radius: 12px; }
+            QFrame#card { background: palette(base); border: 1px solid palette(mid); border-radius: 12px; }
             QFrame#card QLabel { background: transparent; }
             QFrame#card:hover { background: #eef4fb; border-color: #2a7fca; }
-            QLabel#cardTitle { font-size: 12pt; font-weight: bold; color: #222; }
-            QLabel#cardSub { color: #6b7280; }
-            QPushButton { padding: 10px 18px; border-radius: 6px; border: 1px solid #ccc; background: white; }
+            QLabel#cardTitle { font-size: 12pt; font-weight: bold; color: palette(text); }
+            QLabel#cardSub { color: palette(mid); }
+            QPushButton { padding: 10px 18px; border-radius: 6px; border: 1px solid palette(mid); background: palette(base); color: palette(text); }
             QPushButton#primary { background: #2a7fca; color: white; border: none; font-weight: bold; }
             QPushButton#primary:hover { background: #1f6aa8; }
         """)
@@ -289,6 +294,7 @@ class Welcome(QWidget):
 
 def main():
     app = QApplication(sys.argv)
+    apply_theme(app)
     QIcon.setThemeName("Papirus-Light")
     QIcon.setFallbackThemeName("hicolor")
 
