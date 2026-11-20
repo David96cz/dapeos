@@ -7,8 +7,3 @@ case "$theme" in
 esac
 
 xfconf-query -c xsettings -p /Net/IconThemeName -s "$icon" 2>/dev/null || true
-
-# Refresh the clipman status icon against the new icon theme
-pkill -x xfce4-clipman 2>/dev/null || true
-sleep 0.3
-setsid xfce4-clipman >/dev/null 2>&1 < /dev/null &

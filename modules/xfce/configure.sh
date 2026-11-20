@@ -15,6 +15,7 @@ configure_xfce() {
     xfce_default_apps
     flameshot_setup
     xfce_browser_launcher
+    clipman16_setup
     whiskermenu_no_run_setup
     whisker_rename
     thunar_no_root_setup

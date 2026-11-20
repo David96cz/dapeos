@@ -317,3 +317,19 @@ xfce_theme_cleanup() {
         sed -i "s/^Name\[cs\]=.*/Name[cs]=${pair##*:}/" "$idx" 2>/dev/null || true
     done
 }
+
+
+clipman16_setup() {
+    local arch deb
+    arch="$(dpkg --print-architecture)"
+    deb="$(find "$BASE_DIR/packages/clipman-16" -maxdepth 1 \
+        -name "xfce4-clipman-plugin_*_${arch}.deb" 2>/dev/null | head -n1)"
+    if [ -z "$deb" ]; then
+        log "Patchnutý clipman pro $arch není k dispozici, ponechávám stock."
+        return 0
+    fi
+    log "Instaluji clipman s 16px ikonou: $(basename "$deb")"
+    apt-mark unhold xfce4-clipman-plugin >/dev/null 2>&1 || true
+    apt-get install -y "$deb" || return 0
+    apt-mark hold xfce4-clipman-plugin >/dev/null 2>&1 || true
+}

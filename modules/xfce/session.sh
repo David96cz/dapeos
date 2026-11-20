@@ -45,7 +45,7 @@ dapeos_session_setup() {
 
     install -d -m 755 "$USER_HOME/.config/autostart"
     local a
-    for a in nm-applet blueman blueman-applet rustdesk; do
+    for a in nm-applet blueman blueman-applet rustdesk xfce4-clipman-plugin-autostart xfce4-clipman; do
         printf '[Desktop Entry]\nType=Application\nName=%s\nHidden=true\n' "$a" \
             > "$USER_HOME/.config/autostart/$a.desktop"
         chown "$REAL_USER:$REAL_USER" "$USER_HOME/.config/autostart/$a.desktop" 2>/dev/null || true
