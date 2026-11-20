@@ -251,7 +251,7 @@ schedule_volume_refresh (DapeosStatus *st)
 
     const gchar *argv[] = { "pactl", "get-sink-volume", "@DEFAULT_SINK@", NULL };
     GError *error = NULL;
-    GSubprocess *proc = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE, NULL, &error);
+    GSubprocess *proc = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE, &error);
     if (proc == NULL) {
         st->volume_busy = FALSE;
         if (error) g_error_free (error);
