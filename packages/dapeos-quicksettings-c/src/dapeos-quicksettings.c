@@ -83,10 +83,18 @@ static gchar *get_battery (void)
 
 static gboolean is_dark (void)
 {
-    gchar *out = run_cmd ("xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null");
-    gboolean dark = g_strrstr (out, "dark") != NULL || g_strrstr (out, "Dark") != NULL;
+    gchar *out = run_cmd ("xfconf-query -c xfce4-panel -p /panels/panel-2/dark-mode 2>/dev/null");
+    gboolean dark = g_strcmp0 (out, "true") == 0;
     g_free (out);
     return dark;
+}
+
+static gint panel_height (void)
+{
+    gchar *out = run_cmd ("xfconf-query -c xfce4-panel -p /panels/panel-2/size 2>/dev/null");
+    gint h = atoi (out);
+    g_free (out);
+    return h > 0 ? h : 36;
 }
 
 static void apply_css (void)
@@ -95,7 +103,7 @@ static void apply_css (void)
     const gchar *data;
     if (is_dark ()) {
         data =
-            "window { background: #2b2b2b; border-radius: 14px; }"
+            "window { background: #2f2f2f; border-radius: 14px; }"
             "label, button { color: #eaeaea; }"
             "button.tile { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 10px; padding: 10px; }"
             "button.tile:hover { border-color: #2a7fca; }"
@@ -217,7 +225,7 @@ static void build_ui (void)
     gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
     gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
-    gtk_window_set_default_size (GTK_WINDOW (window), 420, 340);
+    gtk_window_set_default_size (GTK_WINDOW (window), 420, 250);
     g_signal_connect (window, "key-press-event", G_CALLBACK (on_key_press), NULL);
     g_signal_connect (window, "focus-out-event", G_CALLBACK (on_focus_out), NULL);
 
@@ -302,7 +310,7 @@ static void position_window (void)
     if (w <= 0) w = 420;
     if (h <= 0) h = 340;
     gint x = geo.x + geo.width - w - 20;
-    gint y = geo.y + geo.height - h - 12;
+    gint y = geo.y + geo.height - panel_height () - h - 8;
     if (x < geo.x + 8) x = geo.x + 8;
     if (y < geo.y + 8) y = geo.y + 8;
     gtk_window_move (GTK_WINDOW (window), x, y);
