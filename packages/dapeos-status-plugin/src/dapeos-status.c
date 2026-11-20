@@ -286,8 +286,7 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
 
     g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
 
-    spawn_monitor (st, "pactl subscribe", &st->pactl_pid);
-
+    /* Event monitors are enabled after the static version is verified. */
     xfce_panel_plugin_set_small (plugin, TRUE);
     gtk_widget_show_all (GTK_WIDGET (plugin));
 }
