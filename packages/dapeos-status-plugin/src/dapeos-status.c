@@ -268,6 +268,9 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     gtk_widget_set_size_request (button, 74, 22);
     gtk_container_add (GTK_CONTAINER (button), st->area);
     gtk_container_add (GTK_CONTAINER (plugin), button);
+    gtk_widget_set_size_request (GTK_WIDGET (plugin), 74, 22);
+    gtk_widget_set_size_request (button, 74, 22);
+    gtk_widget_show (button);
 
     g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
 
