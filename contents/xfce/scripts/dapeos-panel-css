@@ -1,0 +1,29 @@
+#!/bin/sh
+# Style only the panel window, independent of the global GTK theme.
+dark=false
+for prop in $(xfconf-query -c xfce4-panel -l 2>/dev/null | grep '/dark-mode$'); do
+    [ "$(xfconf-query -c xfce4-panel -p "$prop" 2>/dev/null)" = "true" ] && dark=true
+done
+
+mkdir -p "$HOME/.config/gtk-3.0"
+css="$HOME/.config/gtk-3.0/gtk.css"
+
+if [ "$dark" = "true" ]; then
+    bg="rgba(43,43,43,1)"; fg="#eaeaea"; border="#3a3a3a"
+else
+    bg="rgba(240,240,240,1)"; fg="#222222"; border="#c8c8c8"
+fi
+
+cat > "$css" <<CSS
+/* DapeOS panel-only theme */
+#XfcePanelWindow {
+    background-color: $bg;
+    color: $fg;
+    border-color: $border;
+}
+#XfcePanelWindow label,
+#XfcePanelWindow button,
+#XfcePanelWindow image {
+    color: $fg;
+}
+CSS

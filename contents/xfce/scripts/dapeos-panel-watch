@@ -25,6 +25,7 @@ watch_channel() {
                 dapeos-theme-sync
                 ;;
             *dark-mode*)
+                dapeos-panel-css
                 sleep 0.4
                 restart_panel
                 ;;
