@@ -145,6 +145,28 @@ def strip_nodisplay(path):
         f.write("\n".join(out) + "\n")
 
 
+def strip_gtk_theme(path):
+    """Never leak the panel's GTK_THEME into launched applications."""
+    try:
+        with open(path, encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+    except OSError:
+        return
+    changed = False
+    for i, line in enumerate(lines):
+        if line.startswith("Exec=") and "env -u GTK_THEME" not in line:
+            value = line[5:].strip()
+            if value:
+                lines[i] = "Exec=env -u GTK_THEME " + value + "\n"
+                changed = True
+    if changed:
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.writelines(lines)
+        except OSError:
+            pass
+
+
 def main():
     conf = read_conf()
     for src in glob.glob(os.path.join(SRC, "*.desktop")):
@@ -190,6 +212,9 @@ def main():
                 move_to_system(dst)
         except OSError:
             pass
+
+    for dst in glob.glob(os.path.join(DST, "*.desktop")):
+        strip_gtk_theme(dst)
 
     subprocess.run(["update-desktop-database", DST], capture_output=True)
     return 0

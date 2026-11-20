@@ -1,0 +1,4 @@
+#!/bin/sh
+# Never pass the panel's GTK_THEME to applications.
+unset GTK_THEME
+exec /usr/bin/exo-open "$@"
