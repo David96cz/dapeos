@@ -112,7 +112,7 @@ def svg(color, net_type, vol, mute, cap):
         parts.append('<rect x="3" y="7" width="14" height="9" rx="2"/>')
         parts.append('</g>')
     else:
-        fillw = max(2, int(12 * cap / 100))
+        fillw = max(2, min(10, int(10 * cap / 100)))
         fill = "#4caf50" if cap > 30 else ("#ff9800" if cap > 15 else "#f44336")
         parts.append(f'<g transform="translate({x},0)">')
         parts.append(f'<rect x="3" y="7" width="14" height="9" rx="2" fill="none" stroke="{color}" stroke-width="1.5"/>')
@@ -121,7 +121,7 @@ def svg(color, net_type, vol, mute, cap):
         parts.append('</g>')
 
     x = PAD_LEFT + 2 * (W + GAP)
-    parts.append(f'<g transform="translate({x},0)" fill="{color}">')
+    parts.append(f'<g transform="translate({x},1.5)" fill="{color}">')
     parts.append('<path d="M4 8.5h3l4.5-3.5v12L7 13.5H4z"/>')
     if mute or vol == 0:
         parts.append(f'<path d="M13.5 8.5l5 5M18.5 8.5l-5 5" fill="none" stroke="#f44336" stroke-width="1.7" stroke-linecap="round"/>')
