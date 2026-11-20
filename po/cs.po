@@ -581,3 +581,30 @@ msgstr "Uptime"
 
 msgid "Ethernet"
 msgstr "Kabel"
+
+msgid "Tray Settings"
+msgstr "Nastavení traye"
+
+msgid "Icon size and spacing on the right side of the panel."
+msgstr "Velikost ikon a rozestupy na pravé straně panelu."
+
+msgid "Status icon size"
+msgstr "Velikost stavové ikony"
+
+msgid "Space between icons"
+msgstr "Mezera mezi ikonami"
+
+msgid "Left padding"
+msgstr "Levý okraj"
+
+msgid "Right padding"
+msgstr "Pravý okraj"
+
+msgid "System tray icon size"
+msgstr "Velikost ikon systémového traye"
+
+msgid "Save"
+msgstr "Uložit"
+
+msgid "Saved. GenMon refreshes within 2 seconds."
+msgstr "Uloženo. GenMon se obnoví do 2 sekund."

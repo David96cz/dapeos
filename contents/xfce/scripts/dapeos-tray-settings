@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+import json
+import os
+import subprocess
+import sys
+
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QApplication, QFormLayout, QLabel, QPushButton,
+                             QSpinBox, QVBoxLayout, QWidget)
+
+try:
+    from dapeos_i18n import _
+except Exception:  # noqa: BLE001
+    _ = lambda s: s
+
+CONF = os.path.expanduser("~/.config/dapeos/tray.json")
+DEFAULTS = {"icon_size": 22, "gap": 4, "pad_left": 0, "pad_right": 0}
+SYS_DEFAULT = 16
+
+
+def load_conf():
+    cfg = dict(DEFAULTS)
+    try:
+        with open(CONF, encoding="utf-8") as f:
+            cfg.update(json.load(f))
+    except Exception:  # noqa: BLE001
+        pass
+    return cfg
+
+
+def get_systray_size():
+    try:
+        out = subprocess.check_output(
+            ["xfconf-query", "-c", "xfce4-panel", "-p", "/plugins/plugin-8/icon-size"],
+            text=True, timeout=3).strip()
+        return int(out)
+    except Exception:  # noqa: BLE001
+        return SYS_DEFAULT
+
+
+class TraySettings(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle(_("Tray Settings"))
+        self.setFixedWidth(420)
+        self.cfg = load_conf()
+        self.spins = {}
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(18, 18, 18, 18)
+        root.setSpacing(12)
+
+        title = QLabel(_("Tray Settings"))
+        title.setStyleSheet("font-size: 16pt; font-weight: bold;")
+        root.addWidget(title)
+
+        hint = QLabel(_("Icon size and spacing on the right side of the panel."))
+        hint.setWordWrap(True)
+        root.addWidget(hint)
+
+        form = QFormLayout()
+        form.setSpacing(10)
+        for key, label, low, high in (
+                ("icon_size", _("Status icon size"), 12, 48),
+                ("gap", _("Space between icons"), 0, 24),
+                ("pad_left", _("Left padding"), 0, 48),
+                ("pad_right", _("Right padding"), 0, 48)):
+            spin = QSpinBox()
+            spin.setRange(low, high)
+            spin.setValue(int(self.cfg.get(key, DEFAULTS[key])))
+            self.spins[key] = spin
+            form.addRow(label, spin)
+
+        self.sys_spin = QSpinBox()
+        self.sys_spin.setRange(16, 48)
+        self.sys_spin.setValue(get_systray_size())
+        self.spins["systray"] = self.sys_spin
+        form.addRow(_("System tray icon size"), self.sys_spin)
+        root.addLayout(form)
+
+        save = QPushButton(_("Save"))
+        save.clicked.connect(self.save)
+        root.addWidget(save)
+
+        self.status = QLabel("")
+        self.status.setStyleSheet("color: #4caf50;")
+        root.addWidget(self.status)
+
+    def center(self):
+        screen = QApplication.primaryScreen().availableGeometry()
+        self.move(screen.center() - self.rect().center())
+
+    def save(self):
+        cfg = {k: self.spins[k].value()
+               for k in ("icon_size", "gap", "pad_left", "pad_right")}
+        os.makedirs(os.path.dirname(CONF), exist_ok=True)
+        with open(CONF, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2)
+        subprocess.Popen(
+            ["xfconf-query", "-c", "xfce4-panel", "-p",
+             "/plugins/plugin-8/icon-size", "-s", str(self.spins["systray"].value())])
+        self.status.setText(_("Saved. GenMon refreshes within 2 seconds."))
+
+
+def main():
+    app = QApplication(sys.argv)
+    w = TraySettings()
+    w.center()
+    w.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()

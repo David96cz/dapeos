@@ -8,8 +8,27 @@ try:
 except Exception:  # noqa: BLE001
     _ = lambda s: s
 
-W, H = 22, 22
-GAP = 4
+import json
+
+CONF = os.path.expanduser("~/.config/dapeos/tray.json")
+DEFAULTS = {"icon_size": 22, "gap": 4, "pad_left": 0, "pad_right": 0}
+
+
+def load_style():
+    cfg = dict(DEFAULTS)
+    try:
+        with open(CONF, encoding="utf-8") as f:
+            cfg.update(json.load(f))
+    except Exception:  # noqa: BLE001
+        pass
+    size = max(12, min(48, int(cfg.get("icon_size", 22))))
+    gap = max(0, min(24, int(cfg.get("gap", 4))))
+    left = max(0, min(48, int(cfg.get("pad_left", 0))))
+    right = max(0, min(48, int(cfg.get("pad_right", 0))))
+    return size, size, gap, left, right
+
+
+W, H, GAP, PAD_LEFT, PAD_RIGHT = load_style()
 
 
 def sh(cmd):
@@ -70,7 +89,7 @@ def battery_state():
 
 def svg(color, net_type, vol, mute, cap):
     parts = []
-    x = 0
+    x = PAD_LEFT
     if net_type == "ethernet":
         parts.append(f'<g transform="translate({x},0)" fill="{color}">')
         parts.append('<rect x="4" y="8" width="14" height="8" rx="2"/>')
@@ -112,8 +131,9 @@ def svg(color, net_type, vol, mute, cap):
             parts.append(f'<path d="M15.8 5.8a8 8 0 0 1 0 10.4" fill="none" stroke="{color}" stroke-width="1.6" stroke-linecap="round"/>')
     parts.append('</g>')
 
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{3*W+2*GAP}" height="{H}" '
-            f'viewBox="0 0 {3*W+2*GAP} {H}">' + "".join(parts) + '</svg>')
+    total_w = PAD_LEFT + 3 * W + 2 * GAP + PAD_RIGHT
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{total_w}" height="{H}" '
+            f'viewBox="0 0 {total_w} {H}">' + "".join(parts) + '</svg>')
 
 
 def main():
