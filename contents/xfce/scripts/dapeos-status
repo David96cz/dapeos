@@ -28,7 +28,8 @@ def load_style():
     return size, size, gap, left, right
 
 
-W, H, GAP, PAD_LEFT, PAD_RIGHT = load_style()
+ICON_SIZE, _h, GAP, PAD_LEFT, PAD_RIGHT = load_style()
+W, H = 22, 22
 
 
 def sh(cmd):
@@ -132,7 +133,10 @@ def svg(color, net_type, vol, mute, cap):
     parts.append('</g>')
 
     total_w = PAD_LEFT + 3 * W + 2 * GAP + PAD_RIGHT
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{total_w}" height="{H}" '
+    scale = ICON_SIZE / 22.0
+    out_w = max(1, round(total_w * scale))
+    out_h = max(1, round(H * scale))
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{out_w}" height="{out_h}" '
             f'viewBox="0 0 {total_w} {H}">' + "".join(parts) + '</svg>')
 
 
