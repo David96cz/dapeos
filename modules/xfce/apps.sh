@@ -338,7 +338,10 @@ clipman16_setup() {
 
 
 templates_setup() {
-    local src="$CONTENTS_DIR/xfce/Templates" f
+    local src="$CONTENTS_DIR/xfce/Templates/en" f
+    if [ "$SYS_LANG_CODE" = "cs" ] || [ "${DAPEOS_LANG:-}" = "cs" ]; then
+        src="$CONTENTS_DIR/xfce/Templates/cs"
+    fi
     [ -d "$src" ] || return 0
     install -d -m 755 "$USER_HOME/Templates"
     for f in "$src"/*; do
