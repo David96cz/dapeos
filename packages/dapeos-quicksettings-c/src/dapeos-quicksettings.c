@@ -1,5 +1,6 @@
 #include <gtk/gtk.h>
 #include <gio/gio.h>
+#include <glib/gstdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -33,11 +34,11 @@ static gboolean bt_is_on (void)
 static void update_tiles (void)
 {
     gboolean bt = bt_is_on ();
-    gtk_button_set_label (GTK_BUTTON (bt_label), bt ? "On" : "Off");
+    gtk_label_set_text (GTK_LABEL (bt_label), bt ? "On" : "Off");
     gchar *nightfile = night_state_path ("nightlight_on");
     night_on = g_file_test (nightfile, G_FILE_TEST_EXISTS);
     g_free (nightfile);
-    gtk_button_set_label (GTK_BUTTON (night_label), night_on ? "On" : "Off");
+    gtk_label_set_text (GTK_LABEL (night_label), night_on ? "On" : "Off");
 }
 
 static void on_bt_clicked (GtkButton *button, gpointer data)
@@ -105,7 +106,7 @@ static void on_night_clicked (GtkButton *button, gpointer data)
         apply_gamma (4000);
     }
     night_on = !night_on;
-    gtk_button_set_label (GTK_BUTTON (night_label), night_on ? "On" : "Off");
+    gtk_label_set_text (GTK_LABEL (night_label), night_on ? "On" : "Off");
     g_free (onfile); g_free (dir);
 }
 
