@@ -196,11 +196,9 @@ update_image (DapeosStatus *st)
     GdkPixbuf *pix = gdk_pixbuf_get_from_surface (surface, 0, 0, 74, 22);
     cairo_surface_destroy (surface);
     if (pix) {
-        g_print ("DAPEOS: pixbuf %dx%d\n", gdk_pixbuf_get_width (pix), gdk_pixbuf_get_height (pix));
         gtk_image_set_from_pixbuf (GTK_IMAGE (st->area), pix);
         g_object_unref (pix);
     } else {
-        g_print ("DAPEOS: pixbuf null\n");
     }
 
     gchar *tip = g_strdup_printf ("%s%s | sound: %d%% | battery: %s",
@@ -260,35 +258,9 @@ on_size_changed (XfcePanelPlugin *plugin, gint size, gpointer data)
     return TRUE;
 }
 
-static gboolean
-force_size (gpointer data)
-{
-    DapeosStatus *st = data;
-    GtkWidget *plugin = gtk_widget_get_parent (gtk_widget_get_parent (st->area));
-    GtkWidget *eventbox = gtk_widget_get_parent (gtk_widget_get_parent (gtk_widget_get_parent (st->area)));
-    gtk_widget_set_size_request (st->area, 74, 22);
-    if (plugin) gtk_widget_set_size_request (plugin, 74, 22);
-    if (eventbox) gtk_widget_set_size_request (eventbox, 74, 22);
-    gtk_widget_queue_resize (st->area);
-    g_print ("DAPEOS: force size done\n");
-    return FALSE;
-}
-
-static gboolean
-print_alloc (gpointer data)
-{
-    DapeosStatus *st = data;
-    g_print ("DAPEOS: alloc plugin=%d area=%d visible=%d\n",
-             gtk_widget_get_allocated_width (gtk_widget_get_parent (st->area)),
-             gtk_widget_get_allocated_width (st->area),
-             gtk_widget_get_visible (st->area));
-    return FALSE;
-}
-
 static void
 dapeos_status_construct (XfcePanelPlugin *plugin)
 {
-    g_print ("DAPEOS: construct\n");
     DapeosStatus *st = g_new0 (DapeosStatus, 1);
     read_state (st);
 
@@ -318,17 +290,8 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     spawn_monitor (st, "nmcli monitor", &st->nm_pid);
     spawn_monitor (st, "upower --monitor", &st->upower_pid);
 
+    xfce_panel_plugin_set_small (plugin, TRUE);
     gtk_widget_show_all (GTK_WIDGET (plugin));
-    g_timeout_add (500, force_size, st);
-    g_print ("DAPEOS: now plugin=%d child=%d area=%d parent=%p children=%u visible=%d mapped=%d\n",
-             gtk_widget_get_allocated_width (GTK_WIDGET (plugin)),
-             gtk_widget_get_allocated_width (eventbox),
-             gtk_widget_get_allocated_width (st->area),
-             gtk_widget_get_parent (st->area),
-             g_list_length (gtk_container_get_children (GTK_CONTAINER (plugin))),
-             gtk_widget_get_visible (GTK_WIDGET (plugin)),
-             gtk_widget_get_mapped (GTK_WIDGET (plugin)));
-    g_idle_add (print_alloc, st);
 }
 
 XFCE_PANEL_PLUGIN_REGISTER (dapeos_status_construct)
