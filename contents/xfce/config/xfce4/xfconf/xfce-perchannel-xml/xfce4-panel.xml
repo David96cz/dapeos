@@ -20,7 +20,6 @@
         <value type="int" value="7"/>
         <value type="int" value="8"/>
         <value type="int" value="12"/>
-        <value type="int" value="5"/>
         <value type="int" value="2"/>
       </property>
       <property name="icon-size" type="uint" value="32"/>
@@ -125,7 +124,5 @@
         <property name="inhibit" type="bool" value="false"/>
       </property>
     </property>
-    <property name="plugin-14" type="string" value="xfce4-clipman-plugin"/>
-    <property name="plugin-5" type="string" value="xfce4-clipman-plugin"/>
   </property>
 </channel>
