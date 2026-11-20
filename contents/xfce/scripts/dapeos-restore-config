@@ -70,13 +70,17 @@ class RestoreDialog(QWidget):
             f"mkdir -p {cfg} {loc}; "
             f"cp -a /etc/skel/.config/. {cfg}/; "
             f"cp -a /etc/skel/.local/. {loc}/; "
-            f"chown -R {shlex.quote(user)}:{shlex.quote(user)} {cfg} {loc}; "
-            "setsid /usr/bin/xfsettingsd >/dev/null 2>&1 < /dev/null & "
-            "sleep 0.5; setsid /usr/bin/xfdesktop >/dev/null 2>&1 < /dev/null & "
-            "setsid /usr/local/bin/xfce4-panel >/dev/null 2>&1 < /dev/null &"
+            f"chown -R {shlex.quote(user)}:{shlex.quote(user)} {cfg} {loc}"
         )
         rc = subprocess.call(["pkexec", "bash", "-c", cmd])
         if rc == 0:
+            # Restart the session components as the user, never as root.
+            for cmd in (["xfsettingsd"], ["xfdesktop"], ["/usr/local/bin/xfce4-panel"]):
+                try:
+                    subprocess.Popen(cmd, start_new_session=True,
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                except OSError:
+                    pass
             QMessageBox.information(
                 self, _("Done"),
                 _("Default configuration restored. Log out and back in to apply it."))
