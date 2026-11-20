@@ -135,7 +135,7 @@ def main():
         f.write(svg(color, net_type, vol, mute, cap))
 
     if net_type == "ethernet":
-        net_txt = f"Kabel: {net_name}"
+        net_txt = f"{_('Ethernet')}: {net_name}"
     elif net_type == "wifi":
         net_txt = f"Wi-Fi: {net_name}"
     else:

@@ -597,6 +597,7 @@ class QuickSettings(QWidget):
         gear.setIcon(QIcon.fromTheme("preferences-system"))
         gear.setIconSize(QSize(22, 22))
         gear.setFixedSize(36, 36)
+        gear.setStyleSheet("padding: 0px;")
         gear.setToolTip(_("Settings"))
         gear.clicked.connect(lambda: subprocess.Popen(["dapeos-settings"]))
         foot.addWidget(gear)
