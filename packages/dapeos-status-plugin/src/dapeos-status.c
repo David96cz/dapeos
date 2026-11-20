@@ -243,12 +243,15 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     st->area = gtk_drawing_area_new ();
     gtk_widget_set_size_request (st->area, 74, 22);
     gtk_widget_set_hexpand (st->area, TRUE);
-    gtk_widget_set_size_request (GTK_WIDGET (plugin), 74, 22);
     gtk_widget_show (st->area);
     gtk_widget_add_events (st->area, GDK_BUTTON_PRESS_MASK);
     g_signal_connect (st->area, "draw", G_CALLBACK (on_draw), st);
     g_signal_connect (st->area, "button-press-event", G_CALLBACK (on_click), st);
-    gtk_container_add (GTK_CONTAINER (plugin), st->area);
+
+    GtkWidget *button = xfce_panel_create_button ();
+    gtk_widget_set_size_request (button, 74, 22);
+    gtk_container_add (GTK_CONTAINER (button), st->area);
+    gtk_container_add (GTK_CONTAINER (plugin), button);
 
     xfce_panel_plugin_set_small (plugin, TRUE);
 
