@@ -5,3 +5,5 @@ Comment=Network, battery and volume status
 Icon=dapeos-logo
 X-XFCE-Module=dapeos-status
 X-XFCE-Internal=false
+
+[Xfce Panel]
