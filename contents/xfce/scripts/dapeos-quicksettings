@@ -852,6 +852,7 @@ class QuickSettings(QWidget):
             self.vol_lbl.setText(f"{s['vol']}%")
         if time.time() - self._bri_hold > 1.5:
             if s["bri_max"]:
+                self.bri_row.show()
                 pct = max(1, int(s["bri"] * 100 / s["bri_max"]))
                 self.bri.blockSignals(True)
                 self.bri.setValue(pct)
