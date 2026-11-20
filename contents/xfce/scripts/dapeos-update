@@ -24,9 +24,10 @@ except Exception:  # noqa: BLE001
 
 
 try:
-    from dapeos_theme import apply_theme
+    from dapeos_theme import apply_theme, install_theme_watch
 except Exception:  # noqa: BLE001
     apply_theme = lambda app=None: False
+    install_theme_watch = lambda app=None: None
 from PyQt5.QtWidgets import (
     QAction, QApplication, QCheckBox, QComboBox, QHBoxLayout, QLabel, QListWidget,
     QListWidgetItem, QMenu, QMessageBox, QProgressBar, QPushButton,
@@ -518,6 +519,7 @@ class Updater(QWidget):
 def main():
     app = QApplication(sys.argv)
     apply_theme(app)
+    install_theme_watch(app)
     QIcon.setThemeName("Papirus-Light")
     QIcon.setFallbackThemeName("hicolor")
     app.setQuitOnLastWindowClosed(False)

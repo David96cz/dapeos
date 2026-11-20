@@ -14,9 +14,10 @@ try:
 except Exception:  # noqa: BLE001
     _ = lambda s: s
 try:
-    from dapeos_theme import apply_theme
+    from dapeos_theme import apply_theme, install_theme_watch
 except Exception:  # noqa: BLE001
     apply_theme = lambda app=None: False
+    install_theme_watch = lambda app=None: None
 
 
 def config_missing():
@@ -100,6 +101,7 @@ class RestoreDialog(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     apply_theme(app)
+    install_theme_watch(app)
     if "--check" in sys.argv and not config_missing():
         sys.exit(0)
     w = RestoreDialog()

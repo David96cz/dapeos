@@ -22,9 +22,10 @@ except Exception:  # noqa: BLE001
 
 
 try:
-    from dapeos_theme import apply_theme
+    from dapeos_theme import apply_theme, install_theme_watch
 except Exception:  # noqa: BLE001
     apply_theme = lambda app=None: False
+    install_theme_watch = lambda app=None: None
 DIRS = [os.path.expanduser("~/.local/share/applications"), "/usr/share/applications"]
 HIDE_CONF = "/usr/share/dapeos/settings-hide.conf"
 
@@ -251,6 +252,7 @@ def raise_existing():
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     apply_theme(app)
+    install_theme_watch(app)
     QIcon.setThemeName("Papirus")
 
     if raise_existing():

@@ -15,9 +15,10 @@ except Exception:  # noqa: BLE001
 
 
 try:
-    from dapeos_theme import apply_theme
+    from dapeos_theme import apply_theme, install_theme_watch
 except Exception:  # noqa: BLE001
     apply_theme = lambda app=None: False
+    install_theme_watch = lambda app=None: None
 CONF = os.path.expanduser("~/.config/dapeos/tray.json")
 DEFAULTS = {"icon_size": 26, "gap": 5, "pad_left": 4, "pad_right": 0, "clipman_size": 20}
 SYS_DEFAULT = 24
@@ -146,6 +147,7 @@ class TraySettings(QWidget):
 def main():
     app = QApplication(sys.argv)
     apply_theme(app)
+    install_theme_watch(app)
     w = TraySettings()
     w.show()
     w.center()
