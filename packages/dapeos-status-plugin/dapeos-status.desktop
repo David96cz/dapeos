@@ -1,10 +1,8 @@
-[Desktop Entry]
+[Xfce Panel]
 Type=X-XFCE-PanelPlugin
 Name=DapeOS Status
 Comment=Network, battery and volume status
 Icon=dapeos-logo
 X-XFCE-Module=dapeos-status
 X-XFCE-Internal=false
-
-[Xfce Panel]
 X-XFCE-API=2.0
