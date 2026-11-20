@@ -305,6 +305,7 @@ xfdesktop_menu_setup() {
 
 
 xfce_theme_cleanup() {
+    apt-get install -y gnome-themes-extra >/dev/null 2>&1 || true
     apt-get purge -y arc-theme >/dev/null 2>&1 || true
     rm -rf /usr/share/themes/Arc /usr/share/themes/Arc-Dark \
            /usr/share/themes/Arc-Darker /usr/share/themes/Arc-Lighter 2>/dev/null || true
