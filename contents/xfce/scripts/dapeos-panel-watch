@@ -17,12 +17,12 @@ watch_channel() {
         case "$line" in
             *ThemeName*)
                 dapeos-theme-sync
+                ;;
+            *dark-mode*)
                 sleep 0.4
                 restart_panel
                 ;;
-            *dark-mode*|*IconThemeName*)
-                sleep 0.4
-                restart_panel
+            *IconThemeName*)
                 ;;
         esac
     done
