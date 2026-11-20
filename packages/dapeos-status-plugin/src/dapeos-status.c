@@ -261,6 +261,20 @@ on_size_changed (XfcePanelPlugin *plugin, gint size, gpointer data)
 }
 
 static gboolean
+force_size (gpointer data)
+{
+    DapeosStatus *st = data;
+    GtkWidget *plugin = gtk_widget_get_parent (gtk_widget_get_parent (st->area));
+    GtkWidget *eventbox = gtk_widget_get_parent (gtk_widget_get_parent (gtk_widget_get_parent (st->area)));
+    gtk_widget_set_size_request (st->area, 74, 22);
+    if (plugin) gtk_widget_set_size_request (plugin, 74, 22);
+    if (eventbox) gtk_widget_set_size_request (eventbox, 74, 22);
+    gtk_widget_queue_resize (st->area);
+    g_print ("DAPEOS: force size done\n");
+    return FALSE;
+}
+
+static gboolean
 print_alloc (gpointer data)
 {
     DapeosStatus *st = data;
@@ -305,6 +319,7 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     spawn_monitor (st, "upower --monitor", &st->upower_pid);
 
     gtk_widget_show_all (GTK_WIDGET (plugin));
+    g_timeout_add (500, force_size, st);
     g_print ("DAPEOS: now plugin=%d child=%d area=%d parent=%p children=%u visible=%d mapped=%d\n",
              gtk_widget_get_allocated_width (GTK_WIDGET (plugin)),
              gtk_widget_get_allocated_width (eventbox),
