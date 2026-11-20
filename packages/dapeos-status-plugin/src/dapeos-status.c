@@ -300,6 +300,14 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     spawn_monitor (st, "upower --monitor", &st->upower_pid);
 
     gtk_widget_show_all (GTK_WIDGET (plugin));
+    g_print ("DAPEOS: now plugin=%d child=%d area=%d parent=%p children=%u visible=%d mapped=%d\n",
+             gtk_widget_get_allocated_width (GTK_WIDGET (plugin)),
+             gtk_widget_get_allocated_width (button),
+             gtk_widget_get_allocated_width (st->area),
+             gtk_widget_get_parent (st->area),
+             g_list_length (gtk_container_get_children (GTK_CONTAINER (plugin))),
+             gtk_widget_get_visible (GTK_WIDGET (plugin)),
+             gtk_widget_get_mapped (GTK_WIDGET (plugin)));
     g_idle_add (print_alloc, st);
 }
 
