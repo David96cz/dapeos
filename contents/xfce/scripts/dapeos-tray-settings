@@ -105,8 +105,8 @@ class TraySettings(QWidget):
 def main():
     app = QApplication(sys.argv)
     w = TraySettings()
-    w.center()
     w.show()
+    w.center()
     sys.exit(app.exec_())
 
 
