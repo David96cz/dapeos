@@ -58,7 +58,9 @@ def install_theme_watch(app=None):
     app = app or QApplication.instance()
 
     proc = QProcess(app)
+    proc.setProcessChannelMode(QProcess.MergedChannels)
     proc.start("xfconf-query", ["-c", "xsettings", "-m"])
+    proc.waitForStarted(1000)
 
     pending = {"timer": None}
 
@@ -73,7 +75,7 @@ def install_theme_watch(app=None):
                 pass
 
     def on_output():
-        data = bytes(proc.readAllStandardOutput()).decode("utf-8", "ignore")
+        data = bytes(proc.readAll()).decode("utf-8", "ignore")
         if "ThemeName" not in data and "IconThemeName" not in data:
             return
         if pending["timer"] is not None:
@@ -83,6 +85,11 @@ def install_theme_watch(app=None):
         pending["timer"].timeout.connect(refresh)
         pending["timer"].start(120)
 
+    proc.readyRead.connect(on_output)
     proc.readyReadStandardOutput.connect(on_output)
+    def on_finished():
+        QTimer.singleShot(1000, lambda: proc.start("xfconf-query", ["-c", "xsettings", "-m"]))
+
+    proc.finished.connect(on_finished)
     app._dapeos_theme_proc = proc
     return proc
