@@ -1,0 +1,139 @@
+--- a/thunar/thunar-application.c
++++ b/thunar/thunar-application.c
+@@ -32,6 +32,8 @@
+ #endif
+ #ifdef HAVE_STRING_H
+ #include <string.h>
++
++static gboolean dapeos_block_protected (gpointer parent, GList *files);
+ #endif
+ #ifdef HAVE_TIME_H
+ #include <time.h>
+@@ -2347,6 +2349,9 @@
+   _thunar_return_if_fail (THUNAR_IS_APPLICATION (application));
+   _thunar_return_if_fail (target_file != NULL);
+ 
++  if (dapeos_block_protected (parent, source_file_list))
++    return;
++
+   /* Source folder cannot be moved into its subdirectory */
+   for (GList *lp = source_file_list; lp != NULL; lp = lp->next)
+     {
+@@ -2412,6 +2417,9 @@
+   _thunar_return_if_fail (parent == NULL || GDK_IS_SCREEN (parent) || GTK_IS_WIDGET (parent));
+   _thunar_return_if_fail (THUNAR_IS_APPLICATION (application));
+ 
++  if (dapeos_block_protected (parent, source_file_list))
++    return;
++
+   thunar_application_launch (application, parent,
+                              "stock_folder-move", _("Moving files ..."),
+                              thunar_io_jobs_move_files,
+@@ -2438,7 +2446,7 @@
+  * @parent      : a #GdkScreen, a #GtkWidget or %NULL.
+  * @file_list   : the list of #ThunarFile<!---->s that should be deleted.
+  * @permanently : whether to unlink the files permanently.
+- * @warn        : whether to warn the user if moving files to trash.
++ * @warn        : whether to warn the user if deleting permanently.
+  * @log_mode    : log mode
+  *
+  * Deletes all files in the @file_list and takes care of all user interaction.
+@@ -2472,6 +2480,9 @@
+   _thunar_return_val_if_fail (parent == NULL || GDK_IS_SCREEN (parent) || GTK_IS_WIDGET (parent), TRUE);
+   _thunar_return_val_if_fail (THUNAR_IS_APPLICATION (application), TRUE);
+ 
++  if (dapeos_block_protected (parent, file_list))
++    return TRUE;
++
+   /* determine the paths for the files */
+   for (lp = g_list_last (file_list); lp != NULL; lp = lp->prev, ++n_path_list)
+     {
+@@ -2489,7 +2500,7 @@
+     return FALSE;
+ 
+   /* ask the user to confirm if deleting permanently */
+-  if (G_UNLIKELY (permanently))
++  if (G_UNLIKELY (permanently) && warn)
+     {
+       /* parse the parent pointer */
+       screen = thunar_util_parse_parent (parent, &window);
+@@ -2554,6 +2565,12 @@
+         }
+       else
+         operation_canceled = TRUE;
++    }
++  else if (G_UNLIKELY (permanently))
++    {
++      thunar_application_launch (application, parent, "edit-delete",
++                                 _("Deleting files..."), unlink_stub,
++                                 path_list, path_list, TRUE, FALSE, log_mode, NULL);
+     }
+   else if (G_LIKELY (!permanently) && warn)
+     {
+@@ -2621,8 +2638,56 @@
+ {
+   return thunar_io_jobs_trash_files (source_file_list);
+ }
++
++
++
++
++/* DapeOS: protect top-level XDG folders from GUI removal/move */
++
++static gboolean
++dapeos_is_protected_top_level (GFile *file)
++{
++  static const gchar *names[] = {
++    "Desktop", "Documents", "Downloads", "Music",
++    "Pictures", "Public", "Templates", "Videos", NULL
++  };
++  const gchar *home = g_get_home_dir ();
++  gchar *path = g_file_get_path (file);
++  gboolean protected = FALSE;
+ 
++  if (path != NULL && home != NULL && g_str_has_prefix (path, home))
++    {
++      const gchar *rel = path + strlen (home);
++      if (*rel == G_DIR_SEPARATOR)
++        rel++;
++      if (*rel != '\0' && strchr (rel, G_DIR_SEPARATOR) == NULL)
++        {
++          for (guint i = 0; names[i] != NULL; i++)
++            if (g_strcmp0 (rel, names[i]) == 0)
++              {
++                protected = TRUE;
++                break;
++              }
++        }
++    }
++  g_free (path);
++  return protected;
++}
+ 
++static gboolean
++dapeos_block_protected (gpointer parent, GList *files)
++{
++  for (GList *lp = files; lp != NULL; lp = lp->next)
++    {
++      if (G_IS_FILE (lp->data) && dapeos_is_protected_top_level (G_FILE (lp->data)))
++        {
++          thunar_dialogs_show_error (parent, NULL, "%s",
++                                     _("This folder is protected and cannot be removed or moved."));
++          return TRUE;
++        }
++    }
++  return FALSE;
++}
+ 
+ /* thunar_application_trash:
+  * @application       : a #ThunarApplication.
+@@ -2642,6 +2707,9 @@
+   _thunar_return_if_fail (THUNAR_IS_APPLICATION (application));
+   _thunar_return_if_fail (file_list != NULL);
+ 
++  if (dapeos_block_protected (parent, file_list))
++    return;
++
+   thunar_application_launch (application, parent, "user-trash-full",
+                              _("Moving files into the trash..."), trash_stub,
+                              file_list, NULL, TRUE, FALSE, log_mode, NULL);

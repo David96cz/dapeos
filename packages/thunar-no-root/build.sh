@@ -41,10 +41,12 @@ SRCDIR="$(find "$WORK" -maxdepth 1 -type d -name 'thunar-*' | head -n1)"
 [ -n "$SRCDIR" ] || { echo "Source directory not found" >&2; exit 1; }
 cd "$SRCDIR"
 
-patch -p1 --forward < "$HERE/no-root.patch"
+for p in "$HERE/no-root.patch" "$HERE/protect-xdg.patch"; do
+    patch -p1 --forward < "$p"
+done
 
 BASEVER="$(dpkg-parsechangelog -SVersion)"
-NEWVER="${BASEVER}+dapeos2"
+NEWVER="${BASEVER}+dapeos3"
 export DEBEMAIL="dapeos@localhost"
 export DEBFULLNAME="DapeOS"
 dch --newversion "$NEWVER" --distribution trixie \
