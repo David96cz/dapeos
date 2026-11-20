@@ -255,8 +255,9 @@ on_size_changed (XfcePanelPlugin *plugin, gint size, gpointer data)
 {
     DapeosStatus *st = data;
     gtk_widget_set_size_request (st->area, 74, 22);
+    gtk_widget_set_size_request (GTK_WIDGET (plugin), 74, 22);
     update_image (st);
-    return FALSE;
+    return TRUE;
 }
 
 static gboolean
