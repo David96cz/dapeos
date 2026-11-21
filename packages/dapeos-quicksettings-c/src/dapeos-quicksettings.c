@@ -218,6 +218,25 @@ static gint panel_height (void)
     return h > 0 ? h : 36;
 }
 
+static GtkWidget *
+volume_icon (const gchar *name)
+{
+    const gchar *theme = is_dark () ? "Papirus-Dark" : "Papirus-Light";
+    const gchar *subdirs[] = { "24x24/status", "22x22/status", "16x16/status",
+                               "symbolic/status", "status/scalable", "status/24" };
+    for (guint i = 0; i < G_N_ELEMENTS (subdirs); i++) {
+        gchar *path = g_build_filename ("/usr/share/icons", theme, subdirs[i],
+                                        g_strdup_printf ("%s.svg", name), NULL);
+        if (g_file_test (path, G_FILE_TEST_EXISTS)) {
+            GtkWidget *img = gtk_image_new_from_file (path);
+            g_free (path);
+            return img;
+        }
+        g_free (path);
+    }
+    return gtk_image_new_from_icon_name (name, GTK_ICON_SIZE_BUTTON);
+}
+
 static void
 apply_panel_icon_theme (void)
 {
@@ -271,8 +290,7 @@ static void update_volume_ui (void)
     gtk_label_set_text (GTK_LABEL (vol_label), txt);
     g_free (txt);
     const gchar *ic = (mute || vol == 0) ? "audio-volume-muted" : "audio-volume-high";
-    GtkWidget *img = gtk_image_new_from_icon_name (ic, GTK_ICON_SIZE_BUTTON);
-    gtk_button_set_image (GTK_BUTTON (mute_button), img);
+    gtk_button_set_image (GTK_BUTTON (mute_button), volume_icon (ic));
     updating = FALSE;
 }
 
@@ -667,8 +685,7 @@ static void build_ui (void)
     gtk_widget_set_halign (battery_label, GTK_ALIGN_START);
     GtkWidget *soundbtn = gtk_button_new ();
     GtkWidget *mbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
-    gtk_box_pack_start (GTK_BOX (mbox),
-        gtk_image_new_from_icon_name ("audio-volume-high", GTK_ICON_SIZE_BUTTON), FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (mbox), volume_icon ("audio-volume-high"), FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (mbox), gtk_label_new ("Sound"), FALSE, FALSE, 0);
     gtk_container_add (GTK_CONTAINER (soundbtn), mbox);
     gtk_style_context_add_class (gtk_widget_get_style_context (soundbtn), "flat");
@@ -708,7 +725,7 @@ static void position_window (void)
     if (w <= 0) w = 420;
     if (h <= 0) h = 340;
     gint x = geo.x + geo.width - w - 20;
-    gint y = geo.y + geo.height - panel_height () - h - 8;
+    gint y = geo.y + geo.height - panel_height () - h - 20;
     if (x < geo.x + 8) x = geo.x + 8;
     if (y < geo.y + 8) y = geo.y + 8;
     gtk_window_move (GTK_WINDOW (window), x, y);
