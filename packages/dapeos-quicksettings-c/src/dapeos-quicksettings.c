@@ -1583,11 +1583,12 @@ static void build_ui (void)
     gtk_scale_set_draw_value (GTK_SCALE (vol_scale), FALSE);
     gtk_widget_set_hexpand (vol_scale, TRUE);
     vol_label = gtk_label_new ("0%");
-    gtk_widget_set_size_request (vol_label, 44, -1);
+    gtk_widget_set_size_request (vol_label, 48, -1);
     mute_button = gtk_button_new ();
     gtk_style_context_add_class (gtk_widget_get_style_context (mute_button), "flat");
     gtk_button_set_image (GTK_BUTTON (mute_button),
         gtk_image_new_from_icon_name ("audio-volume-high", GTK_ICON_SIZE_BUTTON));
+    gtk_widget_set_size_request (mute_button, 32, -1);
     g_signal_connect (vol_scale, "value-changed", G_CALLBACK (on_volume_changed), NULL);
     g_signal_connect (mute_button, "clicked", G_CALLBACK (on_mute_clicked), NULL);
     gtk_box_pack_start (GTK_BOX (volrow), mute_button, FALSE, FALSE, 0);
@@ -1603,7 +1604,7 @@ static void build_ui (void)
     gtk_scale_set_draw_value (GTK_SCALE (bri_scale), FALSE);
     gtk_widget_set_hexpand (bri_scale, TRUE);
     bri_label = gtk_label_new ("0%");
-    gtk_widget_set_size_request (bri_label, 44, -1);
+    gtk_widget_set_size_request (bri_label, 48, -1);
     g_signal_connect (bri_scale, "value-changed", G_CALLBACK (on_brightness_changed), NULL);
     gtk_box_pack_start (GTK_BOX (bri_row), bri_icon, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (bri_row), bri_scale, TRUE, TRUE, 0);
