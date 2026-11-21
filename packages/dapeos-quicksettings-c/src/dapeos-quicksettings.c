@@ -1006,7 +1006,7 @@ on_net_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
-    gtk_window_resize (GTK_WINDOW (window), 440, 500);
+    gtk_window_resize (GTK_WINDOW (window), 440, 420);
     position_window ();
     wifi_start_scan (wifi_page);
 }
@@ -1271,7 +1271,7 @@ show_wifi_password (const gchar *ssid, gboolean known)
     gtk_label_set_text (GTK_LABEL (wifi_password_label), ssid);
     gtk_entry_set_text (GTK_ENTRY (wifi_password_entry), "");
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi-password");
-    gtk_window_resize (GTK_WINDOW (window), 440, 360);
+    gtk_window_resize (GTK_WINDOW (window), 440, 330);
     position_window ();
     gtk_widget_grab_focus (wifi_password_entry);
 }
@@ -1325,7 +1325,6 @@ build_wifi_page (void)
     gtk_widget_set_sensitive (forget, FALSE);
     g_signal_connect (list, "row-selected", G_CALLBACK (wifi_row_selected), page);
     g_signal_connect (list, "row-activated", G_CALLBACK (wifi_row_activated), page);
-    gtk_widget_set_size_request (page, 440, 500);
     gtk_widget_show_all (page);
     gtk_widget_hide (action);
     return page;
@@ -1351,6 +1350,8 @@ static void build_ui (void)
 
     qstack = gtk_stack_new ();
     gtk_stack_set_transition_type (GTK_STACK (qstack), GTK_STACK_TRANSITION_TYPE_NONE);
+    gtk_stack_set_hhomogeneous (GTK_STACK (qstack), FALSE);
+    gtk_stack_set_vhomogeneous (GTK_STACK (qstack), FALSE);
     gtk_container_add (GTK_CONTAINER (window), qstack);
 
     main_page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
