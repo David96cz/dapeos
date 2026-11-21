@@ -505,7 +505,8 @@ static void apply_css (void)
             "#dapeos-qs scrolledwindow, #dapeos-qs viewport, #dapeos-qs list, #dapeos-qs listbox, #dapeos-qs row { background: transparent; color: #eaeaea; }"
             "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
             "#dapeos-qs button { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 8px; padding: 6px 10px; }"
-            "#dapeos-qs label#wifi-error { color: #ff6b6b; }";
+            "#dapeos-qs label#wifi-error { color: #ff6b6b; }"
+            "#dapeos-qs label#brightness-icon { color: #eaeaea; font-size: 16pt; }";
     } else {
         data =
             "#dapeos-qs { background: transparent; }"
@@ -520,7 +521,8 @@ static void apply_css (void)
             "#dapeos-qs scrolledwindow, #dapeos-qs viewport, #dapeos-qs list, #dapeos-qs listbox, #dapeos-qs row { background: transparent; color: #1a1a1a; }"
             "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
             "#dapeos-qs button { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px; padding: 6px 10px; }"
-            "#dapeos-qs label#wifi-error { color: #c62828; }";
+            "#dapeos-qs label#wifi-error { color: #c62828; }"
+            "#dapeos-qs label#brightness-icon { color: #1a1a1a; font-size: 16pt; }";
     }
     gtk_css_provider_load_from_data (css, data, -1, NULL);
     gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
@@ -1594,7 +1596,9 @@ static void build_ui (void)
     gtk_box_pack_start (GTK_BOX (outer), volrow, FALSE, FALSE, 0);
 
     bri_row = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
-    GtkWidget *bri_icon = volume_icon ("display-brightness-symbolic");
+    GtkWidget *bri_icon = gtk_label_new ("☀");
+    gtk_widget_set_name (bri_icon, "brightness-icon");
+    gtk_widget_set_size_request (bri_icon, 32, -1);
     bri_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1, 100, 1);
     gtk_scale_set_draw_value (GTK_SCALE (bri_scale), FALSE);
     gtk_widget_set_hexpand (bri_scale, TRUE);
