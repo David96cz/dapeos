@@ -69,6 +69,9 @@ static gboolean bt_is_on (void)
 
 static void update_volume_ui (void);
 static void set_volume_ui (gint vol, gboolean mute);
+static gint get_volume (void);
+static gboolean get_mute (void);
+static gboolean backlight_info (gint *current, gint *maximum);
 static void update_tiles (void);
 static gboolean wifi_radio_on (void);
 
