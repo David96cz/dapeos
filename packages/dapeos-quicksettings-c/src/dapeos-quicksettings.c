@@ -521,6 +521,22 @@ wifi_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
 
 static void wifi_start_scan (GtkWidget *dialog);
 
+static gboolean
+rescan_cb (gpointer data)
+{
+    GtkWidget *dialog = data;
+    wifi_start_scan (dialog);
+    g_object_unref (dialog);
+    return FALSE;
+}
+
+static void
+rescan_later (GtkWidget *dialog)
+{
+    g_object_ref (dialog);
+    g_timeout_add (1200, rescan_cb, dialog);
+}
+
 static void
 wifi_action (GtkWidget *dialog)
 {
@@ -531,7 +547,7 @@ wifi_action (GtkWidget *dialog)
                                       g_shell_quote (item->ssid));
         run_async (cmd);
         g_free (cmd);
-        wifi_start_scan (dialog);
+        rescan_later (dialog);
         return;
     }
     if (item->known) {
@@ -539,7 +555,7 @@ wifi_action (GtkWidget *dialog)
                                       g_shell_quote (item->ssid));
         run_async (cmd);
         g_free (cmd);
-        wifi_start_scan (dialog);
+        rescan_later (dialog);
         return;
     }
     if (!item->secured) {
@@ -585,7 +601,7 @@ on_wifi_forget (GtkButton *button, gpointer data)
                                   g_shell_quote (item->ssid));
     run_async (cmd);
     g_free (cmd);
-    wifi_start_scan (dialog);
+    rescan_later (dialog);
 }
 
 static void
@@ -706,8 +722,8 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
             gtk_widget_set_halign (name, GTK_ALIGN_START);
             gtk_widget_set_hexpand (name, TRUE);
             gtk_box_pack_start (GTK_BOX (hbox), name, TRUE, TRUE, 0);
-            if (connected || secured) {
-                GtkWidget *state = gtk_label_new (connected ? "✓ Connected" : "Secured");
+            if (connected || item->known) {
+                GtkWidget *state = gtk_label_new (connected ? "✓ Connected" : "Known connection");
                 gtk_widget_set_halign (state, GTK_ALIGN_END);
                 gtk_style_context_add_class (gtk_widget_get_style_context (state), "dim-label");
                 gtk_box_pack_end (GTK_BOX (hbox), state, FALSE, FALSE, 0);
