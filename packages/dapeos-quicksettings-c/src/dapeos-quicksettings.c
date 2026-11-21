@@ -63,6 +63,7 @@ static gboolean bt_is_on (void)
 
 static void update_volume_ui (void);
 static void update_tiles (void);
+static gboolean wifi_radio_on (void);
 
 static gboolean update_volume_cb (gpointer data) { (void) data; update_volume_ui (); return FALSE; }
 static gboolean update_tiles_cb (gpointer data) { (void) data; update_tiles (); return FALSE; }
@@ -1352,7 +1353,7 @@ static void build_ui (void)
     gtk_grid_set_column_homogeneous (GTK_GRID (grid), TRUE);
     gtk_grid_set_column_spacing (GTK_GRID (grid), 8);
     gtk_grid_set_row_spacing (GTK_GRID (grid), 8);
-    GtkWidget *net_t, *net_o, *bt_t, *bt_o, *night_t, *night_o, *sound_t, *sound_o;
+    GtkWidget *net_t, *net_o, *bt_t, *bt_o, *night_t, *night_o;
     GtkWidget *net = make_tile ("Network", "", &net_label, &net_status_label, &net_t, &net_o);
     GtkWidget *bt = make_tile ("Bluetooth", "", &bt_label, &bt_status_label, &bt_t, &bt_o);
     GtkWidget *night = make_tile ("Night light", "", &night_label, &night_status_label, &night_t, &night_o);
