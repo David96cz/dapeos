@@ -20,6 +20,7 @@ static gboolean updating = FALSE;
 static guint vol_timeout = 0;
 static guint bg_timeout = 0;
 static gboolean night_on = FALSE;
+static gboolean window_dark = TRUE;
 
 static gchar *night_state_path (const gchar *name)
 {
@@ -219,24 +220,27 @@ static gint panel_height (void)
 
 static void apply_css (void)
 {
+    window_dark = is_dark ();
     GtkCssProvider *css = gtk_css_provider_new ();
     const gchar *data;
     if (is_dark ()) {
         data =
-            "window { background: #2f2f2f; border-radius: 14px; }"
+            "window { background: transparent; }"
             "label, button { color: #eaeaea; }"
-            "button.tile { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 10px; padding: 10px; }"
-            "button.tile:hover { border-color: #2a7fca; }"
+            "button.tile-left { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 10px 0 0 10px; padding: 10px; }"
+            "button.tile-right { background: #3a3a3a; border: 1px solid #4a4a4a; border-left: none; border-radius: 0 10px 10px 0; padding: 0; }"
+            "button.tile-left:hover, button.tile-right:hover { border-color: #2a7fca; }"
             "scale trough { background: #151515; border-radius: 3px; min-height: 6px; }"
             "scale highlight { background: #2a7fca; }"
             "scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
             "button.flat { background: transparent; border: none; }";
     } else {
         data =
-            "window { background: #f5f5f5; border-radius: 14px; }"
+            "window { background: transparent; }"
             "label, button { color: #1a1a1a; }"
-            "button.tile { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 10px; padding: 10px; }"
-            "button.tile:hover { border-color: #2a7fca; }"
+            "button.tile-left { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 10px 0 0 10px; padding: 10px; }"
+            "button.tile-right { background: #ffffff; border: 1px solid #dcdcdc; border-left: none; border-radius: 0 10px 10px 0; padding: 0; }"
+            "button.tile-left:hover, button.tile-right:hover { border-color: #2a7fca; }"
             "scale trough { background: #d0d0d0; border-radius: 3px; min-height: 6px; }"
             "scale highlight { background: #2a7fca; }"
             "scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
@@ -257,7 +261,9 @@ static void update_volume_ui (void)
     gchar *txt = g_strdup_printf ("%d%%", vol);
     gtk_label_set_text (GTK_LABEL (vol_label), txt);
     g_free (txt);
-    gtk_button_set_label (GTK_BUTTON (mute_button), mute ? "Unmute" : "Mute");
+    const gchar *ic = (mute || vol == 0) ? "audio-volume-muted" : "audio-volume-high";
+    GtkWidget *img = gtk_image_new_from_icon_name (ic, GTK_ICON_SIZE_BUTTON);
+    gtk_button_set_image (GTK_BUTTON (mute_button), img);
     updating = FALSE;
 }
 
@@ -320,21 +326,34 @@ static gboolean on_focus_out (GtkWidget *widget, GdkEventFocus *event, gpointer 
     return FALSE;
 }
 
-static GtkWidget *make_tile (const gchar *title, const gchar *sub, GtkWidget **sub_label)
+static GtkWidget *
+make_tile (const gchar *title, const gchar *sub, GtkWidget **sub_label,
+           GtkWidget **toggle_out, GtkWidget **open_out)
 {
-    GtkWidget *btn = gtk_button_new ();
-    gtk_style_context_add_class (gtk_widget_get_style_context (btn), "tile");
-    GtkWidget *box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 2);
+    GtkWidget *box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 1);
+
+    GtkWidget *toggle = gtk_button_new ();
+    gtk_style_context_add_class (gtk_widget_get_style_context (toggle), "tile-left");
+    GtkWidget *content = gtk_box_new (GTK_ORIENTATION_VERTICAL, 2);
     GtkWidget *t = gtk_label_new (title);
     gtk_widget_set_halign (t, GTK_ALIGN_START);
     GtkWidget *s = gtk_label_new (sub);
     gtk_widget_set_halign (s, GTK_ALIGN_START);
     gtk_style_context_add_class (gtk_widget_get_style_context (s), "dim-label");
-    gtk_box_pack_start (GTK_BOX (box), t, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (box), s, FALSE, FALSE, 0);
-    gtk_container_add (GTK_CONTAINER (btn), box);
+    gtk_box_pack_start (GTK_BOX (content), t, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (content), s, FALSE, FALSE, 0);
+    gtk_container_add (GTK_CONTAINER (toggle), content);
+
+    GtkWidget *open = gtk_button_new_with_label ("›");
+    gtk_style_context_add_class (gtk_widget_get_style_context (open), "tile-right");
+    gtk_widget_set_size_request (open, 28, -1);
+
+    gtk_box_pack_start (GTK_BOX (box), toggle, TRUE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (box), open, FALSE, FALSE, 0);
     if (sub_label) *sub_label = s;
-    return btn;
+    if (toggle_out) *toggle_out = toggle;
+    if (open_out) *open_out = open;
+    return box;
 }
 
 static void build_ui (void)
@@ -345,8 +364,13 @@ static void build_ui (void)
     gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
     gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
-    gtk_window_set_default_size (GTK_WINDOW (window), 420, 250);
+    gtk_window_set_default_size (GTK_WINDOW (window), 440, 300);
     g_signal_connect (window, "key-press-event", G_CALLBACK (on_key_press), NULL);
+    GdkScreen *screen = gtk_widget_get_screen (window);
+    GdkVisual *visual = gdk_screen_get_rgba_visual (screen);
+    if (visual) gtk_widget_set_visual (window, visual);
+    gtk_widget_set_app_paintable (window, TRUE);
+    g_signal_connect (window, "draw", G_CALLBACK (on_window_draw), NULL);
 
     GtkWidget *outer = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
     gtk_container_set_border_width (GTK_CONTAINER (outer), 16);
@@ -371,41 +395,56 @@ static void build_ui (void)
     GtkWidget *grid = gtk_grid_new ();
     gtk_grid_set_column_spacing (GTK_GRID (grid), 8);
     gtk_grid_set_row_spacing (GTK_GRID (grid), 8);
-    GtkWidget *net = make_tile ("Network", "Ethernet", &net_label);
-    GtkWidget *bt = make_tile ("Bluetooth", "Off", &bt_label);
-    GtkWidget *night = make_tile ("Night light", "Off", &night_label);
-    g_signal_connect (bt, "clicked", G_CALLBACK (on_bt_clicked), NULL);
-    g_signal_connect (night, "clicked", G_CALLBACK (on_night_clicked), NULL);
+    GtkWidget *net_t, *net_o, *bt_t, *bt_o, *night_t, *night_o, *sound_t, *sound_o;
+    GtkWidget *net = make_tile ("Network", "Ethernet", &net_label, &net_t, &net_o);
+    GtkWidget *bt = make_tile ("Bluetooth", "Off", &bt_label, &bt_t, &bt_o);
+    GtkWidget *night = make_tile ("Night light", "Off", &night_label, &night_t, &night_o);
+    GtkWidget *sound = make_tile ("Sound", "Mixer", NULL, &sound_t, &sound_o);
+    g_signal_connect (net_t, "clicked", G_CALLBACK (on_net_open), NULL);
+    g_signal_connect (net_o, "clicked", G_CALLBACK (on_net_open), NULL);
+    g_signal_connect (bt_t, "clicked", G_CALLBACK (on_bt_clicked), NULL);
+    g_signal_connect (bt_o, "clicked", G_CALLBACK (on_bt_open), NULL);
+    g_signal_connect (night_t, "clicked", G_CALLBACK (on_night_clicked), NULL);
+    g_signal_connect (night_o, "clicked", G_CALLBACK (on_night_open), NULL);
+    g_signal_connect (sound_t, "clicked", G_CALLBACK (on_sound_open), NULL);
+    g_signal_connect (sound_o, "clicked", G_CALLBACK (on_sound_open), NULL);
     gtk_widget_set_hexpand (net, TRUE);
     gtk_widget_set_hexpand (bt, TRUE);
     gtk_widget_set_hexpand (night, TRUE);
+    gtk_widget_set_hexpand (sound, TRUE);
     gtk_grid_attach (GTK_GRID (grid), net, 0, 0, 1, 1);
     gtk_grid_attach (GTK_GRID (grid), bt, 1, 0, 1, 1);
-    gtk_grid_attach (GTK_GRID (grid), night, 2, 0, 1, 1);
+    gtk_grid_attach (GTK_GRID (grid), night, 0, 1, 1, 1);
+    gtk_grid_attach (GTK_GRID (grid), sound, 1, 1, 1, 1);
     gtk_box_pack_start (GTK_BOX (outer), grid, FALSE, FALSE, 0);
 
     GtkWidget *volrow = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
-    GtkWidget *vicon = gtk_image_new_from_icon_name ("audio-volume-high", GTK_ICON_SIZE_BUTTON);
     vol_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0, 100, 1);
     gtk_scale_set_draw_value (GTK_SCALE (vol_scale), FALSE);
     gtk_widget_set_hexpand (vol_scale, TRUE);
     vol_label = gtk_label_new ("0%");
     gtk_widget_set_size_request (vol_label, 44, -1);
-    mute_button = gtk_button_new_with_label ("Mute");
+    mute_button = gtk_button_new ();
     gtk_style_context_add_class (gtk_widget_get_style_context (mute_button), "flat");
+    gtk_button_set_image (GTK_BUTTON (mute_button),
+        gtk_image_new_from_icon_name ("audio-volume-high", GTK_ICON_SIZE_BUTTON));
     g_signal_connect (vol_scale, "value-changed", G_CALLBACK (on_volume_changed), NULL);
     g_signal_connect (mute_button, "clicked", G_CALLBACK (on_mute_clicked), NULL);
-    gtk_box_pack_start (GTK_BOX (volrow), vicon, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (volrow), mute_button, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (volrow), vol_scale, TRUE, TRUE, 0);
     gtk_box_pack_start (GTK_BOX (volrow), vol_label, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (volrow), mute_button, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (outer), volrow, FALSE, FALSE, 0);
 
     GtkWidget *footer = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
     battery_label = gtk_label_new ("Battery");
     gtk_widget_set_hexpand (battery_label, TRUE);
     gtk_widget_set_halign (battery_label, GTK_ALIGN_START);
-    GtkWidget *settings = gtk_button_new_with_label ("Settings");
+    GtkWidget *settings = gtk_button_new ();
+    GtkWidget *sbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_box_pack_start (GTK_BOX (sbox),
+        gtk_image_new_from_icon_name ("preferences-system", GTK_ICON_SIZE_BUTTON), FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (sbox), gtk_label_new ("Settings"), FALSE, FALSE, 0);
+    gtk_container_add (GTK_CONTAINER (settings), sbox);
     gtk_style_context_add_class (gtk_widget_get_style_context (settings), "flat");
     g_signal_connect (settings, "clicked", G_CALLBACK (on_settings_clicked), NULL);
     gtk_box_pack_start (GTK_BOX (footer), battery_label, TRUE, TRUE, 0);
