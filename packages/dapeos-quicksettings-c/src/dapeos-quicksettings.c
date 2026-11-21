@@ -24,6 +24,7 @@ static guint vol_timeout = 0;
 static guint bg_timeout = 0;
 static gboolean night_on = FALSE;
 static gboolean window_dark = TRUE;
+static void position_window (void);
 static gboolean net_connecting = FALSE;
 static guint net_anim_id = 0;
 static gint net_anim_phase = 0;
