@@ -87,6 +87,15 @@ active_wifi_ssid (void)
     return ssid;
 }
 
+static gboolean
+has_known_wifi (void)
+{
+    gchar *out = run_cmd ("nmcli -t -f NAME,TYPE connection show 2>/dev/null");
+    gboolean known = strstr (out, "wireless") != NULL || strstr (out, "wifi") != NULL;
+    g_free (out);
+    return known;
+}
+
 static gboolean update_network_label (void)
 {
     if (!net_label) return FALSE;
@@ -266,7 +275,8 @@ static void on_night_clicked (GtkButton *button, gpointer data)
         apply_gamma (4000);
     }
     night_on = !night_on;
-    gtk_label_set_text (GTK_LABEL (night_label), night_on ? "On" : "Off");
+    gtk_label_set_text (GTK_LABEL (night_status_label), night_on ? "On" : "Off");
+    gtk_label_set_text (GTK_LABEL (night_label), night_on ? "4000 K" : "");
     g_free (onfile); g_free (dir);
 }
 
@@ -1007,7 +1017,12 @@ night_scale_changed (GtkRange *range, gpointer data)
     g_free (val); g_free (state); g_free (onfile); g_free (dir);
     apply_gamma (temp);
     night_on = TRUE;
-    if (night_label) gtk_label_set_text (GTK_LABEL (night_label), "On");
+    if (night_status_label) gtk_label_set_text (GTK_LABEL (night_status_label), "On");
+    if (night_label) {
+        gchar *t = g_strdup_printf ("%d K", temp);
+        gtk_label_set_text (GTK_LABEL (night_label), t);
+        g_free (t);
+    }
 }
 
 static void
