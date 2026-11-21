@@ -459,8 +459,9 @@ on_net_open (GtkButton *button, gpointer data)
     gchar *out = run_cmd ("nmcli -t -f SSID,SIGNAL,SECURITY device wifi list 2>/dev/null");
     GtkWidget *dialog = gtk_dialog_new_with_buttons ("Wi-Fi networks", NULL,
         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        "_Advanced…", GTK_RESPONSE_APPLY,
         "_Close", GTK_RESPONSE_CLOSE, NULL);
-    gtk_window_set_default_size (GTK_WINDOW (dialog), 380, 420);
+    gtk_window_set_default_size (GTK_WINDOW (dialog), 380, 460);
     GtkWidget *box = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
     GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
     gtk_widget_set_vexpand (scroll, TRUE);
@@ -478,7 +479,9 @@ on_net_open (GtkButton *button, gpointer data)
             WifiItem *item = g_new0 (WifiItem, 1);
             item->ssid = g_strdup (parts[0]);
             item->secured = secured;
-            gchar *label = g_strdup_printf ("%s   %s", parts[0], secured ? "🔒" : "");
+            gint signal = parts[1] ? atoi (parts[1]) : 0;
+            gchar *label = g_strdup_printf ("%s   %s  %d%%", parts[0],
+                                            secured ? "🔒" : "  ", signal);
             GtkWidget *rowbtn = gtk_button_new_with_label (label);
             g_free (label);
             gtk_widget_set_halign (rowbtn, GTK_ALIGN_FILL);
@@ -496,8 +499,14 @@ on_net_open (GtkButton *button, gpointer data)
     g_hash_table_destroy (seen);
     g_free (out);
     gtk_widget_show_all (dialog);
-    gtk_dialog_run (GTK_DIALOG (dialog));
+    gint response = gtk_dialog_run (GTK_DIALOG (dialog));
     gtk_widget_destroy (dialog);
+    if (response == GTK_RESPONSE_APPLY) {
+        if (g_find_program_in_path ("nm-connection-editor"))
+            run_async ("nm-connection-editor");
+        else
+            run_async ("xfce4-settings-manager");
+    }
 }
 
 static void
