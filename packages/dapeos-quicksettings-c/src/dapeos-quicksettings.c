@@ -887,6 +887,14 @@ connect_known_wifi (void)
     }
 }
 
+static gboolean
+connect_known_cb (gpointer data)
+{
+    (void) data;
+    connect_known_wifi ();
+    return FALSE;
+}
+
 static void
 on_net_toggle (GtkButton *button, gpointer data)
 {
@@ -898,7 +906,7 @@ on_net_toggle (GtkButton *button, gpointer data)
     } else {
         start_net_animation ();
         run_async ("nmcli radio wifi on");
-        g_timeout_add (1500, (GSourceFunc) connect_known_wifi, NULL);
+        g_timeout_add (1500, connect_known_cb, NULL);
     }
     g_timeout_add (1000, update_tiles_cb, NULL);
 }
