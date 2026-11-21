@@ -1504,6 +1504,15 @@ build_wifi_page (void)
     return page;
 }
 
+static gboolean
+on_window_map (GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+    (void) widget; (void) event; (void) data;
+    if (qstack)
+        gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+    return FALSE;
+}
+
 static void build_ui (void)
 {
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
@@ -1516,6 +1525,7 @@ static void build_ui (void)
     gtk_window_set_default_size (GTK_WINDOW (window), 440, 300);
     g_signal_connect (window, "key-press-event", G_CALLBACK (on_key_press), NULL);
     g_signal_connect (window, "focus-out-event", G_CALLBACK (on_focus_out), NULL);
+    g_signal_connect (window, "map-event", G_CALLBACK (on_window_map), NULL);
     GdkScreen *screen = gtk_widget_get_screen (window);
     GdkVisual *visual = gdk_screen_get_rgba_visual (screen);
     if (visual) gtk_widget_set_visual (window, visual);
