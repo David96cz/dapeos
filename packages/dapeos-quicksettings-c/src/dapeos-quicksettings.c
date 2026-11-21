@@ -1611,6 +1611,15 @@ static void build_ui (void)
     gtk_box_pack_start (GTK_BOX (bri_row), bri_label, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (outer), bri_row, FALSE, FALSE, 0);
 
+    GtkSizeGroup *icon_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+    GtkSizeGroup *value_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+    gtk_size_group_add_widget (icon_group, mute_button);
+    gtk_size_group_add_widget (icon_group, bri_icon);
+    gtk_size_group_add_widget (value_group, vol_label);
+    gtk_size_group_add_widget (value_group, bri_label);
+    g_object_unref (icon_group);
+    g_object_unref (value_group);
+
     GtkWidget *footer = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
     battery_label = gtk_label_new ("Battery");
     gtk_widget_set_hexpand (battery_label, TRUE);
