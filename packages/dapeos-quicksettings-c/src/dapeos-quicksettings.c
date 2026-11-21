@@ -690,7 +690,7 @@ static void build_ui (void)
     gtk_box_pack_start (GTK_BOX (footer), battery_label, TRUE, TRUE, 0);
     gtk_box_pack_end (GTK_BOX (footer), settings, FALSE, FALSE, 0);
     gtk_box_pack_end (GTK_BOX (footer), soundbtn, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (outer), footer, FALSE, FALSE, 0);
+    gtk_box_pack_end (GTK_BOX (outer), footer, FALSE, FALSE, 0);
 
     apply_css ();
     gtk_label_set_text (GTK_LABEL (vol_label), "--%");
