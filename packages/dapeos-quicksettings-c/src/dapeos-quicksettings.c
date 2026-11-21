@@ -64,7 +64,7 @@ static void update_network_label (void)
     }
     gchar *label;
     if (wifi)
-        label = g_strdup_printf ("Wi-Fi: %s", wifi);
+        label = g_strdup (wifi);
     else if (eth)
         label = g_strdup_printf ("Ethernet: %s", eth);
     else
@@ -561,6 +561,7 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
             GtkWidget *rowbtn = gtk_button_new_with_label (label);
             g_free (label);
             gtk_widget_set_halign (rowbtn, GTK_ALIGN_FILL);
+            gtk_widget_set_size_request (rowbtn, -1, 40);
             g_signal_connect_data (rowbtn, "clicked", G_CALLBACK (wifi_selected),
                                    item, (GClosureNotify) wifi_item_free, 0);
             gtk_list_box_insert (GTK_LIST_BOX (list), rowbtn, -1);
@@ -575,8 +576,26 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
     g_hash_table_destroy (seen);
     g_hash_table_destroy (active_set);
     g_free (out);
+    gtk_widget_show_all (list);
     g_object_unref (dialog);
     return;
+}
+
+static gboolean
+wifi_radio_on (void)
+{
+    gchar *out = run_cmd ("nmcli -t -f WIFI radio 2>/dev/null");
+    gboolean on = strstr (out, "enabled") != NULL;
+    g_free (out);
+    return on;
+}
+
+static void
+on_net_toggle (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    run_async (wifi_radio_on () ? "nmcli radio wifi off" : "nmcli radio wifi on");
+    g_timeout_add (1000, update_tiles_cb, NULL);
 }
 
 static void
@@ -748,13 +767,14 @@ static void build_ui (void)
     gtk_box_pack_start (GTK_BOX (outer), header, FALSE, FALSE, 0);
 
     GtkWidget *grid = gtk_grid_new ();
+    gtk_grid_set_column_homogeneous (GTK_GRID (grid), TRUE);
     gtk_grid_set_column_spacing (GTK_GRID (grid), 8);
     gtk_grid_set_row_spacing (GTK_GRID (grid), 8);
     GtkWidget *net_t, *net_o, *bt_t, *bt_o, *night_t, *night_o, *sound_t, *sound_o;
     GtkWidget *net = make_tile ("Network", "Ethernet", &net_label, &net_t, &net_o);
     GtkWidget *bt = make_tile ("Bluetooth", "Off", &bt_label, &bt_t, &bt_o);
     GtkWidget *night = make_tile ("Night light", "Off", &night_label, &night_t, &night_o);
-    g_signal_connect (net_t, "clicked", G_CALLBACK (on_net_open), NULL);
+    g_signal_connect (net_t, "clicked", G_CALLBACK (on_net_toggle), NULL);
     g_signal_connect (net_o, "clicked", G_CALLBACK (on_net_open), NULL);
     g_signal_connect (bt_t, "clicked", G_CALLBACK (on_bt_clicked), NULL);
     g_signal_connect (bt_o, "clicked", G_CALLBACK (on_bt_open), NULL);
