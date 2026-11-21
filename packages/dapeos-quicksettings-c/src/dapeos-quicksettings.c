@@ -538,7 +538,7 @@ set_volume_ui (gint vol, gboolean mute)
     gchar *txt = g_strdup_printf ("%d%%", vol);
     gtk_label_set_text (GTK_LABEL (vol_label), txt);
     g_free (txt);
-    const gchar *ic = (mute || vol == 0) ? "audio-volume-muted" : "audio-volume-high";
+    const gchar *ic = mute ? "audio-volume-muted" : "audio-volume-high";
     gtk_button_set_image (GTK_BUTTON (mute_button), volume_icon (ic));
     updating = FALSE;
 }

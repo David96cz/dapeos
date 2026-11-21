@@ -169,11 +169,11 @@ build_svg (DapeosStatus *st)
     x = 2 * (W + GAP);
     g_string_append_printf (s, "<g transform=\"translate(%d,0)\" fill=\"%s\">", x, color);
     g_string_append (s, "<path d=\"M4 8.5h3l4.5-3.5v12L7 13.5H4z\"/>");
-    if (st->mute || st->vol == 0) {
+    if (st->mute) {
         g_string_append (s, "<path d=\"M13.5 8.5l5 5M18.5 8.5l-5 5\" fill=\"none\" stroke=\"#f44336\" stroke-width=\"1.7\" stroke-linecap=\"round\"/>");
     } else {
-        if (st->vol >= 34) g_string_append_printf (s, "<path d=\"M13.5 8a4.2 4.2 0 0 1 0 6\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.6\" stroke-linecap=\"round\"/>", color);
-        if (st->vol >= 67) g_string_append_printf (s, "<path d=\"M15.8 5.8a8 8 0 0 1 0 10.4\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.6\" stroke-linecap=\"round\"/>", color);
+        if (st->vol > 0) g_string_append_printf (s, "<path d=\"M13.5 8a4.2 4.2 0 0 1 0 6\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.6\" stroke-linecap=\"round\"/>", color);
+        if (st->vol > 50) g_string_append_printf (s, "<path d=\"M15.8 5.8a8 8 0 0 1 0 10.4\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.6\" stroke-linecap=\"round\"/>", color);
     }
     g_string_append (s, "</g></svg>");
     return s;
