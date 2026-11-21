@@ -221,34 +221,22 @@ static gint panel_height (void)
 static GtkWidget *
 volume_icon (const gchar *name)
 {
-    const gchar *theme = is_dark () ? "Papirus-Dark" : "Papirus-Light";
-    const gchar *subdirs[] = { "24x24/status", "22x22/status", "16x16/status",
-                               "symbolic/status", "status/scalable", "status/24" };
-    for (guint i = 0; i < G_N_ELEMENTS (subdirs); i++) {
-        gchar *path = g_build_filename ("/usr/share/icons", theme, subdirs[i],
-                                        g_strdup_printf ("%s.svg", name), NULL);
-        if (g_file_test (path, G_FILE_TEST_EXISTS)) {
-            GtkWidget *img = gtk_image_new_from_file (path);
-            g_free (path);
-            return img;
-        }
-        g_free (path);
+    const gchar *theme_name = is_dark () ? "Papirus-Dark" : "Papirus-Light";
+    GtkIconTheme *theme = gtk_icon_theme_new ();
+    gtk_icon_theme_set_custom_theme (theme, theme_name);
+    GdkPixbuf *pix = gtk_icon_theme_load_icon (theme, name, 24, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
+    g_object_unref (theme);
+    if (pix) {
+        GtkWidget *img = gtk_image_new_from_pixbuf (pix);
+        g_object_unref (pix);
+        return img;
     }
     return gtk_image_new_from_icon_name (name, GTK_ICON_SIZE_BUTTON);
-}
-
-static void
-apply_panel_icon_theme (void)
-{
-    const gchar *name = is_dark () ? "Papirus-Dark" : "Papirus-Light";
-    GtkIconTheme *theme = gtk_icon_theme_get_default ();
-    gtk_icon_theme_set_custom_theme (theme, name);
 }
 
 static void apply_css (void)
 {
     window_dark = is_dark ();
-    apply_panel_icon_theme ();
     GtkCssProvider *css = gtk_css_provider_new ();
     const gchar *data;
     if (is_dark ()) {
