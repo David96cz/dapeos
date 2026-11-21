@@ -22,6 +22,7 @@ static GtkWidget *wifi_confirm_page;
 static GtkWidget *wifi_confirm_label;
 static gchar *wifi_confirm_ssid;
 static gboolean wifi_confirm_connected;
+static guint wifi_error_timeout = 0;
 static GtkWidget *vol_scale;
 static GtkWidget *vol_label;
 static GtkWidget *mute_button;
@@ -722,6 +723,15 @@ on_wifi_advanced (GtkButton *button, gpointer data)
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
 }
 
+static gboolean
+hide_wifi_error (gpointer data)
+{
+    (void) data;
+    wifi_error_timeout = 0;
+    if (wifi_error_label) gtk_widget_hide (wifi_error_label);
+    return FALSE;
+}
+
 static const gchar *
 wifi_error_text (const gchar *out)
 {
@@ -755,6 +765,8 @@ connect_wifi (const gchar *ssid, const gchar *password, gboolean was_known)
         if (!ok) {
             gtk_label_set_text (GTK_LABEL (wifi_error_label), wifi_error_text (out));
             gtk_widget_show (wifi_error_label);
+            if (wifi_error_timeout) g_source_remove (wifi_error_timeout);
+            wifi_error_timeout = g_timeout_add (4000, hide_wifi_error, NULL);
         } else {
             gtk_widget_hide (wifi_error_label);
         }
@@ -1098,6 +1110,15 @@ on_window_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 }
 
 static void
+wifi_row_activated (GtkListBox *list, GtkListBoxRow *row, gpointer data)
+{
+    (void) list;
+    if (!row) return;
+    gtk_list_box_select_row (GTK_LIST_BOX (list), row);
+    wifi_action (data);
+}
+
+static void
 show_main_page (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
@@ -1302,6 +1323,8 @@ build_wifi_page (void)
     gtk_widget_set_sensitive (action, FALSE);
     gtk_widget_set_sensitive (forget, FALSE);
     g_signal_connect (list, "row-selected", G_CALLBACK (wifi_row_selected), page);
+    g_signal_connect (list, "row-activated", G_CALLBACK (wifi_row_activated), page);
+    gtk_widget_set_size_request (page, 440, 500);
     gtk_widget_show_all (page);
     gtk_widget_hide (action);
     return page;
@@ -1318,6 +1341,7 @@ static void build_ui (void)
     gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
     gtk_window_set_default_size (GTK_WINDOW (window), 440, 300);
     g_signal_connect (window, "key-press-event", G_CALLBACK (on_key_press), NULL);
+    g_signal_connect (window, "focus-out-event", G_CALLBACK (on_focus_out), NULL);
     GdkScreen *screen = gtk_widget_get_screen (window);
     GdkVisual *visual = gdk_screen_get_rgba_visual (screen);
     if (visual) gtk_widget_set_visual (window, visual);
