@@ -146,7 +146,8 @@ net_anim_tick (gpointer data)
     if (net_anim_ticks > 22) {
         net_connecting = FALSE;
         net_anim_id = 0;
-        gtk_label_set_text (GTK_LABEL (net_label), "No known Wi-Fi");
+        gtk_label_set_text (GTK_LABEL (net_label),
+                            has_known_wifi () ? "Disconnected" : "No known Wi-Fi");
         return FALSE;
     }
     if (update_network_label ()) {
@@ -926,6 +927,7 @@ connect_known_wifi (void)
         g_free (name);
         g_timeout_add (1500, update_tiles_cb, NULL);
     } else {
+        stop_net_animation ();
         gtk_label_set_text (GTK_LABEL (net_label), "No known Wi-Fi");
     }
 }
@@ -949,9 +951,14 @@ on_net_toggle (GtkButton *button, gpointer data)
         gtk_label_set_text (GTK_LABEL (net_label), "");
     } else {
         gtk_label_set_text (GTK_LABEL (net_status_label), "On");
-        start_net_animation ();
         run_async ("nmcli radio wifi on");
-        g_timeout_add (1500, connect_known_cb, NULL);
+        if (has_known_wifi ()) {
+            start_net_animation ();
+            g_timeout_add (1500, connect_known_cb, NULL);
+        } else {
+            stop_net_animation ();
+            gtk_label_set_text (GTK_LABEL (net_label), "No known Wi-Fi");
+        }
     }
     g_timeout_add (1000, update_tiles_cb, NULL);
 }
