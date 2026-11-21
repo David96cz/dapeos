@@ -485,6 +485,20 @@ wifi_item_destroy (gpointer data)
 static void connect_wifi (const gchar *ssid, const gchar *password);
 
 static void
+password_visibility_toggled (GtkToggleButton *button, gpointer data)
+{
+    GtkWidget *entry = data;
+    gtk_entry_set_visibility (GTK_ENTRY (entry), gtk_toggle_button_get_active (button));
+}
+
+static void
+password_activate (GtkEntry *entry, gpointer data)
+{
+    (void) entry;
+    gtk_dialog_response (GTK_DIALOG (data), GTK_RESPONSE_OK);
+}
+
+static void
 wifi_password_response (GtkDialog *dialog, gint response, gpointer data)
 {
     WifiItem *item = data;
@@ -572,8 +586,13 @@ wifi_action (GtkWidget *dialog)
     GtkWidget *entry = gtk_entry_new ();
     gtk_entry_set_visibility (GTK_ENTRY (entry), FALSE);
     gtk_entry_set_input_purpose (GTK_ENTRY (entry), GTK_INPUT_PURPOSE_PASSWORD);
+    GtkWidget *show = gtk_check_button_new_with_label ("Show password");
     gtk_box_pack_start (GTK_BOX (box), label, FALSE, FALSE, 6);
     gtk_box_pack_start (GTK_BOX (box), entry, FALSE, FALSE, 6);
+    gtk_box_pack_start (GTK_BOX (box), show, FALSE, FALSE, 6);
+    g_signal_connect (show, "toggled", G_CALLBACK (password_visibility_toggled), entry);
+    g_signal_connect (entry, "activate", G_CALLBACK (password_activate), pw);
+    gtk_dialog_set_default_response (GTK_DIALOG (pw), GTK_RESPONSE_OK);
     g_object_set_data (G_OBJECT (pw), "password-entry", entry);
     WifiItem *copy = g_new0 (WifiItem, 1);
     copy->ssid = g_strdup (item->ssid);
@@ -597,6 +616,17 @@ on_wifi_forget (GtkButton *button, gpointer data)
     GtkWidget *dialog = data;
     WifiItem *item = g_object_get_data (G_OBJECT (dialog), "wifi-selected");
     if (!item) return;
+
+    GtkWidget *confirm = gtk_message_dialog_new (GTK_WINDOW (dialog),
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO,
+        "Forget Wi-Fi network?");
+    gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (confirm),
+        "The saved connection \"%s\" will be removed.", item->ssid);
+    gint answer = gtk_dialog_run (GTK_DIALOG (confirm));
+    gtk_widget_destroy (confirm);
+    if (answer != GTK_RESPONSE_YES) return;
+
     gchar *cmd = g_strdup_printf ("nmcli connection delete id %s 2>&1",
                                   g_shell_quote (item->ssid));
     run_async (cmd);
