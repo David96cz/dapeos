@@ -365,15 +365,132 @@ make_tile (const gchar *title, const gchar *sub, GtkWidget **sub_label,
     return box;
 }
 
+typedef struct {
+    gchar *ssid;
+    gboolean secured;
+} WifiItem;
+
+static void
+wifi_item_free (gpointer data)
+{
+    WifiItem *item = data;
+    g_free (item->ssid);
+    g_free (item);
+}
+
+static void connect_wifi (const gchar *ssid, const gchar *password);
+
+static void
+wifi_password_response (GtkDialog *dialog, gint response, gpointer data)
+{
+    WifiItem *item = data;
+    if (response == GTK_RESPONSE_OK) {
+        GtkWidget *entry = g_object_get_data (G_OBJECT (dialog), "password-entry");
+        const gchar *pw = gtk_entry_get_text (GTK_ENTRY (entry));
+        connect_wifi (item->ssid, pw);
+    }
+    gtk_widget_destroy (GTK_WIDGET (dialog));
+    wifi_item_free (item);
+}
+
+static void
+wifi_selected (GtkButton *button, gpointer data)
+{
+    (void) button;
+    WifiItem *item = data;
+    if (!item->secured) {
+        connect_wifi (item->ssid, NULL);
+        return;
+    }
+    GtkWidget *dialog = gtk_dialog_new_with_buttons ("Wi-Fi password", NULL,
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        "_Cancel", GTK_RESPONSE_CANCEL, "_Connect", GTK_RESPONSE_OK, NULL);
+    GtkWidget *box = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+    GtkWidget *label = gtk_label_new (item->ssid);
+    GtkWidget *entry = gtk_entry_new ();
+    gtk_entry_set_visibility (GTK_ENTRY (entry), FALSE);
+    gtk_entry_set_input_purpose (GTK_ENTRY (entry), GTK_INPUT_PURPOSE_PASSWORD);
+    gtk_box_pack_start (GTK_BOX (box), label, FALSE, FALSE, 6);
+    gtk_box_pack_start (GTK_BOX (box), entry, FALSE, FALSE, 6);
+    g_object_set_data (G_OBJECT (dialog), "password-entry", entry);
+    WifiItem *copy = g_new0 (WifiItem, 1);
+    copy->ssid = g_strdup (item->ssid);
+    copy->secured = TRUE;
+    g_signal_connect (dialog, "response", G_CALLBACK (wifi_password_response), copy);
+    gtk_widget_show_all (dialog);
+}
+
+static void
+connect_wifi (const gchar *ssid, const gchar *password)
+{
+    gchar *qssid = g_shell_quote (ssid);
+    gchar *cmd;
+    if (password && *password)
+        cmd = g_strdup_printf ("nmcli device wifi connect %s password %s 2>&1",
+                               qssid, g_shell_quote (password));
+    else
+        cmd = g_strdup_printf ("nmcli device wifi connect %s 2>&1", qssid);
+    gchar *out = run_cmd (cmd);
+    if (g_strrstr (out, "Error") || g_strrstr (out, "error")) {
+        GtkWidget *msg = gtk_message_dialog_new (NULL, GTK_DIALOG_MODAL,
+            GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE, "Wi-Fi connection failed");
+        gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (msg), "%s", out);
+        gtk_dialog_run (GTK_DIALOG (msg));
+        gtk_widget_destroy (msg);
+    }
+    g_free (out);
+    g_free (cmd);
+    g_free (qssid);
+}
+
 static void
 on_net_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
-    if (g_find_program_in_path ("nm-connection-editor"))
-        run_async ("nm-connection-editor");
-    else
-        run_async ("xfce4-settings-manager");
     gtk_widget_hide (window);
+
+    gchar *out = run_cmd ("nmcli -t -f SSID,SIGNAL,SECURITY device wifi list 2>/dev/null");
+    GtkWidget *dialog = gtk_dialog_new_with_buttons ("Wi-Fi networks", NULL,
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        "_Close", GTK_RESPONSE_CLOSE, NULL);
+    gtk_window_set_default_size (GTK_WINDOW (dialog), 380, 420);
+    GtkWidget *box = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+    GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+    gtk_widget_set_vexpand (scroll, TRUE);
+    GtkWidget *list = gtk_list_box_new ();
+    gtk_container_add (GTK_CONTAINER (scroll), list);
+    gtk_box_pack_start (GTK_BOX (box), scroll, TRUE, TRUE, 0);
+
+    GHashTable *seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+    gchar **lines = g_strsplit (out, "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        gchar **parts = g_strsplit (lines[i], ":", 3);
+        if (parts[0] && *parts[0] && parts[2] && !g_hash_table_contains (seen, parts[0])) {
+            g_hash_table_add (seen, g_strdup (parts[0]));
+            gboolean secured = g_strcmp0 (parts[2], "--") != 0 && *parts[2] != 0;
+            WifiItem *item = g_new0 (WifiItem, 1);
+            item->ssid = g_strdup (parts[0]);
+            item->secured = secured;
+            gchar *label = g_strdup_printf ("%s   %s", parts[0], secured ? "🔒" : "");
+            GtkWidget *rowbtn = gtk_button_new_with_label (label);
+            g_free (label);
+            gtk_widget_set_halign (rowbtn, GTK_ALIGN_FILL);
+            g_signal_connect_data (rowbtn, "clicked", G_CALLBACK (wifi_selected),
+                                   item, (GClosureNotify) wifi_item_free, 0);
+            gtk_list_box_insert (GTK_LIST_BOX (list), rowbtn, -1);
+        }
+        g_strfreev (parts);
+    }
+    g_strfreev (lines);
+    if (g_hash_table_size (seen) == 0) {
+        GtkWidget *empty = gtk_label_new ("No Wi-Fi networks found");
+        gtk_list_box_insert (GTK_LIST_BOX (list), empty, -1);
+    }
+    g_hash_table_destroy (seen);
+    g_free (out);
+    gtk_widget_show_all (dialog);
+    gtk_dialog_run (GTK_DIALOG (dialog));
+    gtk_widget_destroy (dialog);
 }
 
 static void
