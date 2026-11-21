@@ -29,6 +29,9 @@ static GtkWidget *battery_label;
 static GtkWidget *bt_label;
 static GtkWidget *night_label;
 static GtkWidget *net_label;
+static GtkWidget *net_status_label;
+static GtkWidget *bt_status_label;
+static GtkWidget *night_status_label;
 static gboolean updating = FALSE;
 static guint vol_timeout = 0;
 static guint bg_timeout = 0;
@@ -169,12 +172,33 @@ stop_net_animation (void)
 static void update_tiles (void)
 {
     gboolean bt = bt_is_on ();
-    gtk_label_set_text (GTK_LABEL (bt_label), bt ? "On" : "Off");
+    gtk_label_set_text (GTK_LABEL (bt_status_label), bt ? "On" : "Off");
+    gtk_label_set_text (GTK_LABEL (bt_label), "");
+
     gchar *nightfile = night_state_path ("nightlight_on");
     night_on = g_file_test (nightfile, G_FILE_TEST_EXISTS);
     g_free (nightfile);
-    gtk_label_set_text (GTK_LABEL (night_label), night_on ? "On" : "Off");
-    update_network_label ();
+    gtk_label_set_text (GTK_LABEL (night_status_label), night_on ? "On" : "Off");
+    if (night_on) {
+        gchar *state = night_state_path ("nightlight");
+        gchar *temp = NULL;
+        if (g_file_get_contents (state, &temp, NULL, NULL)) {
+            gchar *t = g_strdup_printf ("%d K", atoi (temp));
+            gtk_label_set_text (GTK_LABEL (night_label), t);
+            g_free (t);
+        }
+        g_free (temp); g_free (state);
+    } else {
+        gtk_label_set_text (GTK_LABEL (night_label), "");
+    }
+
+    gboolean on = wifi_radio_on ();
+    gtk_label_set_text (GTK_LABEL (net_status_label), on ? "On" : "Off");
+    if (!on) {
+        gtk_label_set_text (GTK_LABEL (net_label), "");
+    } else {
+        update_network_label ();
+    }
 }
 
 static void on_bt_clicked (GtkButton *button, gpointer data)
@@ -477,19 +501,26 @@ static gboolean on_focus_out (GtkWidget *widget, GdkEventFocus *event, gpointer 
 
 static GtkWidget *
 make_tile (const gchar *title, const gchar *sub, GtkWidget **sub_label,
-           GtkWidget **toggle_out, GtkWidget **open_out)
+           GtkWidget **status_label, GtkWidget **toggle_out, GtkWidget **open_out)
 {
     GtkWidget *box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 1);
 
     GtkWidget *toggle = gtk_button_new ();
     gtk_style_context_add_class (gtk_widget_get_style_context (toggle), "tile-left");
     GtkWidget *content = gtk_box_new (GTK_ORIENTATION_VERTICAL, 2);
+    GtkWidget *top = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 4);
     GtkWidget *t = gtk_label_new (title);
     gtk_widget_set_halign (t, GTK_ALIGN_START);
+    gtk_widget_set_hexpand (t, TRUE);
+    GtkWidget *st = gtk_label_new ("Off");
+    gtk_widget_set_halign (st, GTK_ALIGN_END);
+    gtk_style_context_add_class (gtk_widget_get_style_context (st), "dim-label");
+    gtk_box_pack_start (GTK_BOX (top), t, TRUE, TRUE, 0);
+    gtk_box_pack_end (GTK_BOX (top), st, FALSE, FALSE, 0);
     GtkWidget *s = gtk_label_new (sub);
     gtk_widget_set_halign (s, GTK_ALIGN_START);
     gtk_style_context_add_class (gtk_widget_get_style_context (s), "dim-label");
-    gtk_box_pack_start (GTK_BOX (content), t, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (content), top, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (content), s, FALSE, FALSE, 0);
     gtk_container_add (GTK_CONTAINER (toggle), content);
 
@@ -500,6 +531,7 @@ make_tile (const gchar *title, const gchar *sub, GtkWidget **sub_label,
     gtk_box_pack_start (GTK_BOX (box), toggle, TRUE, TRUE, 0);
     gtk_box_pack_start (GTK_BOX (box), open, FALSE, FALSE, 0);
     if (sub_label) *sub_label = s;
+    if (status_label) *status_label = st;
     if (toggle_out) *toggle_out = toggle;
     if (open_out) *open_out = open;
     return box;
@@ -902,8 +934,10 @@ on_net_toggle (GtkButton *button, gpointer data)
     if (wifi_radio_on ()) {
         stop_net_animation ();
         run_async ("nmcli radio wifi off");
-        gtk_label_set_text (GTK_LABEL (net_label), "Wi-Fi off");
+        gtk_label_set_text (GTK_LABEL (net_status_label), "Off");
+        gtk_label_set_text (GTK_LABEL (net_label), "");
     } else {
+        gtk_label_set_text (GTK_LABEL (net_status_label), "On");
         start_net_animation ();
         run_async ("nmcli radio wifi on");
         g_timeout_add (1500, connect_known_cb, NULL);
@@ -1098,9 +1132,10 @@ wifi_confirm_do (GtkButton *button, gpointer data)
     } else {
         cmd = g_strdup_printf ("nmcli connection delete id %s 2>&1", g_shell_quote (wifi_confirm_ssid));
     }
-    run_async (cmd);
+    run_cmd (cmd);
     g_free (cmd);
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
+    update_tiles_cb (NULL);
     rescan_later (wifi_page);
 }
 
@@ -1303,9 +1338,9 @@ static void build_ui (void)
     gtk_grid_set_column_spacing (GTK_GRID (grid), 8);
     gtk_grid_set_row_spacing (GTK_GRID (grid), 8);
     GtkWidget *net_t, *net_o, *bt_t, *bt_o, *night_t, *night_o, *sound_t, *sound_o;
-    GtkWidget *net = make_tile ("Network", "Ethernet", &net_label, &net_t, &net_o);
-    GtkWidget *bt = make_tile ("Bluetooth", "Off", &bt_label, &bt_t, &bt_o);
-    GtkWidget *night = make_tile ("Night light", "Off", &night_label, &night_t, &night_o);
+    GtkWidget *net = make_tile ("Network", "", &net_label, &net_status_label, &net_t, &net_o);
+    GtkWidget *bt = make_tile ("Bluetooth", "", &bt_label, &bt_status_label, &bt_t, &bt_o);
+    GtkWidget *night = make_tile ("Night light", "", &night_label, &night_status_label, &night_t, &night_o);
     g_signal_connect (net_t, "clicked", G_CALLBACK (on_net_toggle), NULL);
     g_signal_connect (net_o, "clicked", G_CALLBACK (on_net_open), NULL);
     g_signal_connect (bt_t, "clicked", G_CALLBACK (on_bt_clicked), NULL);
