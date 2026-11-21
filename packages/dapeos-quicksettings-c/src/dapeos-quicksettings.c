@@ -31,6 +31,11 @@ static gboolean bt_is_on (void)
 {
     gchar *out = run_cmd ("rfkill list bluetooth 2>/dev/null");
     gboolean on = strstr (out, "Soft blocked: no") != NULL;
+    gboolean blocked = strstr (out, "Soft blocked: yes") != NULL;
+    g_free (out);
+    if (on || blocked) return on;
+    out = run_cmd ("timeout 1 bluetoothctl show 2>/dev/null");
+    on = strstr (out, "Powered: yes") != NULL;
     g_free (out);
     return on;
 }
@@ -46,24 +51,26 @@ static void update_network_label (void)
     if (!net_label) return;
     gchar *out = run_cmd ("nmcli -t -f TYPE,STATE,CONNECTION device status 2>/dev/null");
     gchar **lines = g_strsplit (out, "\n", -1);
-    const gchar *shown = "Disconnected";
-    static gchar buf[128];
+    gchar *wifi = NULL, *eth = NULL;
     for (guint i = 0; lines[i]; i++) {
         gchar **parts = g_strsplit (lines[i], ":", 3);
         if (parts[1] && g_strcmp0 (parts[1], "connected") == 0) {
-            if (g_strcmp0 (parts[0], "wifi") == 0)
-                g_snprintf (buf, sizeof buf, "Wi-Fi: %s", parts[2] ? parts[2] : "");
-            else if (g_strcmp0 (parts[0], "ethernet") == 0)
-                g_snprintf (buf, sizeof buf, "Ethernet: %s", parts[2] ? parts[2] : "");
-            else
-                g_snprintf (buf, sizeof buf, "%s", parts[2] ? parts[2] : "");
-            shown = buf;
-            g_strfreev (parts);
-            break;
+            if (g_strcmp0 (parts[0], "wifi") == 0 && wifi == NULL)
+                wifi = g_strdup (parts[2] ? parts[2] : "");
+            else if (g_strcmp0 (parts[0], "ethernet") == 0 && eth == NULL)
+                eth = g_strdup (parts[2] ? parts[2] : "");
         }
         g_strfreev (parts);
     }
-    gtk_label_set_text (GTK_LABEL (net_label), shown);
+    gchar *label;
+    if (wifi)
+        label = g_strdup_printf ("Wi-Fi: %s", wifi);
+    else if (eth)
+        label = g_strdup_printf ("Ethernet: %s", eth);
+    else
+        label = g_strdup ("Disconnected");
+    gtk_label_set_text (GTK_LABEL (net_label), label);
+    g_free (label); g_free (wifi); g_free (eth);
     g_strfreev (lines);
     g_free (out);
 }
