@@ -464,6 +464,7 @@ typedef struct {
     gchar *ssid;
     gboolean secured;
     gboolean connected;
+    gboolean known;
 } WifiItem;
 
 static void
@@ -505,15 +506,20 @@ wifi_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
     WifiItem *item = NULL;
     if (row) item = g_object_get_data (G_OBJECT (row), "wifi-item");
     g_object_set_data (G_OBJECT (dialog), "wifi-selected", item);
+    GtkWidget *forget = g_object_get_data (G_OBJECT (dialog), "wifi-forget");
     if (item) {
         gtk_button_set_label (GTK_BUTTON (action), item->connected ? "Disconnect" : "Connect");
         gtk_widget_show (action);
         gtk_widget_set_sensitive (action, TRUE);
+        gtk_widget_set_sensitive (forget, item->known);
     } else {
         gtk_button_set_label (GTK_BUTTON (action), "Connect");
         gtk_widget_set_sensitive (action, FALSE);
+        gtk_widget_set_sensitive (forget, FALSE);
     }
 }
+
+static void wifi_start_scan (GtkWidget *dialog);
 
 static void
 wifi_action (GtkWidget *dialog)
@@ -525,12 +531,20 @@ wifi_action (GtkWidget *dialog)
                                       g_shell_quote (item->ssid));
         run_async (cmd);
         g_free (cmd);
-        gtk_widget_destroy (dialog);
+        wifi_start_scan (dialog);
+        return;
+    }
+    if (item->known) {
+        gchar *cmd = g_strdup_printf ("nmcli connection up id %s 2>&1",
+                                      g_shell_quote (item->ssid));
+        run_async (cmd);
+        g_free (cmd);
+        wifi_start_scan (dialog);
         return;
     }
     if (!item->secured) {
         connect_wifi (item->ssid, NULL);
-        gtk_widget_destroy (dialog);
+        wifi_start_scan (dialog);
         return;
     }
 
@@ -558,6 +572,20 @@ on_wifi_action (GtkButton *button, gpointer data)
 {
     (void) button;
     wifi_action (data);
+}
+
+static void
+on_wifi_forget (GtkButton *button, gpointer data)
+{
+    (void) button;
+    GtkWidget *dialog = data;
+    WifiItem *item = g_object_get_data (G_OBJECT (dialog), "wifi-selected");
+    if (!item) return;
+    gchar *cmd = g_strdup_printf ("nmcli connection delete id %s 2>&1",
+                                  g_shell_quote (item->ssid));
+    run_async (cmd);
+    g_free (cmd);
+    wifi_start_scan (dialog);
 }
 
 static void
@@ -647,6 +675,18 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
         g_free (connections);
     }
 
+    GHashTable *known_set = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+    gchar *conns = run_cmd ("nmcli -t -f NAME,TYPE connection show 2>/dev/null");
+    gchar **clines = g_strsplit (conns, "\n", -1);
+    for (guint i = 0; clines[i]; i++) {
+        gchar **cp = g_strsplit (clines[i], ":", 2);
+        if (cp[0] && cp[1] && strstr (cp[1], "wireless"))
+            g_hash_table_add (known_set, g_strdup (cp[0]));
+        g_strfreev (cp);
+    }
+    g_strfreev (clines);
+    g_free (conns);
+
     GHashTable *seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
     gchar **lines = g_strsplit (out, "\n", -1);
     for (guint i = 0; lines[i]; i++) {
@@ -659,6 +699,7 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
             item->ssid = g_strdup (parts[0]);
             item->secured = secured;
             item->connected = connected;
+            item->known = g_hash_table_contains (known_set, parts[0]);
             GtkWidget *row = gtk_list_box_row_new ();
             GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
             GtkWidget *name = gtk_label_new (parts[0]);
@@ -684,6 +725,7 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
     }
     g_hash_table_destroy (seen);
     g_hash_table_destroy (active_set);
+    g_hash_table_destroy (known_set);
     g_free (out);
     gtk_widget_show_all (list);
 
@@ -726,6 +768,32 @@ on_net_toggle (GtkButton *button, gpointer data)
 }
 
 static void
+wifi_start_scan (GtkWidget *dialog)
+{
+    GtkWidget *list = g_object_get_data (G_OBJECT (dialog), "wifi-list");
+    if (!list) return;
+    GList *children = gtk_container_get_children (GTK_CONTAINER (list));
+    g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
+    GtkWidget *scanning = gtk_label_new ("Scanning for networks…");
+    gtk_list_box_insert (GTK_LIST_BOX (list), scanning, -1);
+    gtk_widget_show_all (list);
+
+    const gchar *argv[] = { "nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY",
+                            "device", "wifi", "list", NULL };
+    GError *error = NULL;
+    GSubprocess *proc = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE, &error);
+    if (proc) {
+        g_object_ref (dialog);
+        g_subprocess_communicate_utf8_async (proc, NULL, NULL, wifi_scan_done, dialog);
+        g_object_unref (proc);
+    } else {
+        if (error) g_error_free (error);
+        GtkWidget *label = gtk_label_new ("NetworkManager is not available");
+        gtk_list_box_insert (GTK_LIST_BOX (list), label, -1);
+    }
+}
+
+static void
 on_net_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
@@ -749,33 +817,26 @@ on_net_open (GtkButton *button, gpointer data)
     g_object_set_data (G_OBJECT (dialog), "wifi-list", list);
     GtkWidget *actions = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
     GtkWidget *action = gtk_button_new_with_label ("Connect");
+    GtkWidget *forget = gtk_button_new_with_label ("Forget");
     GtkWidget *advanced = gtk_button_new_with_label ("Advanced…");
     GtkWidget *close = gtk_button_new_with_label ("Close");
     g_signal_connect (action, "clicked", G_CALLBACK (on_wifi_action), dialog);
+    g_signal_connect (forget, "clicked", G_CALLBACK (on_wifi_forget), dialog);
     g_signal_connect (advanced, "clicked", G_CALLBACK (on_wifi_advanced), dialog);
     g_signal_connect_swapped (close, "clicked", G_CALLBACK (gtk_widget_destroy), dialog);
     gtk_box_pack_start (GTK_BOX (actions), action, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), forget, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), advanced, FALSE, FALSE, 0);
     gtk_box_pack_end (GTK_BOX (actions), close, FALSE, FALSE, 0);
     gtk_box_pack_end (GTK_BOX (box), actions, FALSE, FALSE, 0);
     g_object_set_data (G_OBJECT (dialog), "wifi-action", action);
+    g_object_set_data (G_OBJECT (dialog), "wifi-forget", forget);
     gtk_widget_set_no_show_all (action, TRUE);
     gtk_widget_set_sensitive (action, FALSE);
+    gtk_widget_set_sensitive (forget, FALSE);
     gtk_widget_show_all (dialog);
 
-    const gchar *argv[] = { "nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY",
-                            "device", "wifi", "list", NULL };
-    GError *error = NULL;
-    GSubprocess *proc = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE, &error);
-    if (proc) {
-        g_object_ref (dialog);
-        g_subprocess_communicate_utf8_async (proc, NULL, NULL, wifi_scan_done, dialog);
-        g_object_unref (proc);
-    } else {
-        if (error) g_error_free (error);
-        GtkWidget *label = gtk_label_new ("NetworkManager is not available");
-        gtk_list_box_insert (GTK_LIST_BOX (list), label, -1);
-    }
+    wifi_start_scan (dialog);
 }
 
 static void
