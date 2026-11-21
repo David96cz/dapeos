@@ -31,6 +31,11 @@ static GtkWidget *bt_label;
 static GtkWidget *night_label;
 static GtkWidget *net_label;
 static GtkWidget *net_status_label;
+static GtkWidget *bri_row;
+static GtkWidget *bri_scale;
+static GtkWidget *bri_label;
+static gboolean bri_updating = FALSE;
+static guint bri_timeout = 0;
 static GtkWidget *bt_status_label;
 static GtkWidget *night_status_label;
 static gboolean updating = FALSE;
@@ -211,6 +216,73 @@ static void update_tiles (void)
     } else {
         update_network_label ();
     }
+}
+
+static void
+volume_cache_changed (GFileMonitor *monitor, GFile *file, GFile *other,
+                      GFileMonitorEvent event, gpointer data)
+{
+    (void) monitor; (void) file; (void) other; (void) data;
+    if (event != G_FILE_MONITOR_EVENT_CHANGED &&
+        event != G_FILE_MONITOR_EVENT_CREATED &&
+        event != G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT)
+        return;
+    gchar *path = g_build_filename (g_get_user_cache_dir (), "dapeos", "volume", NULL);
+    gchar *text = NULL;
+    if (g_file_get_contents (path, &text, NULL, NULL)) {
+        gchar **p = g_strsplit (text, "\n", -1);
+        gint vol = p[0] ? atoi (p[0]) : 0;
+        gboolean mute = p[1] ? atoi (p[1]) != 0 : FALSE;
+        set_volume_ui (vol, mute);
+        g_strfreev (p);
+    }
+    g_free (text); g_free (path);
+}
+
+static void
+brightness_cache_changed (GFileMonitor *monitor, GFile *file, GFile *other,
+                          GFileMonitorEvent event, gpointer data)
+{
+    (void) monitor; (void) file; (void) other; (void) data;
+    if (event != G_FILE_MONITOR_EVENT_CHANGED &&
+        event != G_FILE_MONITOR_EVENT_CREATED &&
+        event != G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT)
+        return;
+    gchar *path = g_build_filename (g_get_user_cache_dir (), "dapeos", "brightness", NULL);
+    gchar *text = NULL;
+    if (g_file_get_contents (path, &text, NULL, NULL)) {
+        gint pct = atoi (text);
+        bri_updating = TRUE;
+        gtk_range_set_value (GTK_RANGE (bri_scale), pct);
+        gchar *t = g_strdup_printf ("%d%%", pct);
+        gtk_label_set_text (GTK_LABEL (bri_label), t);
+        g_free (t);
+        bri_updating = FALSE;
+    }
+    g_free (text); g_free (path);
+}
+
+static void
+install_cache_monitors (void)
+{
+    gchar *dir = g_build_filename (g_get_user_cache_dir (), "dapeos", NULL);
+    g_mkdir_with_parents (dir, 0700);
+
+    gchar *vpath = g_build_filename (dir, "volume", NULL);
+    if (!g_file_test (vpath, G_FILE_TEST_EXISTS)) g_file_set_contents (vpath, "0\n0\n", -1, NULL);
+    GFile *vf = g_file_new_for_path (vpath);
+    GFileMonitor *vm = g_file_monitor_file (vf, G_FILE_MONITOR_NONE, NULL, NULL);
+    if (vm) g_signal_connect (vm, "changed", G_CALLBACK (volume_cache_changed), NULL);
+    g_object_unref (vf);
+
+    gchar *bpath = g_build_filename (dir, "brightness", NULL);
+    if (!g_file_test (bpath, G_FILE_TEST_EXISTS)) g_file_set_contents (bpath, "0\n", -1, NULL);
+    GFile *bf = g_file_new_for_path (bpath);
+    GFileMonitor *bm = g_file_monitor_file (bf, G_FILE_MONITOR_NONE, NULL, NULL);
+    if (bm) g_signal_connect (bm, "changed", G_CALLBACK (brightness_cache_changed), NULL);
+    g_object_unref (bf);
+
+    g_free (vpath); g_free (bpath); g_free (dir);
 }
 
 static void on_bt_clicked (GtkButton *button, gpointer data)
@@ -439,11 +511,10 @@ static void apply_css (void)
     g_object_unref (css);
 }
 
-static void update_volume_ui (void)
+static void
+set_volume_ui (gint vol, gboolean mute)
 {
     updating = TRUE;
-    gint vol = get_volume ();
-    gboolean mute = get_mute ();
     gtk_range_set_value (GTK_RANGE (vol_scale), vol);
     gchar *txt = g_strdup_printf ("%d%%", vol);
     gtk_label_set_text (GTK_LABEL (vol_label), txt);
@@ -451,6 +522,79 @@ static void update_volume_ui (void)
     const gchar *ic = (mute || vol == 0) ? "audio-volume-muted" : "audio-volume-high";
     gtk_button_set_image (GTK_BUTTON (mute_button), volume_icon (ic));
     updating = FALSE;
+}
+
+static void update_volume_ui (void)
+{
+    set_volume_ui (get_volume (), get_mute ());
+}
+
+static gboolean
+backlight_info (gint *current, gint *maximum)
+{
+    GDir *dir = g_dir_open ("/sys/class/backlight", 0, NULL);
+    if (!dir) return FALSE;
+    const gchar *name;
+    gboolean found = FALSE;
+    while ((name = g_dir_read_name (dir)) != NULL) {
+        gchar *base = g_build_filename ("/sys/class/backlight", name, NULL);
+        gchar *curf = g_build_filename (base, "brightness", NULL);
+        gchar *maxf = g_build_filename (base, "max_brightness", NULL);
+        gchar *cur = NULL, *max = NULL;
+        if (g_file_get_contents (curf, &cur, NULL, NULL) &&
+            g_file_get_contents (maxf, &max, NULL, NULL)) {
+            *current = atoi (cur);
+            *maximum = atoi (max);
+            found = (*maximum > 0);
+        }
+        g_free (cur); g_free (max); g_free (curf); g_free (maxf); g_free (base);
+        if (found) break;
+    }
+    g_dir_close (dir);
+    return found;
+}
+
+static void
+update_brightness_ui (void)
+{
+    gint cur = 0, max = 0;
+    if (!bri_row) return;
+    if (!backlight_info (&cur, &max)) {
+        gtk_widget_hide (bri_row);
+        return;
+    }
+    gtk_widget_show (bri_row);
+    bri_updating = TRUE;
+    gint pct = max > 0 ? (cur * 100 / max) : 0;
+    gtk_range_set_value (GTK_RANGE (bri_scale), pct);
+    gchar *txt = g_strdup_printf ("%d%%", pct);
+    gtk_label_set_text (GTK_LABEL (bri_label), txt);
+    g_free (txt);
+    bri_updating = FALSE;
+}
+
+static gboolean
+apply_brightness (gpointer data)
+{
+    (void) data;
+    bri_timeout = 0;
+    gint pct = (gint) gtk_range_get_value (GTK_RANGE (bri_scale));
+    gchar *cmd = g_strdup_printf ("brightnessctl set %d%%", pct);
+    run_async (cmd);
+    g_free (cmd);
+    gchar *txt = g_strdup_printf ("%d%%", pct);
+    gtk_label_set_text (GTK_LABEL (bri_label), txt);
+    g_free (txt);
+    return FALSE;
+}
+
+static void
+on_brightness_changed (GtkRange *range, gpointer data)
+{
+    (void) range; (void) data;
+    if (bri_updating) return;
+    if (bri_timeout) g_source_remove (bri_timeout);
+    bri_timeout = g_timeout_add (120, apply_brightness, NULL);
 }
 
 static gboolean apply_volume (gpointer data)
@@ -1421,6 +1565,19 @@ static void build_ui (void)
     gtk_box_pack_start (GTK_BOX (volrow), vol_label, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (outer), volrow, FALSE, FALSE, 0);
 
+    bri_row = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
+    GtkWidget *bri_icon = gtk_image_new_from_icon_name ("display-brightness-symbolic", GTK_ICON_SIZE_BUTTON);
+    bri_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1, 100, 1);
+    gtk_scale_set_draw_value (GTK_SCALE (bri_scale), FALSE);
+    gtk_widget_set_hexpand (bri_scale, TRUE);
+    bri_label = gtk_label_new ("0%");
+    gtk_widget_set_size_request (bri_label, 44, -1);
+    g_signal_connect (bri_scale, "value-changed", G_CALLBACK (on_brightness_changed), NULL);
+    gtk_box_pack_start (GTK_BOX (bri_row), bri_icon, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (bri_row), bri_scale, TRUE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (bri_row), bri_label, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (outer), bri_row, FALSE, FALSE, 0);
+
     GtkWidget *footer = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
     battery_label = gtk_label_new ("Battery");
     gtk_widget_set_hexpand (battery_label, TRUE);
@@ -1453,6 +1610,8 @@ static void build_ui (void)
     gchar *bat = get_battery ();
     gtk_label_set_text (GTK_LABEL (battery_label), bat);
     g_free (bat);
+    update_brightness_ui ();
+    install_cache_monitors ();
 }
 
 static void position_window (void)

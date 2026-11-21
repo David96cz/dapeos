@@ -116,6 +116,13 @@ class OSD(QWidget):
         pct = int(cur_i * 100 / mx_i) + delta
         pct = max(BRI_MIN, min(100, pct))
         sh(["brightnessctl", "set", f"{pct}%"])
+        try:
+            cache = os.path.expanduser("~/.cache/dapeos")
+            os.makedirs(cache, exist_ok=True)
+            with open(os.path.join(cache, "brightness"), "w", encoding="utf-8") as f:
+                f.write(str(pct))
+        except OSError:
+            pass
         name = "brightness" if pct > 20 else "brightness"
         self.show_osd(name, _( "Brightness" ), f"{pct}%")
 
