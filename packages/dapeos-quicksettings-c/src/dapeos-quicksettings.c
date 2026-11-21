@@ -560,7 +560,7 @@ wifi_action (GtkWidget *dialog)
     }
     if (!item->secured) {
         connect_wifi (item->ssid, NULL);
-        wifi_start_scan (dialog);
+        rescan_later (dialog);
         return;
     }
 
