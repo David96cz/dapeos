@@ -619,7 +619,7 @@ on_wifi_forget (GtkButton *button, gpointer data)
     WifiItem *item = g_object_get_data (G_OBJECT (dialog), "wifi-selected");
     if (!item) return;
 
-    GtkWidget *confirm = gtk_message_dialog_new (GTK_WINDOW (dialog),
+    GtkWidget *confirm = gtk_message_dialog_new (GTK_WINDOW (window),
         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
         GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO,
         "Forget Wi-Fi network?");
@@ -847,6 +847,8 @@ on_net_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
+    gtk_window_resize (GTK_WINDOW (window), 440, 500);
+    position_window ();
     wifi_start_scan (wifi_page);
 }
 
@@ -948,6 +950,8 @@ show_main_page (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+    gtk_window_resize (GTK_WINDOW (window), 440, 300);
+    position_window ();
 }
 
 static GtkWidget *
