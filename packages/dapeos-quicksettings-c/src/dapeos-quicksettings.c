@@ -535,7 +535,7 @@ wifi_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
         gtk_button_set_label (GTK_BUTTON (action), item->connected ? "Disconnect" : "Connect");
         gtk_widget_show (action);
         gtk_widget_set_sensitive (action, TRUE);
-        gtk_widget_set_sensitive (forget, item->known);
+        gtk_widget_set_sensitive (forget, item->known || item->connected);
     } else {
         gtk_button_set_label (GTK_BUTTON (action), "Connect");
         gtk_widget_set_sensitive (action, FALSE);
@@ -561,16 +561,41 @@ rescan_later (GtkWidget *dialog)
     g_timeout_add (1200, rescan_cb, dialog);
 }
 
+static gchar *
+wifi_device (void)
+{
+    gchar *out = run_cmd ("nmcli -t -f DEVICE,TYPE device status 2>/dev/null");
+    gchar **lines = g_strsplit (out, "\n", -1);
+    gchar *dev = NULL;
+    for (guint i = 0; lines[i]; i++) {
+        gchar **parts = g_strsplit (lines[i], ":", 2);
+        if (parts[0] && parts[1] && g_strcmp0 (parts[1], "wifi") == 0) {
+            dev = g_strdup (parts[0]);
+            g_strfreev (parts);
+            break;
+        }
+        g_strfreev (parts);
+    }
+    g_strfreev (lines);
+    g_free (out);
+    return dev;
+}
+
 static void
 wifi_action (GtkWidget *dialog)
 {
     WifiItem *item = g_object_get_data (G_OBJECT (dialog), "wifi-selected");
     if (!item) return;
     if (item->connected) {
-        gchar *cmd = g_strdup_printf ("nmcli connection down id %s 2>&1",
-                                      g_shell_quote (item->ssid));
+        gchar *dev = wifi_device ();
+        gchar *cmd;
+        if (dev)
+            cmd = g_strdup_printf ("nmcli device disconnect %s 2>&1", g_shell_quote (dev));
+        else
+            cmd = g_strdup_printf ("nmcli connection down id %s 2>&1", g_shell_quote (item->ssid));
         run_async (cmd);
         g_free (cmd);
+        g_free (dev);
         rescan_later (dialog);
         return;
     }
@@ -993,15 +1018,12 @@ build_wifi_page (void)
     GtkWidget *action = gtk_button_new_with_label ("Connect");
     GtkWidget *forget = gtk_button_new_with_label ("Forget");
     GtkWidget *advanced = gtk_button_new_with_label ("Advanced…");
-    GtkWidget *close = gtk_button_new_with_label ("Close");
     g_signal_connect (action, "clicked", G_CALLBACK (on_wifi_action), page);
     g_signal_connect (forget, "clicked", G_CALLBACK (on_wifi_forget), page);
     g_signal_connect (advanced, "clicked", G_CALLBACK (on_wifi_advanced), page);
-    g_signal_connect (close, "clicked", G_CALLBACK (show_main_page), NULL);
     gtk_box_pack_start (GTK_BOX (actions), action, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), forget, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), advanced, FALSE, FALSE, 0);
-    gtk_box_pack_end (GTK_BOX (actions), close, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), actions, FALSE, FALSE, 0);
 
     g_object_set_data (G_OBJECT (page), "wifi-list", list);
@@ -1034,7 +1056,7 @@ static void build_ui (void)
     g_signal_connect (window, "draw", G_CALLBACK (on_window_draw), NULL);
 
     qstack = gtk_stack_new ();
-    gtk_stack_set_transition_type (GTK_STACK (qstack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
+    gtk_stack_set_transition_type (GTK_STACK (qstack), GTK_STACK_TRANSITION_TYPE_NONE);
     gtk_container_add (GTK_CONTAINER (window), qstack);
 
     main_page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
