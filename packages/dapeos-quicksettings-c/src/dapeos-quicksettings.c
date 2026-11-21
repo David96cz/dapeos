@@ -9,6 +9,9 @@ static gchar *run_cmd (const gchar *cmd);
 static void run_async (const gchar *cmd);
 
 static GtkWidget *window;
+static GtkWidget *qstack;
+static GtkWidget *main_page;
+static GtkWidget *wifi_page;
 static GtkWidget *vol_scale;
 static GtkWidget *vol_label;
 static GtkWidget *mute_button;
@@ -599,7 +602,6 @@ wifi_action (GtkWidget *dialog)
     copy->secured = TRUE;
     g_signal_connect (pw, "response", G_CALLBACK (wifi_password_response), copy);
     gtk_widget_show_all (pw);
-    gtk_widget_destroy (dialog);
 }
 
 static void
@@ -639,11 +641,12 @@ on_wifi_advanced (GtkButton *button, gpointer data)
 {
     (void) button;
     GtkWidget *dialog = data;
+    (void) dialog;
     if (g_find_program_in_path ("nm-connection-editor"))
         run_async ("nm-connection-editor");
     else
         run_async ("xfce4-settings-manager");
-    gtk_widget_destroy (dialog);
+    gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
 }
 
 static void
@@ -843,46 +846,8 @@ static void
 on_net_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
-    gtk_widget_hide (window);
-
-    GtkWidget *dialog = gtk_dialog_new ();
-    gtk_window_set_title (GTK_WINDOW (dialog), "Wi-Fi networks");
-    gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
-    gtk_window_set_destroy_with_parent (GTK_WINDOW (dialog), TRUE);
-    gtk_window_set_default_size (GTK_WINDOW (dialog), 440, 460);
-    GtkWidget *box = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
-    GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
-    gtk_widget_set_vexpand (scroll, TRUE);
-    GtkWidget *list = gtk_list_box_new ();
-    gtk_container_add (GTK_CONTAINER (scroll), list);
-    gtk_box_pack_start (GTK_BOX (box), scroll, TRUE, TRUE, 0);
-    GtkWidget *scanning = gtk_label_new ("Scanning for networks…");
-    gtk_list_box_insert (GTK_LIST_BOX (list), scanning, -1);
-    gtk_list_box_set_selection_mode (GTK_LIST_BOX (list), GTK_SELECTION_SINGLE);
-    g_signal_connect (list, "row-selected", G_CALLBACK (wifi_row_selected), dialog);
-    g_object_set_data (G_OBJECT (dialog), "wifi-list", list);
-    GtkWidget *actions = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
-    GtkWidget *action = gtk_button_new_with_label ("Connect");
-    GtkWidget *forget = gtk_button_new_with_label ("Forget");
-    GtkWidget *advanced = gtk_button_new_with_label ("Advanced…");
-    GtkWidget *close = gtk_button_new_with_label ("Close");
-    g_signal_connect (action, "clicked", G_CALLBACK (on_wifi_action), dialog);
-    g_signal_connect (forget, "clicked", G_CALLBACK (on_wifi_forget), dialog);
-    g_signal_connect (advanced, "clicked", G_CALLBACK (on_wifi_advanced), dialog);
-    g_signal_connect_swapped (close, "clicked", G_CALLBACK (gtk_widget_destroy), dialog);
-    gtk_box_pack_start (GTK_BOX (actions), action, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (actions), forget, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (actions), advanced, FALSE, FALSE, 0);
-    gtk_box_pack_end (GTK_BOX (actions), close, FALSE, FALSE, 0);
-    gtk_box_pack_end (GTK_BOX (box), actions, FALSE, FALSE, 0);
-    g_object_set_data (G_OBJECT (dialog), "wifi-action", action);
-    g_object_set_data (G_OBJECT (dialog), "wifi-forget", forget);
-    gtk_widget_set_no_show_all (action, TRUE);
-    gtk_widget_set_sensitive (action, FALSE);
-    gtk_widget_set_sensitive (forget, FALSE);
-    gtk_widget_show_all (dialog);
-
-    wifi_start_scan (dialog);
+    gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
+    wifi_start_scan (wifi_page);
 }
 
 static void
@@ -978,6 +943,68 @@ on_window_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
     return FALSE;
 }
 
+static void
+show_main_page (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+}
+
+static GtkWidget *
+build_wifi_page (void)
+{
+    GtkWidget *page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 8);
+    gtk_container_set_border_width (GTK_CONTAINER (page), 16);
+
+    GtkWidget *header = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget *back = gtk_button_new_with_label ("‹ Back");
+    gtk_style_context_add_class (gtk_widget_get_style_context (back), "flat");
+    GtkWidget *title = gtk_label_new ("Wi-Fi networks");
+    PangoAttrList *attrs = pango_attr_list_new ();
+    pango_attr_list_insert (attrs, pango_attr_weight_new (PANGO_WEIGHT_BOLD));
+    gtk_label_set_attributes (GTK_LABEL (title), attrs);
+    pango_attr_list_unref (attrs);
+    gtk_widget_set_hexpand (title, TRUE);
+    gtk_widget_set_halign (title, GTK_ALIGN_START);
+    g_signal_connect (back, "clicked", G_CALLBACK (show_main_page), NULL);
+    gtk_box_pack_start (GTK_BOX (header), back, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (header), title, TRUE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (page), header, FALSE, FALSE, 0);
+
+    GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+    gtk_widget_set_vexpand (scroll, TRUE);
+    GtkWidget *list = gtk_list_box_new ();
+    gtk_list_box_set_selection_mode (GTK_LIST_BOX (list), GTK_SELECTION_SINGLE);
+    gtk_container_add (GTK_CONTAINER (scroll), list);
+    gtk_box_pack_start (GTK_BOX (page), scroll, TRUE, TRUE, 0);
+
+    GtkWidget *actions = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget *action = gtk_button_new_with_label ("Connect");
+    GtkWidget *forget = gtk_button_new_with_label ("Forget");
+    GtkWidget *advanced = gtk_button_new_with_label ("Advanced…");
+    GtkWidget *close = gtk_button_new_with_label ("Close");
+    g_signal_connect (action, "clicked", G_CALLBACK (on_wifi_action), page);
+    g_signal_connect (forget, "clicked", G_CALLBACK (on_wifi_forget), page);
+    g_signal_connect (advanced, "clicked", G_CALLBACK (on_wifi_advanced), page);
+    g_signal_connect (close, "clicked", G_CALLBACK (show_main_page), NULL);
+    gtk_box_pack_start (GTK_BOX (actions), action, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), forget, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), advanced, FALSE, FALSE, 0);
+    gtk_box_pack_end (GTK_BOX (actions), close, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), actions, FALSE, FALSE, 0);
+
+    g_object_set_data (G_OBJECT (page), "wifi-list", list);
+    g_object_set_data (G_OBJECT (page), "wifi-action", action);
+    g_object_set_data (G_OBJECT (page), "wifi-forget", forget);
+    gtk_widget_set_no_show_all (action, TRUE);
+    gtk_widget_set_sensitive (action, FALSE);
+    gtk_widget_set_sensitive (forget, FALSE);
+    g_signal_connect (list, "row-selected", G_CALLBACK (wifi_row_selected), page);
+    gtk_widget_show_all (page);
+    gtk_widget_hide (action);
+    return page;
+}
+
 static void build_ui (void)
 {
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
@@ -995,9 +1022,17 @@ static void build_ui (void)
     gtk_widget_set_app_paintable (window, TRUE);
     g_signal_connect (window, "draw", G_CALLBACK (on_window_draw), NULL);
 
-    GtkWidget *outer = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
-    gtk_container_set_border_width (GTK_CONTAINER (outer), 16);
-    gtk_container_add (GTK_CONTAINER (window), outer);
+    qstack = gtk_stack_new ();
+    gtk_stack_set_transition_type (GTK_STACK (qstack), GTK_STACK_TRANSITION_TYPE_CROSSFADE);
+    gtk_container_add (GTK_CONTAINER (window), qstack);
+
+    main_page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
+    gtk_container_set_border_width (GTK_CONTAINER (main_page), 16);
+    GtkWidget *outer = main_page;
+    gtk_stack_add_named (GTK_STACK (qstack), main_page, "main");
+    wifi_page = build_wifi_page ();
+    gtk_stack_add_named (GTK_STACK (qstack), wifi_page, "wifi");
+    gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
 
     GtkWidget *header = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget *title = gtk_label_new ("Quick settings");
