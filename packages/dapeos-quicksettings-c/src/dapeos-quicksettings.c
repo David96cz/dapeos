@@ -507,6 +507,7 @@ wifi_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
     g_object_set_data (G_OBJECT (dialog), "wifi-selected", item);
     if (item) {
         gtk_button_set_label (GTK_BUTTON (action), item->connected ? "Disconnect" : "Connect");
+        gtk_widget_show (action);
         gtk_widget_set_sensitive (action, TRUE);
     } else {
         gtk_button_set_label (GTK_BUTTON (action), "Connect");
