@@ -270,14 +270,27 @@ install_cache_monitors (void)
     g_mkdir_with_parents (dir, 0700);
 
     gchar *vpath = g_build_filename (dir, "volume", NULL);
-    if (!g_file_test (vpath, G_FILE_TEST_EXISTS)) g_file_set_contents (vpath, "0\n0\n", -1, NULL);
+    if (!g_file_test (vpath, G_FILE_TEST_EXISTS)) {
+        gchar *init = g_strdup_printf ("%d\n%d\n", get_volume (), get_mute () ? 1 : 0);
+        g_file_set_contents (vpath, init, -1, NULL);
+        g_free (init);
+    }
     GFile *vf = g_file_new_for_path (vpath);
     GFileMonitor *vm = g_file_monitor_file (vf, G_FILE_MONITOR_NONE, NULL, NULL);
     if (vm) g_signal_connect (vm, "changed", G_CALLBACK (volume_cache_changed), NULL);
     g_object_unref (vf);
 
     gchar *bpath = g_build_filename (dir, "brightness", NULL);
-    if (!g_file_test (bpath, G_FILE_TEST_EXISTS)) g_file_set_contents (bpath, "0\n", -1, NULL);
+    if (!g_file_test (bpath, G_FILE_TEST_EXISTS)) {
+        gint cur = 0, max = 0;
+        gchar *init = NULL;
+        if (backlight_info (&cur, &max) && max > 0)
+            init = g_strdup_printf ("%d", cur * 100 / max);
+        else
+            init = g_strdup ("0");
+        g_file_set_contents (bpath, init, -1, NULL);
+        g_free (init);
+    }
     GFile *bf = g_file_new_for_path (bpath);
     GFileMonitor *bm = g_file_monitor_file (bf, G_FILE_MONITOR_NONE, NULL, NULL);
     if (bm) g_signal_connect (bm, "changed", G_CALLBACK (brightness_cache_changed), NULL);
@@ -533,6 +546,17 @@ static void update_volume_ui (void)
 static gboolean
 backlight_info (gint *current, gint *maximum)
 {
+    gchar *cur_s = run_cmd ("brightnessctl get 2>/dev/null");
+    gchar *max_s = run_cmd ("brightnessctl max 2>/dev/null");
+    if (*cur_s && *max_s) {
+        *current = atoi (cur_s);
+        *maximum = atoi (max_s);
+        g_free (cur_s); g_free (max_s);
+        if (*maximum > 0) return TRUE;
+    } else {
+        g_free (cur_s); g_free (max_s);
+    }
+
     GDir *dir = g_dir_open ("/sys/class/backlight", 0, NULL);
     if (!dir) return FALSE;
     const gchar *name;
@@ -1567,7 +1591,7 @@ static void build_ui (void)
     gtk_box_pack_start (GTK_BOX (outer), volrow, FALSE, FALSE, 0);
 
     bri_row = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
-    GtkWidget *bri_icon = gtk_image_new_from_icon_name ("display-brightness-symbolic", GTK_ICON_SIZE_BUTTON);
+    GtkWidget *bri_icon = volume_icon ("display-brightness-symbolic");
     bri_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1, 100, 1);
     gtk_scale_set_draw_value (GTK_SCALE (bri_scale), FALSE);
     gtk_widget_set_hexpand (bri_scale, TRUE);
