@@ -12,6 +12,10 @@ static GtkWidget *window;
 static GtkWidget *qstack;
 static GtkWidget *main_page;
 static GtkWidget *wifi_page;
+static GtkWidget *wifi_password_page;
+static GtkWidget *wifi_password_label;
+static GtkWidget *wifi_password_entry;
+static gchar *wifi_password_ssid;
 static GtkWidget *vol_scale;
 static GtkWidget *vol_label;
 static GtkWidget *mute_button;
@@ -544,6 +548,7 @@ wifi_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
 }
 
 static void wifi_start_scan (GtkWidget *dialog);
+static void show_wifi_password (const gchar *ssid);
 
 static gboolean
 rescan_cb (gpointer data)
@@ -613,27 +618,7 @@ wifi_action (GtkWidget *dialog)
         return;
     }
 
-    GtkWidget *pw = gtk_dialog_new_with_buttons ("Wi-Fi password", NULL,
-        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-        "_Cancel", GTK_RESPONSE_CANCEL, "_Connect", GTK_RESPONSE_OK, NULL);
-    GtkWidget *box = gtk_dialog_get_content_area (GTK_DIALOG (pw));
-    GtkWidget *label = gtk_label_new (item->ssid);
-    GtkWidget *entry = gtk_entry_new ();
-    gtk_entry_set_visibility (GTK_ENTRY (entry), FALSE);
-    gtk_entry_set_input_purpose (GTK_ENTRY (entry), GTK_INPUT_PURPOSE_PASSWORD);
-    GtkWidget *show = gtk_check_button_new_with_label ("Show password");
-    gtk_box_pack_start (GTK_BOX (box), label, FALSE, FALSE, 6);
-    gtk_box_pack_start (GTK_BOX (box), entry, FALSE, FALSE, 6);
-    gtk_box_pack_start (GTK_BOX (box), show, FALSE, FALSE, 6);
-    g_signal_connect (show, "toggled", G_CALLBACK (password_visibility_toggled), entry);
-    g_signal_connect (entry, "activate", G_CALLBACK (password_activate), pw);
-    gtk_dialog_set_default_response (GTK_DIALOG (pw), GTK_RESPONSE_OK);
-    g_object_set_data (G_OBJECT (pw), "password-entry", entry);
-    WifiItem *copy = g_new0 (WifiItem, 1);
-    copy->ssid = g_strdup (item->ssid);
-    copy->secured = TRUE;
-    g_signal_connect (pw, "response", G_CALLBACK (wifi_password_response), copy);
-    gtk_widget_show_all (pw);
+    show_wifi_password (item->ssid);
 }
 
 static void
@@ -986,6 +971,84 @@ show_main_page (GtkButton *button, gpointer data)
     position_window ();
 }
 
+static void
+wifi_password_cancel (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
+}
+
+static void
+wifi_password_connect (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    const gchar *pw = gtk_entry_get_text (GTK_ENTRY (wifi_password_entry));
+    connect_wifi (wifi_password_ssid, pw);
+    gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
+    rescan_later (wifi_page);
+}
+
+static void
+wifi_password_entry_activate (GtkEntry *entry, gpointer data)
+{
+    (void) entry;
+    wifi_password_connect (NULL, data);
+}
+
+static GtkWidget *
+build_wifi_password_page (void)
+{
+    GtkWidget *page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_set_border_width (GTK_CONTAINER (page), 16);
+
+    GtkWidget *title = gtk_label_new ("Wi-Fi password");
+    PangoAttrList *attrs = pango_attr_list_new ();
+    pango_attr_list_insert (attrs, pango_attr_weight_new (PANGO_WEIGHT_BOLD));
+    gtk_label_set_attributes (GTK_LABEL (title), attrs);
+    pango_attr_list_unref (attrs);
+    gtk_widget_set_halign (title, GTK_ALIGN_START);
+    gtk_box_pack_start (GTK_BOX (page), title, FALSE, FALSE, 0);
+
+    wifi_password_label = gtk_label_new ("");
+    gtk_widget_set_halign (wifi_password_label, GTK_ALIGN_START);
+    gtk_box_pack_start (GTK_BOX (page), wifi_password_label, FALSE, FALSE, 0);
+
+    wifi_password_entry = gtk_entry_new ();
+    gtk_entry_set_visibility (GTK_ENTRY (wifi_password_entry), FALSE);
+    gtk_entry_set_input_purpose (GTK_ENTRY (wifi_password_entry), GTK_INPUT_PURPOSE_PASSWORD);
+    gtk_entry_set_placeholder_text (GTK_ENTRY (wifi_password_entry), "Password");
+    gtk_box_pack_start (GTK_BOX (page), wifi_password_entry, FALSE, FALSE, 0);
+
+    GtkWidget *show = gtk_check_button_new_with_label ("Show password");
+    g_signal_connect (show, "toggled", G_CALLBACK (password_visibility_toggled), wifi_password_entry);
+    gtk_box_pack_start (GTK_BOX (page), show, FALSE, FALSE, 0);
+    g_signal_connect (wifi_password_entry, "activate", G_CALLBACK (password_activate), NULL);
+
+    GtkWidget *actions = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget *connect = gtk_button_new_with_label ("Connect");
+    GtkWidget *cancel = gtk_button_new_with_label ("Cancel");
+    g_signal_connect (connect, "clicked", G_CALLBACK (wifi_password_connect), NULL);
+    g_signal_connect (cancel, "clicked", G_CALLBACK (wifi_password_cancel), NULL);
+    gtk_box_pack_start (GTK_BOX (actions), connect, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), cancel, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), actions, FALSE, FALSE, 0);
+    gtk_widget_show_all (page);
+    return page;
+}
+
+static void
+show_wifi_password (const gchar *ssid)
+{
+    g_free (wifi_password_ssid);
+    wifi_password_ssid = g_strdup (ssid);
+    gtk_label_set_text (GTK_LABEL (wifi_password_label), ssid);
+    gtk_entry_set_text (GTK_ENTRY (wifi_password_entry), "");
+    gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi-password");
+    gtk_window_resize (GTK_WINDOW (window), 440, 360);
+    position_window ();
+    gtk_widget_grab_focus (wifi_password_entry);
+}
+
 static GtkWidget *
 build_wifi_page (void)
 {
@@ -1065,6 +1128,8 @@ static void build_ui (void)
     gtk_stack_add_named (GTK_STACK (qstack), main_page, "main");
     wifi_page = build_wifi_page ();
     gtk_stack_add_named (GTK_STACK (qstack), wifi_page, "wifi");
+    wifi_password_page = build_wifi_password_page ();
+    gtk_stack_add_named (GTK_STACK (qstack), wifi_password_page, "wifi-password");
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
 
     GtkWidget *header = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
