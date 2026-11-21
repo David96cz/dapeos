@@ -356,6 +356,74 @@ make_tile (const gchar *title, const gchar *sub, GtkWidget **sub_label,
     return box;
 }
 
+static void
+on_net_open (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    if (g_find_program_in_path ("nm-connection-editor"))
+        run_async ("nm-connection-editor");
+    else
+        run_async ("xfce4-settings-manager");
+    gtk_widget_hide (window);
+}
+
+static void
+on_bt_open (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    if (g_find_program_in_path ("blueman-manager"))
+        run_async ("blueman-manager");
+    else
+        run_async ("xfce4-settings-manager");
+    gtk_widget_hide (window);
+}
+
+static void
+on_night_open (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    run_async ("xfce4-settings-manager");
+    gtk_widget_hide (window);
+}
+
+static void
+on_sound_open (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    if (g_find_program_in_path ("pavucontrol"))
+        run_async ("pavucontrol");
+    else
+        run_async ("xfce4-settings-manager");
+    gtk_widget_hide (window);
+}
+
+static gboolean
+on_window_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
+{
+    (void) data;
+    gint w = gtk_widget_get_allocated_width (widget);
+    gint h = gtk_widget_get_allocated_height (widget);
+    double r = 14.0;
+
+    cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+    cairo_set_source_rgba (cr, 0, 0, 0, 0);
+    cairo_paint (cr);
+
+    cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+    if (window_dark)
+        cairo_set_source_rgb (cr, 47.0 / 255.0, 47.0 / 255.0, 47.0 / 255.0);
+    else
+        cairo_set_source_rgb (cr, 245.0 / 255.0, 245.0 / 255.0, 245.0 / 255.0);
+    cairo_new_sub_path (cr);
+    cairo_arc (cr, w - r, r, r, -G_PI / 2, 0);
+    cairo_arc (cr, w - r, h - r, r, 0, G_PI / 2);
+    cairo_arc (cr, r, h - r, r, G_PI / 2, G_PI);
+    cairo_arc (cr, r, r, r, G_PI, 3 * G_PI / 2);
+    cairo_close_path (cr);
+    cairo_fill (cr);
+    return FALSE;
+}
+
 static void build_ui (void)
 {
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
