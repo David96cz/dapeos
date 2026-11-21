@@ -21,6 +21,7 @@ static GtkWidget *wifi_error_label;
 static GtkWidget *wifi_confirm_page;
 static GtkWidget *wifi_confirm_label;
 static gchar *wifi_confirm_ssid;
+static gboolean wifi_confirm_connected;
 static GtkWidget *vol_scale;
 static GtkWidget *vol_label;
 static GtkWidget *mute_button;
@@ -63,6 +64,26 @@ static void update_tiles (void);
 static gboolean update_volume_cb (gpointer data) { (void) data; update_volume_ui (); return FALSE; }
 static gboolean update_tiles_cb (gpointer data) { (void) data; update_tiles (); return FALSE; }
 
+static gchar *
+active_wifi_ssid (void)
+{
+    gchar *out = run_cmd ("nmcli -t -f ACTIVE,SSID device wifi list 2>/dev/null");
+    gchar **lines = g_strsplit (out, "\n", -1);
+    gchar *ssid = NULL;
+    for (guint i = 0; lines[i]; i++) {
+        gchar **p = g_strsplit (lines[i], ":", 2);
+        if (p[0] && g_strcmp0 (p[0], "yes") == 0 && p[1]) {
+            ssid = g_strdup (p[1]);
+            g_strfreev (p);
+            break;
+        }
+        g_strfreev (p);
+    }
+    g_strfreev (lines);
+    g_free (out);
+    return ssid;
+}
+
 static gboolean update_network_label (void)
 {
     if (!net_label) return FALSE;
@@ -80,8 +101,11 @@ static gboolean update_network_label (void)
         g_strfreev (parts);
     }
     gchar *label;
-    if (wifi)
-        label = g_strdup (wifi);
+    if (wifi) {
+        gchar *ssid = active_wifi_ssid ();
+        label = g_strdup (ssid ? ssid : wifi);
+        g_free (ssid);
+    }
     else if (eth)
         label = g_strdup_printf ("Ethernet: %s", eth);
     else
@@ -354,7 +378,8 @@ static void apply_css (void)
             "#dapeos-qs button.flat { background: transparent; border: none; }"
             "#dapeos-qs scrolledwindow, #dapeos-qs viewport, #dapeos-qs list, #dapeos-qs listbox, #dapeos-qs row { background: transparent; color: #eaeaea; }"
             "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
-            "#dapeos-qs button { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 8px; padding: 6px 10px; }";
+            "#dapeos-qs button { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 8px; padding: 6px 10px; }"
+            "#dapeos-qs label#wifi-error { color: #ff6b6b; }";
     } else {
         data =
             "#dapeos-qs { background: transparent; }"
@@ -368,7 +393,8 @@ static void apply_css (void)
             "#dapeos-qs button.flat { background: transparent; border: none; }"
             "#dapeos-qs scrolledwindow, #dapeos-qs viewport, #dapeos-qs list, #dapeos-qs listbox, #dapeos-qs row { background: transparent; color: #1a1a1a; }"
             "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
-            "#dapeos-qs button { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px; padding: 6px 10px; }";
+            "#dapeos-qs button { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px; padding: 6px 10px; }"
+            "#dapeos-qs label#wifi-error { color: #c62828; }";
     }
     gtk_css_provider_load_from_data (css, data, -1, NULL);
     gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
@@ -631,6 +657,7 @@ on_wifi_forget (GtkButton *button, gpointer data)
     if (!item) return;
     g_free (wifi_confirm_ssid);
     wifi_confirm_ssid = g_strdup (item->connection ? item->connection : item->ssid);
+    wifi_confirm_connected = item->connected;
     gtk_label_set_text (GTK_LABEL (wifi_confirm_label), item->ssid);
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi-confirm");
     gtk_window_resize (GTK_WINDOW (window), 440, 300);
@@ -648,6 +675,17 @@ on_wifi_advanced (GtkButton *button, gpointer data)
     else
         run_async ("xfce4-settings-manager");
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+}
+
+static const gchar *
+wifi_error_text (const gchar *out)
+{
+    if (strstr (out, "Secrets were required") || strstr (out, "key-mgmt") ||
+        strstr (out, "password") || strstr (out, "802-11-wireless-security"))
+        return "Wrong password or connection failed.";
+    if (strstr (out, "No network with SSID"))
+        return "Network not found.";
+    return "Could not connect to this Wi-Fi network.";
 }
 
 static gboolean
@@ -670,7 +708,7 @@ connect_wifi (const gchar *ssid, const gchar *password, gboolean was_known)
     }
     if (wifi_error_label) {
         if (!ok) {
-            gtk_label_set_text (GTK_LABEL (wifi_error_label), out);
+            gtk_label_set_text (GTK_LABEL (wifi_error_label), wifi_error_text (out));
             gtk_widget_show (wifi_error_label);
         } else {
             gtk_widget_hide (wifi_error_label);
@@ -1013,8 +1051,18 @@ wifi_confirm_do (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     if (!wifi_confirm_ssid) return;
-    gchar *cmd = g_strdup_printf ("nmcli connection delete id %s 2>&1",
-                                  g_shell_quote (wifi_confirm_ssid));
+    gchar *cmd;
+    if (wifi_confirm_connected) {
+        gchar *dev = wifi_device ();
+        if (dev)
+            cmd = g_strdup_printf ("nmcli device disconnect %s 2>/dev/null; nmcli connection delete id %s 2>&1",
+                                   g_shell_quote (dev), g_shell_quote (wifi_confirm_ssid));
+        else
+            cmd = g_strdup_printf ("nmcli connection delete id %s 2>&1", g_shell_quote (wifi_confirm_ssid));
+        g_free (dev);
+    } else {
+        cmd = g_strdup_printf ("nmcli connection delete id %s 2>&1", g_shell_quote (wifi_confirm_ssid));
+    }
     run_async (cmd);
     g_free (cmd);
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
@@ -1077,7 +1125,11 @@ build_wifi_password_page (void)
     g_signal_connect (show, "toggled", G_CALLBACK (password_visibility_toggled), wifi_password_entry);
     gtk_box_pack_start (GTK_BOX (page), show, FALSE, FALSE, 0);
     wifi_error_label = gtk_label_new ("");
-    gtk_label_set_line_wrap (GTK_LABEL (wifi_error_label), TRUE);
+    gtk_widget_set_name (wifi_error_label, "wifi-error");
+    gtk_label_set_ellipsize (GTK_LABEL (wifi_error_label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_lines (GTK_LABEL (wifi_error_label), 1);
+    gtk_label_set_max_width_chars (GTK_LABEL (wifi_error_label), 42);
+    gtk_widget_set_hexpand (wifi_error_label, FALSE);
     gtk_widget_set_halign (wifi_error_label, GTK_ALIGN_START);
     gtk_box_pack_start (GTK_BOX (page), wifi_error_label, FALSE, FALSE, 0);
     gtk_widget_hide (wifi_error_label);
