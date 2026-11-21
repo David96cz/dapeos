@@ -707,7 +707,7 @@ static void position_window (void)
     GdkMonitor *monitor = gdk_display_get_primary_monitor (display);
     if (!monitor) monitor = gdk_display_get_monitor (display, 0);
     GdkRectangle geo;
-    gdk_monitor_get_workarea (monitor, &geo);
+    gdk_monitor_get_geometry (monitor, &geo);
     gint w = 0, h = 0;
     gtk_window_get_size (GTK_WINDOW (window), &w, &h);
     if (w <= 0) w = 420;
