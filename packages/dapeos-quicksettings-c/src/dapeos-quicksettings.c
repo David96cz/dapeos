@@ -484,6 +484,7 @@ typedef struct {
     gboolean secured;
     gboolean connected;
     gboolean known;
+    gchar *connection;
 } WifiItem;
 
 static void
@@ -492,6 +493,7 @@ wifi_item_free (gpointer data, GClosure *closure)
     (void) closure;
     WifiItem *item = data;
     g_free (item->ssid);
+    g_free (item->connection);
     g_free (item);
 }
 
@@ -591,10 +593,11 @@ wifi_action (GtkWidget *dialog)
     }
     if (item->known) {
         gchar *cmd = g_strdup_printf ("nmcli connection up id %s 2>&1",
-                                      g_shell_quote (item->ssid));
+                                      g_shell_quote (item->connection ? item->connection : item->ssid));
         gchar *out = run_cmd (cmd);
         g_free (cmd);
-        if (g_strrstr (out, "Error") || g_strrstr (out, "Secrets")) {
+        if (g_strrstr (out, "Error") || g_strrstr (out, "Secrets") ||
+            g_strrstr (out, "key-mgmt")) {
             g_free (out);
             show_wifi_password (item->ssid, TRUE);
         } else {
@@ -627,7 +630,7 @@ on_wifi_forget (GtkButton *button, gpointer data)
     WifiItem *item = g_object_get_data (G_OBJECT (page), "wifi-selected");
     if (!item) return;
     g_free (wifi_confirm_ssid);
-    wifi_confirm_ssid = g_strdup (item->ssid);
+    wifi_confirm_ssid = g_strdup (item->connection ? item->connection : item->ssid);
     gtk_label_set_text (GTK_LABEL (wifi_confirm_label), item->ssid);
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi-confirm");
     gtk_window_resize (GTK_WINDOW (window), 440, 300);
@@ -731,17 +734,28 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
         g_free (connections);
     }
 
-    GHashTable *known_set = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
-    gchar *conns = run_cmd ("nmcli -t -f NAME,TYPE connection show 2>/dev/null");
-    gchar **clines = g_strsplit (conns, "\n", -1);
-    for (guint i = 0; clines[i]; i++) {
-        gchar **cp = g_strsplit (clines[i], ":", 2);
-        if (cp[0] && cp[1] && strstr (cp[1], "wireless"))
-            g_hash_table_add (known_set, g_strdup (cp[0]));
-        g_strfreev (cp);
+    GHashTable *known_map = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+    gchar *profiles = run_cmd ("nmcli -t -f NAME,TYPE,802-11-wireless.ssid connection show 2>/dev/null");
+    gchar **plines = g_strsplit (profiles, "\n", -1);
+    for (guint i = 0; plines[i]; i++) {
+        gchar **pp = g_strsplit (plines[i], ":", 3);
+        if (pp[0] && pp[1] && strstr (pp[1], "wireless")) {
+            gchar *ssid = pp[2] && *pp[2] ? g_strdup (pp[2]) : NULL;
+            if (!ssid) {
+                gchar *q = g_shell_quote (pp[0]);
+                gchar *cmd = g_strdup_printf ("nmcli -g 802-11-wireless.ssid connection show %s 2>/dev/null", q);
+                ssid = run_cmd (cmd);
+                g_free (cmd); g_free (q);
+            }
+            if (ssid && *ssid)
+                g_hash_table_insert (known_map, ssid, g_strdup (pp[0]));
+            else
+                g_free (ssid);
+        }
+        g_strfreev (pp);
     }
-    g_strfreev (clines);
-    g_free (conns);
+    g_strfreev (plines);
+    g_free (profiles);
 
     GHashTable *seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
     gchar **lines = g_strsplit (out, "\n", -1);
@@ -755,7 +769,8 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
             item->ssid = g_strdup (parts[0]);
             item->secured = secured;
             item->connected = connected;
-            item->known = g_hash_table_contains (known_set, parts[0]);
+            item->connection = g_strdup (g_hash_table_lookup (known_map, parts[0]));
+            item->known = (item->connection != NULL);
             GtkWidget *row = gtk_list_box_row_new ();
             GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
             GtkWidget *name = gtk_label_new (parts[0]);
@@ -781,7 +796,7 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
     }
     g_hash_table_destroy (seen);
     g_hash_table_destroy (active_set);
-    g_hash_table_destroy (known_set);
+    g_hash_table_destroy (known_map);
     g_free (out);
     gtk_widget_show_all (list);
 
