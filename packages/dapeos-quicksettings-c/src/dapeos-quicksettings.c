@@ -330,26 +330,26 @@ static void apply_css (void)
     const gchar *data;
     if (is_dark ()) {
         data =
-            "window { background: transparent; }"
-            "label, button { color: #eaeaea; }"
-            "button.tile-left { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 10px 0 0 10px; padding: 10px; }"
-            "button.tile-right { background: #3a3a3a; border: 1px solid #4a4a4a; border-left: none; border-radius: 0 10px 10px 0; padding: 0; }"
-            "button.tile-left:hover, button.tile-right:hover { border-color: #2a7fca; }"
-            "scale trough { background: #151515; border-radius: 3px; min-height: 6px; }"
-            "scale highlight { background: #2a7fca; }"
-            "scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
-            "button.flat { background: transparent; border: none; }";
+            "#dapeos-qs { background: transparent; }"
+            "#dapeos-qs label, #dapeos-qs button { color: #eaeaea; }"
+            "#dapeos-qs button.tile-left { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 10px 0 0 10px; padding: 10px; }"
+            "#dapeos-qs button.tile-right { background: #3a3a3a; border: 1px solid #4a4a4a; border-left: none; border-radius: 0 10px 10px 0; padding: 0; }"
+            "#dapeos-qs button.tile-left:hover, button.tile-right:hover { border-color: #2a7fca; }"
+            "#dapeos-qs scale trough { background: #151515; border-radius: 3px; min-height: 6px; }"
+            "#dapeos-qs scale highlight { background: #2a7fca; }"
+            "#dapeos-qs scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
+            "#dapeos-qs button.flat { background: transparent; border: none; }";
     } else {
         data =
-            "window { background: transparent; }"
-            "label, button { color: #1a1a1a; }"
-            "button.tile-left { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 10px 0 0 10px; padding: 10px; }"
-            "button.tile-right { background: #ffffff; border: 1px solid #dcdcdc; border-left: none; border-radius: 0 10px 10px 0; padding: 0; }"
-            "button.tile-left:hover, button.tile-right:hover { border-color: #2a7fca; }"
-            "scale trough { background: #d0d0d0; border-radius: 3px; min-height: 6px; }"
-            "scale highlight { background: #2a7fca; }"
-            "scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
-            "button.flat { background: transparent; border: none; }";
+            "#dapeos-qs { background: transparent; }"
+            "#dapeos-qs label, #dapeos-qs button { color: #1a1a1a; }"
+            "#dapeos-qs button.tile-left { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 10px 0 0 10px; padding: 10px; }"
+            "#dapeos-qs button.tile-right { background: #ffffff; border: 1px solid #dcdcdc; border-left: none; border-radius: 0 10px 10px 0; padding: 0; }"
+            "#dapeos-qs button.tile-left:hover, button.tile-right:hover { border-color: #2a7fca; }"
+            "#dapeos-qs scale trough { background: #d0d0d0; border-radius: 3px; min-height: 6px; }"
+            "#dapeos-qs scale highlight { background: #2a7fca; }"
+            "#dapeos-qs scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
+            "#dapeos-qs button.flat { background: transparent; border: none; }";
     }
     gtk_css_provider_load_from_data (css, data, -1, NULL);
     gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
@@ -982,6 +982,7 @@ static void build_ui (void)
 {
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
+    gtk_widget_set_name (window, "dapeos-qs");
     gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
@@ -1139,6 +1140,7 @@ activate (GtkApplication *app, gpointer data)
 
 int main (int argc, char **argv)
 {
+    unsetenv ("GTK_THEME");
     application = gtk_application_new ("cz.dapeos.quicksettings", G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect (application, "activate", G_CALLBACK (activate), NULL);
     int status = g_application_run (G_APPLICATION (application), argc, argv);
