@@ -1,0 +1,10 @@
+#!/bin/sh
+# Chrome must use the system GTK theme, not the panel's GTK_THEME.
+unset GTK_THEME
+if [ -x /usr/bin/google-chrome-stable ]; then
+    exec /usr/bin/google-chrome-stable "$@"
+elif [ -x /opt/google/chrome/google-chrome ]; then
+    exec /opt/google/chrome/google-chrome "$@"
+else
+    exec /usr/bin/google-chrome "$@"
+fi

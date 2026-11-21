@@ -69,6 +69,12 @@ dapeos_session_setup() {
         chown "$REAL_USER:$REAL_USER" "$USER_HOME/.config/autostart/$a.desktop" 2>/dev/null || true
     done
 
+    if [ -f "$CONTENTS_DIR/xfce/config/xorg/40-libinput-touchpad.conf" ]; then
+        install -d -m 755 /etc/X11/xorg.conf.d
+        install -m 644 "$CONTENTS_DIR/xfce/config/xorg/40-libinput-touchpad.conf" \
+            /etc/X11/xorg.conf.d/40-libinput-touchpad.conf
+    fi
+
     if [ -f "$CONTENTS_DIR/xfce/config/polkit/60-rustdesk.rules" ]; then
         install -d -m 755 /etc/polkit-1/rules.d
         install -m 644 "$CONTENTS_DIR/xfce/config/polkit/60-rustdesk.rules" /etc/polkit-1/rules.d/60-rustdesk.rules
