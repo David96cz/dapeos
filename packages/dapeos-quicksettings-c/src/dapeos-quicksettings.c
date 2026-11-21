@@ -78,11 +78,12 @@ static gboolean update_network_label (void)
         g_free (out);
         return FALSE;
     }
+    gboolean connected = (wifi != NULL);
     gtk_label_set_text (GTK_LABEL (net_label), label);
     g_free (label); g_free (wifi); g_free (eth);
     g_strfreev (lines);
     g_free (out);
-    return (wifi != NULL);
+    return connected;
 }
 
 static gboolean
