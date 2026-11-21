@@ -24,6 +24,7 @@ static gboolean window_dark = TRUE;
 static gboolean net_connecting = FALSE;
 static guint net_anim_id = 0;
 static gint net_anim_phase = 0;
+static gint net_anim_ticks = 0;
 
 static gchar *night_state_path (const gchar *name)
 {
@@ -91,6 +92,13 @@ net_anim_tick (gpointer data)
 {
     (void) data;
     if (!net_connecting) { net_anim_id = 0; return FALSE; }
+    net_anim_ticks++;
+    if (net_anim_ticks > 22) {
+        net_connecting = FALSE;
+        net_anim_id = 0;
+        gtk_label_set_text (GTK_LABEL (net_label), "No known Wi-Fi");
+        return FALSE;
+    }
     if (update_network_label ()) {
         net_connecting = FALSE;
         net_anim_id = 0;
@@ -109,6 +117,7 @@ start_net_animation (void)
 {
     net_connecting = TRUE;
     net_anim_phase = 0;
+    net_anim_ticks = 0;
     if (net_anim_id == 0)
         net_anim_id = g_timeout_add (450, net_anim_tick, NULL);
 }
