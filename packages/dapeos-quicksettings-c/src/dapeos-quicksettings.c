@@ -218,9 +218,18 @@ static gint panel_height (void)
     return h > 0 ? h : 36;
 }
 
+static void
+apply_panel_icon_theme (void)
+{
+    const gchar *name = is_dark () ? "Papirus-Light" : "Papirus-Dark";
+    GtkIconTheme *theme = gtk_icon_theme_get_default ();
+    gtk_icon_theme_set_custom_theme (theme, name);
+}
+
 static void apply_css (void)
 {
     window_dark = is_dark ();
+    apply_panel_icon_theme ();
     GtkCssProvider *css = gtk_css_provider_new ();
     const gchar *data;
     if (is_dark ()) {
@@ -467,23 +476,18 @@ static void build_ui (void)
     GtkWidget *net = make_tile ("Network", "Ethernet", &net_label, &net_t, &net_o);
     GtkWidget *bt = make_tile ("Bluetooth", "Off", &bt_label, &bt_t, &bt_o);
     GtkWidget *night = make_tile ("Night light", "Off", &night_label, &night_t, &night_o);
-    GtkWidget *sound = make_tile ("Sound", "Mixer", NULL, &sound_t, &sound_o);
     g_signal_connect (net_t, "clicked", G_CALLBACK (on_net_open), NULL);
     g_signal_connect (net_o, "clicked", G_CALLBACK (on_net_open), NULL);
     g_signal_connect (bt_t, "clicked", G_CALLBACK (on_bt_clicked), NULL);
     g_signal_connect (bt_o, "clicked", G_CALLBACK (on_bt_open), NULL);
     g_signal_connect (night_t, "clicked", G_CALLBACK (on_night_clicked), NULL);
     g_signal_connect (night_o, "clicked", G_CALLBACK (on_night_open), NULL);
-    g_signal_connect (sound_t, "clicked", G_CALLBACK (on_sound_open), NULL);
-    g_signal_connect (sound_o, "clicked", G_CALLBACK (on_sound_open), NULL);
     gtk_widget_set_hexpand (net, TRUE);
     gtk_widget_set_hexpand (bt, TRUE);
     gtk_widget_set_hexpand (night, TRUE);
-    gtk_widget_set_hexpand (sound, TRUE);
     gtk_grid_attach (GTK_GRID (grid), net, 0, 0, 1, 1);
     gtk_grid_attach (GTK_GRID (grid), bt, 1, 0, 1, 1);
-    gtk_grid_attach (GTK_GRID (grid), night, 0, 1, 1, 1);
-    gtk_grid_attach (GTK_GRID (grid), sound, 1, 1, 1, 1);
+    gtk_grid_attach (GTK_GRID (grid), night, 2, 0, 1, 1);
     gtk_box_pack_start (GTK_BOX (outer), grid, FALSE, FALSE, 0);
 
     GtkWidget *volrow = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
@@ -507,6 +511,15 @@ static void build_ui (void)
     battery_label = gtk_label_new ("Battery");
     gtk_widget_set_hexpand (battery_label, TRUE);
     gtk_widget_set_halign (battery_label, GTK_ALIGN_START);
+    GtkWidget *soundbtn = gtk_button_new ();
+    GtkWidget *mbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_box_pack_start (GTK_BOX (mbox),
+        gtk_image_new_from_icon_name ("audio-volume-high", GTK_ICON_SIZE_BUTTON), FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (mbox), gtk_label_new ("Sound"), FALSE, FALSE, 0);
+    gtk_container_add (GTK_CONTAINER (soundbtn), mbox);
+    gtk_style_context_add_class (gtk_widget_get_style_context (soundbtn), "flat");
+    g_signal_connect (soundbtn, "clicked", G_CALLBACK (on_sound_open), NULL);
+
     GtkWidget *settings = gtk_button_new ();
     GtkWidget *sbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_box_pack_start (GTK_BOX (sbox),
@@ -517,6 +530,7 @@ static void build_ui (void)
     g_signal_connect (settings, "clicked", G_CALLBACK (on_settings_clicked), NULL);
     gtk_box_pack_start (GTK_BOX (footer), battery_label, TRUE, TRUE, 0);
     gtk_box_pack_end (GTK_BOX (footer), settings, FALSE, FALSE, 0);
+    gtk_box_pack_end (GTK_BOX (footer), soundbtn, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (outer), footer, FALSE, FALSE, 0);
 
     apply_css ();
