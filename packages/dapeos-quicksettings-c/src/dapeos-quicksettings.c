@@ -1022,7 +1022,7 @@ build_wifi_password_page (void)
     GtkWidget *show = gtk_check_button_new_with_label ("Show password");
     g_signal_connect (show, "toggled", G_CALLBACK (password_visibility_toggled), wifi_password_entry);
     gtk_box_pack_start (GTK_BOX (page), show, FALSE, FALSE, 0);
-    g_signal_connect (wifi_password_entry, "activate", G_CALLBACK (password_activate), NULL);
+    g_signal_connect (wifi_password_entry, "activate", G_CALLBACK (wifi_password_entry_activate), NULL);
 
     GtkWidget *actions = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
     GtkWidget *connect = gtk_button_new_with_label ("Connect");
