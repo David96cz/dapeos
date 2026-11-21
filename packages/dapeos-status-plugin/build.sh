@@ -10,8 +10,8 @@ OUT="$HERE"
 BUILD="$(mktemp -d)"
 
 apt-get install -y build-essential pkg-config \
-    libgtk-3-dev libxfce4panel-2.0-dev libxfce4util-dev \
-    librsvg2-dev libxfconf-0-dev
+    libgtk-3-dev libxfce4panel-2.0-dev libxfce4ui-2-dev \
+    libxfce4util-dev librsvg2-dev libxfconf-0-dev
 
 gcc -O2 -fPIC -shared \
     $(pkg-config --cflags gtk+-3.0 libxfce4panel-2.0 libxfce4util-1.0 librsvg-2.0) \
