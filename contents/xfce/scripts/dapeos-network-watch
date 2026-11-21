@@ -1,0 +1,20 @@
+#!/bin/sh
+# Event bridge: NetworkManager state -> ~/.cache/dapeos/network
+DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dapeos"
+FILE="$DIR/network"
+TMP="$FILE.tmp"
+mkdir -p "$DIR" 2>/dev/null || exit 0
+command -v nmcli >/dev/null 2>&1 || exit 0
+
+write_state() {
+    nmcli -t -f TYPE,STATE,CONNECTION device status 2>/dev/null > "$TMP" || return
+    printf '%s\n' "$(nmcli networking connectivity 2>/dev/null)" >> "$TMP"
+    mv -f "$TMP" "$FILE" 2>/dev/null || true
+}
+
+write_state
+nmcli monitor 2>/dev/null | while IFS= read -r line; do
+    case "$line" in
+        *"device"*|*"connection"*|*"connectivity"*) write_state ;;
+    esac
+done

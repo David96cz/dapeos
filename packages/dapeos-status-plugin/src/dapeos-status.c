@@ -143,7 +143,7 @@ build_svg (DapeosStatus *st)
     } else {
         gdouble op = st->net_type == 2 ? 1.0 : 0.35;
         g_string_append_printf (s,
-            "<g transform=\"translate(%d,0.5)\" opacity=\"%.2f\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.7\" stroke-linecap=\"round\">",
+            "<g transform=\"translate(%d,0)\" opacity=\"%.2f\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.7\" stroke-linecap=\"round\">",
             x, op, color);
         g_string_append_printf (s, "<circle cx=\"11\" cy=\"16.5\" r=\"1.3\" fill=\"%s\" stroke=\"none\"/>", color);
         g_string_append (s, "<path d=\"M6.8 13.4a6.3 6.3 0 0 1 8.4 0\"/>");
@@ -317,6 +317,44 @@ on_size_changed (XfcePanelPlugin *plugin, gint size, gpointer data)
 }
 
 static void
+network_file_changed (GFileMonitor *monitor, GFile *file, GFile *other,
+                      GFileMonitorEvent event, gpointer data)
+{
+    DapeosStatus *st = data;
+    if (event != G_FILE_MONITOR_EVENT_CHANGED &&
+        event != G_FILE_MONITOR_EVENT_CREATED &&
+        event != G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT)
+        return;
+
+    gchar *path = g_build_filename (g_get_user_cache_dir (), "dapeos", "network", NULL);
+    gchar *text = NULL;
+    if (g_file_get_contents (path, &text, NULL, NULL)) {
+        g_free (st->net_name);
+        st->net_name = g_strdup ("");
+        st->net_type = 0;
+        gchar **lines = g_strsplit (text, "\n", -1);
+        for (guint i = 0; lines[i]; i++) {
+            gchar **p = g_strsplit (lines[i], ":", 3);
+            if (p[1] && g_strcmp0 (p[1], "connected") == 0) {
+                if (g_strcmp0 (p[0], "wifi") == 0) st->net_type = 2;
+                else if (g_strcmp0 (p[0], "ethernet") == 0) st->net_type = 1;
+                if (st->net_type) {
+                    g_free (st->net_name);
+                    st->net_name = g_strdup (p[2] ? p[2] : "");
+                    g_strfreev (p);
+                    break;
+                }
+            }
+            g_strfreev (p);
+        }
+        g_strfreev (lines);
+        update_image (st);
+    }
+    g_free (text);
+    g_free (path);
+}
+
+static void
 volume_file_changed (GFileMonitor *monitor, GFile *file, GFile *other,
                      GFileMonitorEvent event, gpointer data)
 {
@@ -383,6 +421,9 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
 
     GtkWidget *box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_show (box);
+    gtk_widget_set_valign (st->area, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign (eventbox, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign (box, GTK_ALIGN_CENTER);
     gtk_container_add (GTK_CONTAINER (eventbox), box);
     gtk_box_pack_start (GTK_BOX (box), st->area, FALSE, FALSE, 0);
     gtk_widget_set_size_request (eventbox, 74, 22);
@@ -392,6 +433,20 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
 
     install_volume_monitor (plugin, st);
+
+    gchar *ndir = g_build_filename (g_get_user_cache_dir (), "dapeos", NULL);
+    gchar *npath = g_build_filename (ndir, "network", NULL);
+    g_mkdir_with_parents (ndir, 0700);
+    if (!g_file_test (npath, G_FILE_TEST_EXISTS))
+        g_file_set_contents (npath, "", 0, NULL);
+    GFile *nfile = g_file_new_for_path (npath);
+    GFileMonitor *nmon = g_file_monitor_file (nfile, G_FILE_MONITOR_NONE, NULL, NULL);
+    if (nmon) {
+        g_signal_connect (nmon, "changed", G_CALLBACK (network_file_changed), st);
+        g_object_set_data_full (G_OBJECT (plugin), "dapeos-network-monitor", nmon, g_object_unref);
+    }
+    g_object_unref (nfile);
+    g_free (npath); g_free (ndir);
 
     xfce_panel_plugin_set_small (plugin, TRUE);
     gtk_widget_show_all (GTK_WIDGET (plugin));
