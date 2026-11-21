@@ -342,7 +342,10 @@ static void apply_css (void)
             "#dapeos-qs scale trough { background: #151515; border-radius: 3px; min-height: 6px; }"
             "#dapeos-qs scale highlight { background: #2a7fca; }"
             "#dapeos-qs scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
-            "#dapeos-qs button.flat { background: transparent; border: none; }";
+            "#dapeos-qs button.flat { background: transparent; border: none; }"
+            "#dapeos-qs scrolledwindow, #dapeos-qs viewport, #dapeos-qs list, #dapeos-qs listbox, #dapeos-qs row { background: transparent; color: #eaeaea; }"
+            "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
+            "#dapeos-qs button { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 8px; padding: 6px 10px; }";
     } else {
         data =
             "#dapeos-qs { background: transparent; }"
@@ -353,7 +356,10 @@ static void apply_css (void)
             "#dapeos-qs scale trough { background: #d0d0d0; border-radius: 3px; min-height: 6px; }"
             "#dapeos-qs scale highlight { background: #2a7fca; }"
             "#dapeos-qs scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
-            "#dapeos-qs button.flat { background: transparent; border: none; }";
+            "#dapeos-qs button.flat { background: transparent; border: none; }"
+            "#dapeos-qs scrolledwindow, #dapeos-qs viewport, #dapeos-qs list, #dapeos-qs listbox, #dapeos-qs row { background: transparent; color: #1a1a1a; }"
+            "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
+            "#dapeos-qs button { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px; padding: 6px 10px; }";
     }
     gtk_css_provider_load_from_data (css, data, -1, NULL);
     gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
