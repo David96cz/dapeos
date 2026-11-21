@@ -530,6 +530,19 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
     g_strfreev (alines);
     g_free (active);
 
+    if (g_hash_table_size (active_set) == 0) {
+        gchar *connections = run_cmd ("nmcli -t -f NAME,TYPE connection show --active 2>/dev/null");
+        gchar **clines = g_strsplit (connections, "\n", -1);
+        for (guint i = 0; clines[i]; i++) {
+            gchar **cp = g_strsplit (clines[i], ":", 2);
+            if (cp[0] && cp[1] && strstr (cp[1], "wireless"))
+                g_hash_table_add (active_set, g_strdup (cp[0]));
+            g_strfreev (cp);
+        }
+        g_strfreev (clines);
+        g_free (connections);
+    }
+
     GHashTable *seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
     gchar **lines = g_strsplit (out, "\n", -1);
     for (guint i = 0; lines[i]; i++) {
