@@ -300,7 +300,7 @@ static gboolean
 on_click (GtkWidget *widget, GdkEventButton *event, gpointer data)
 {
     if (event->button == 1) {
-        g_spawn_command_line_async ("dapeos-quicksettings-toggle", NULL);
+        g_spawn_command_line_async ("dapeos-quicksettings-c", NULL);
         return TRUE;
     }
     return FALSE;

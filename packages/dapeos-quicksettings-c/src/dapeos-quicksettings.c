@@ -221,7 +221,7 @@ static gint panel_height (void)
 static void
 apply_panel_icon_theme (void)
 {
-    const gchar *name = is_dark () ? "Papirus-Light" : "Papirus-Dark";
+    const gchar *name = is_dark () ? "Papirus-Dark" : "Papirus-Light";
     GtkIconTheme *theme = gtk_icon_theme_get_default ();
     gtk_icon_theme_set_custom_theme (theme, name);
 }
@@ -506,11 +506,47 @@ on_bt_open (GtkButton *button, gpointer data)
 }
 
 static void
+night_scale_changed (GtkRange *range, gpointer data)
+{
+    (void) data;
+    gint temp = (gint) gtk_range_get_value (range);
+    gchar *dir = g_build_filename (g_get_user_cache_dir (), "dapeos", NULL);
+    gchar *state = night_state_path ("nightlight");
+    gchar *onfile = night_state_path ("nightlight_on");
+    g_mkdir_with_parents (dir, 0700);
+    gchar *val = g_strdup_printf ("%d", temp);
+    g_file_set_contents (state, val, -1, NULL);
+    g_file_set_contents (onfile, "", 0, NULL);
+    g_free (val); g_free (state); g_free (onfile); g_free (dir);
+    apply_gamma (temp);
+    night_on = TRUE;
+    if (night_label) gtk_label_set_text (GTK_LABEL (night_label), "On");
+}
+
+static void
 on_night_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
-    run_async ("xfce4-settings-manager");
     gtk_widget_hide (window);
+    GtkWidget *dialog = gtk_dialog_new_with_buttons ("Night light", NULL,
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        "_Close", GTK_RESPONSE_CLOSE, NULL);
+    GtkWidget *box = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+    GtkWidget *label = gtk_label_new ("Color temperature");
+    GtkWidget *scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1000, 6500, 100);
+    gint temp = 4000;
+    gchar *path = night_state_path ("nightlight");
+    gchar *text = NULL;
+    if (g_file_get_contents (path, &text, NULL, NULL)) { temp = atoi (text); g_free (text); }
+    gtk_range_set_value (GTK_RANGE (scale), temp);
+    gtk_scale_set_draw_value (GTK_SCALE (scale), TRUE);
+    gtk_box_pack_start (GTK_BOX (box), label, FALSE, FALSE, 6);
+    gtk_box_pack_start (GTK_BOX (box), scale, FALSE, FALSE, 6);
+    g_signal_connect (scale, "value-changed", G_CALLBACK (night_scale_changed), NULL);
+    g_free (path);
+    gtk_widget_show_all (dialog);
+    gtk_dialog_run (GTK_DIALOG (dialog));
+    gtk_widget_destroy (dialog);
 }
 
 static void
@@ -686,24 +722,35 @@ static gboolean refresh_bg (gpointer data)
     return FALSE;
 }
 
+static GtkApplication *application;
+
+static void
+activate (GtkApplication *app, gpointer data)
+{
+    (void) data;
+    if (window == NULL) {
+        build_ui ();
+        gtk_application_add_window (app, GTK_WINDOW (window));
+        gtk_widget_show_all (window);
+        g_timeout_add (100, update_volume_cb, NULL);
+        g_timeout_add (400, update_tiles_cb, NULL);
+        g_timeout_add (1000, refresh_bg, NULL);
+        position_window ();
+        gtk_window_present (GTK_WINDOW (window));
+    } else if (gtk_widget_get_visible (window)) {
+        gtk_widget_hide (window);
+    } else {
+        position_window ();
+        gtk_widget_show_all (window);
+        gtk_window_present (GTK_WINDOW (window));
+    }
+}
+
 int main (int argc, char **argv)
 {
-    gtk_init (&argc, &argv);
-    build_ui ();
-    g_printerr ("DAPEOS-QS: built\n");
-    gtk_widget_show_all (window);
-    g_printerr ("DAPEOS-QS: shown\n");
-    g_timeout_add (100, update_volume_cb, NULL);
-    g_timeout_add (400, update_tiles_cb, NULL);
-    position_window ();
-    gtk_window_present (GTK_WINDOW (window));
-    gint dw = 0, dh = 0;
-    gtk_window_get_size (GTK_WINDOW (window), &dw, &dh);
-    gint px = 0, py = 0;
-    gtk_window_get_position (GTK_WINDOW (window), &px, &py);
-    g_printerr ("DAPEOS-QS: visible=%d mapped=%d size=%dx%d pos=%d,%d\n",
-             gtk_widget_get_visible (window), gtk_widget_get_mapped (window), dw, dh, px, py);
-    g_timeout_add (1000, refresh_bg, NULL);
-    gtk_main ();
-    return 0;
+    application = gtk_application_new ("cz.dapeos.quicksettings", G_APPLICATION_DEFAULT_FLAGS);
+    g_signal_connect (application, "activate", G_CALLBACK (activate), NULL);
+    int status = g_application_run (G_APPLICATION (application), argc, argv);
+    g_object_unref (application);
+    return status;
 }
