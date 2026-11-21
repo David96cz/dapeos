@@ -41,6 +41,33 @@ static void update_tiles (void);
 static gboolean update_volume_cb (gpointer data) { (void) data; update_volume_ui (); return FALSE; }
 static gboolean update_tiles_cb (gpointer data) { (void) data; update_tiles (); return FALSE; }
 
+static void update_network_label (void)
+{
+    if (!net_label) return;
+    gchar *out = run_cmd ("nmcli -t -f TYPE,STATE,CONNECTION device status 2>/dev/null");
+    gchar **lines = g_strsplit (out, "\n", -1);
+    const gchar *shown = "Disconnected";
+    static gchar buf[128];
+    for (guint i = 0; lines[i]; i++) {
+        gchar **parts = g_strsplit (lines[i], ":", 3);
+        if (parts[1] && g_strcmp0 (parts[1], "connected") == 0) {
+            if (g_strcmp0 (parts[0], "wifi") == 0)
+                g_snprintf (buf, sizeof buf, "Wi-Fi: %s", parts[2] ? parts[2] : "");
+            else if (g_strcmp0 (parts[0], "ethernet") == 0)
+                g_snprintf (buf, sizeof buf, "Ethernet: %s", parts[2] ? parts[2] : "");
+            else
+                g_snprintf (buf, sizeof buf, "%s", parts[2] ? parts[2] : "");
+            shown = buf;
+            g_strfreev (parts);
+            break;
+        }
+        g_strfreev (parts);
+    }
+    gtk_label_set_text (GTK_LABEL (net_label), shown);
+    g_strfreev (lines);
+    g_free (out);
+}
+
 static void update_tiles (void)
 {
     gboolean bt = bt_is_on ();
@@ -49,6 +76,7 @@ static void update_tiles (void)
     night_on = g_file_test (nightfile, G_FILE_TEST_EXISTS);
     g_free (nightfile);
     gtk_label_set_text (GTK_LABEL (night_label), night_on ? "On" : "Off");
+    update_network_label ();
 }
 
 static void on_bt_clicked (GtkButton *button, gpointer data)
@@ -374,6 +402,7 @@ make_tile (const gchar *title, const gchar *sub, GtkWidget **sub_label,
 typedef struct {
     gchar *ssid;
     gboolean secured;
+    gboolean connected;
 } WifiItem;
 
 static void
@@ -405,6 +434,12 @@ wifi_selected (GtkButton *button, gpointer data)
 {
     (void) button;
     WifiItem *item = data;
+    if (item->connected) {
+        gchar *cmd = g_strdup_printf ("nmcli connection down id %s 2>&1", g_shell_quote (item->ssid));
+        run_async (cmd);
+        g_free (cmd);
+        return;
+    }
     if (!item->secured) {
         connect_wifi (item->ssid, NULL);
         return;
@@ -450,24 +485,39 @@ connect_wifi (const gchar *ssid, const gchar *password)
     g_free (qssid);
 }
 
-static void
-on_net_open (GtkButton *button, gpointer data)
+static gboolean
+wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
 {
-    (void) button; (void) data;
-    gtk_widget_hide (window);
+    GtkWidget *dialog = data;
+    GtkWidget *list = g_object_get_data (G_OBJECT (dialog), "wifi-list");
+    gchar *out = NULL;
+    GError *error = NULL;
+    GSubprocess *proc = G_SUBPROCESS (source);
+    gboolean ok = g_subprocess_communicate_utf8_finish (proc, res, &out, NULL, &error);
 
-    gchar *out = run_cmd ("nmcli -t -f SSID,SIGNAL,SECURITY device wifi list 2>/dev/null");
-    GtkWidget *dialog = gtk_dialog_new_with_buttons ("Wi-Fi networks", NULL,
-        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-        "_Advanced…", GTK_RESPONSE_APPLY,
-        "_Close", GTK_RESPONSE_CLOSE, NULL);
-    gtk_window_set_default_size (GTK_WINDOW (dialog), 380, 460);
-    GtkWidget *box = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
-    GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
-    gtk_widget_set_vexpand (scroll, TRUE);
-    GtkWidget *list = gtk_list_box_new ();
-    gtk_container_add (GTK_CONTAINER (scroll), list);
-    gtk_box_pack_start (GTK_BOX (box), scroll, TRUE, TRUE, 0);
+    GList *children = gtk_container_get_children (GTK_CONTAINER (list));
+    g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
+
+    if (!ok || out == NULL) {
+        GtkWidget *label = gtk_label_new ("Could not read Wi-Fi networks");
+        gtk_list_box_insert (GTK_LIST_BOX (list), label, -1);
+        if (error) g_error_free (error);
+        g_free (out);
+        g_object_unref (dialog);
+        return FALSE;
+    }
+
+    gchar *active = run_cmd ("nmcli -t -f ACTIVE,SSID device wifi list 2>/dev/null");
+    GHashTable *active_set = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+    gchar **alines = g_strsplit (active, "\n", -1);
+    for (guint i = 0; alines[i]; i++) {
+        gchar **ap = g_strsplit (alines[i], ":", 2);
+        if (ap[0] && g_strcmp0 (ap[0], "yes") == 0 && ap[1])
+            g_hash_table_add (active_set, g_strdup (ap[1]));
+        g_strfreev (ap);
+    }
+    g_strfreev (alines);
+    g_free (active);
 
     GHashTable *seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
     gchar **lines = g_strsplit (out, "\n", -1);
@@ -476,12 +526,14 @@ on_net_open (GtkButton *button, gpointer data)
         if (parts[0] && *parts[0] && parts[2] && !g_hash_table_contains (seen, parts[0])) {
             g_hash_table_add (seen, g_strdup (parts[0]));
             gboolean secured = g_strcmp0 (parts[2], "--") != 0 && *parts[2] != 0;
+            gboolean connected = g_hash_table_contains (active_set, parts[0]);
             WifiItem *item = g_new0 (WifiItem, 1);
             item->ssid = g_strdup (parts[0]);
             item->secured = secured;
+            item->connected = connected;
             gint signal = parts[1] ? atoi (parts[1]) : 0;
             gchar *label = g_strdup_printf ("%s   %s  %d%%", parts[0],
-                                            secured ? "🔒" : "  ", signal);
+                connected ? "✓ Connected" : (secured ? "🔒" : "  "), signal);
             GtkWidget *rowbtn = gtk_button_new_with_label (label);
             g_free (label);
             gtk_widget_set_halign (rowbtn, GTK_ALIGN_FILL);
@@ -497,15 +549,48 @@ on_net_open (GtkButton *button, gpointer data)
         gtk_list_box_insert (GTK_LIST_BOX (list), empty, -1);
     }
     g_hash_table_destroy (seen);
+    g_hash_table_destroy (active_set);
     g_free (out);
+    g_object_unref (dialog);
+    return FALSE;
+}
+
+static void
+on_net_open (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    gtk_widget_hide (window);
+
+    GtkWidget *dialog = gtk_dialog_new_with_buttons ("Wi-Fi networks", NULL,
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        "_Advanced…", GTK_RESPONSE_APPLY,
+        "_Close", GTK_RESPONSE_CLOSE, NULL);
+    gtk_window_set_default_size (GTK_WINDOW (dialog), 380, 460);
+    GtkWidget *box = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+    GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+    gtk_widget_set_vexpand (scroll, TRUE);
+    GtkWidget *list = gtk_list_box_new ();
+    gtk_container_add (GTK_CONTAINER (scroll), list);
+    gtk_box_pack_start (GTK_BOX (box), scroll, TRUE, TRUE, 0);
+    GtkWidget *scanning = gtk_label_new ("Scanning for networks…");
+    gtk_list_box_insert (GTK_LIST_BOX (list), scanning, -1);
+    g_object_set_data (G_OBJECT (dialog), "wifi-list", list);
     gtk_widget_show_all (dialog);
-    gint response = gtk_dialog_run (GTK_DIALOG (dialog));
-    gtk_widget_destroy (dialog);
-    if (response == GTK_RESPONSE_APPLY) {
-        if (g_find_program_in_path ("nm-connection-editor"))
-            run_async ("nm-connection-editor");
-        else
-            run_async ("xfce4-settings-manager");
+
+    g_signal_connect_swapped (dialog, "response", G_CALLBACK (gtk_widget_destroy), dialog);
+
+    const gchar *argv[] = { "nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY",
+                            "device", "wifi", "list", NULL };
+    GError *error = NULL;
+    GSubprocess *proc = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE, &error);
+    if (proc) {
+        g_object_ref (dialog);
+        g_subprocess_communicate_utf8_async (proc, NULL, NULL, wifi_scan_done, dialog);
+        g_object_unref (proc);
+    } else {
+        if (error) g_error_free (error);
+        GtkWidget *label = gtk_label_new ("NetworkManager is not available");
+        gtk_list_box_insert (GTK_LIST_BOX (list), label, -1);
     }
 }
 
