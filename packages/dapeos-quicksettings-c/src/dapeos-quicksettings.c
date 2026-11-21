@@ -492,14 +492,14 @@ connect_wifi (const gchar *ssid, const gchar *password)
     g_free (qssid);
 }
 
-static gboolean
+static void
 wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
 {
     GtkWidget *dialog = data;
     GtkWidget *list = g_object_get_data (G_OBJECT (dialog), "wifi-list");
     if (!list || !GTK_IS_LIST_BOX (list)) {
         g_object_unref (dialog);
-        return FALSE;
+        return;
     }
     gchar *out = NULL;
     GError *error = NULL;
@@ -515,7 +515,7 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
         if (error) g_error_free (error);
         g_free (out);
         g_object_unref (dialog);
-        return FALSE;
+        return;
     }
 
     gchar *active = run_cmd ("nmcli -t -f ACTIVE,SSID device wifi list 2>/dev/null");
@@ -576,7 +576,7 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
     g_hash_table_destroy (active_set);
     g_free (out);
     g_object_unref (dialog);
-    return FALSE;
+    return;
 }
 
 static void
