@@ -21,6 +21,9 @@ static guint vol_timeout = 0;
 static guint bg_timeout = 0;
 static gboolean night_on = FALSE;
 static gboolean window_dark = TRUE;
+static gboolean net_connecting = FALSE;
+static guint net_anim_id = 0;
+static gint net_anim_phase = 0;
 
 static gchar *night_state_path (const gchar *name)
 {
@@ -46,9 +49,9 @@ static void update_tiles (void);
 static gboolean update_volume_cb (gpointer data) { (void) data; update_volume_ui (); return FALSE; }
 static gboolean update_tiles_cb (gpointer data) { (void) data; update_tiles (); return FALSE; }
 
-static void update_network_label (void)
+static gboolean update_network_label (void)
 {
-    if (!net_label) return;
+    if (!net_label) return FALSE;
     gchar *out = run_cmd ("nmcli -t -f TYPE,STATE,CONNECTION device status 2>/dev/null");
     gchar **lines = g_strsplit (out, "\n", -1);
     gchar *wifi = NULL, *eth = NULL;
@@ -69,10 +72,51 @@ static void update_network_label (void)
         label = g_strdup_printf ("Ethernet: %s", eth);
     else
         label = g_strdup ("Disconnected");
+    if (net_connecting && !wifi && !eth) {
+        g_free (label); g_free (wifi); g_free (eth);
+        g_strfreev (lines);
+        g_free (out);
+        return FALSE;
+    }
     gtk_label_set_text (GTK_LABEL (net_label), label);
     g_free (label); g_free (wifi); g_free (eth);
     g_strfreev (lines);
     g_free (out);
+    return (wifi != NULL);
+}
+
+static gboolean
+net_anim_tick (gpointer data)
+{
+    (void) data;
+    if (!net_connecting) { net_anim_id = 0; return FALSE; }
+    if (update_network_label ()) {
+        net_connecting = FALSE;
+        net_anim_id = 0;
+        return FALSE;
+    }
+    static const gchar *dots[] = { ".", "..", "...", "....", "...", ".." };
+    gchar *text = g_strdup_printf ("Connecting%s", dots[net_anim_phase % 6]);
+    gtk_label_set_text (GTK_LABEL (net_label), text);
+    g_free (text);
+    net_anim_phase++;
+    return TRUE;
+}
+
+static void
+start_net_animation (void)
+{
+    net_connecting = TRUE;
+    net_anim_phase = 0;
+    if (net_anim_id == 0)
+        net_anim_id = g_timeout_add (450, net_anim_tick, NULL);
+}
+
+static void
+stop_net_animation (void)
+{
+    net_connecting = FALSE;
+    if (net_anim_id) { g_source_remove (net_anim_id); net_anim_id = 0; }
 }
 
 static void update_tiles (void)
@@ -490,6 +534,7 @@ connect_wifi (const gchar *ssid, const gchar *password)
     g_free (out);
     g_free (cmd);
     g_free (qssid);
+    start_net_animation ();
 }
 
 static void
@@ -594,7 +639,14 @@ static void
 on_net_toggle (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
-    run_async (wifi_radio_on () ? "nmcli radio wifi off" : "nmcli radio wifi on");
+    if (wifi_radio_on ()) {
+        stop_net_animation ();
+        run_async ("nmcli radio wifi off");
+        gtk_label_set_text (GTK_LABEL (net_label), "Wi-Fi off");
+    } else {
+        start_net_animation ();
+        run_async ("nmcli radio wifi on");
+    }
     g_timeout_add (1000, update_tiles_cb, NULL);
 }
 
