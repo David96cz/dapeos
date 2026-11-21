@@ -490,6 +490,10 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
 {
     GtkWidget *dialog = data;
     GtkWidget *list = g_object_get_data (G_OBJECT (dialog), "wifi-list");
+    if (!list || !GTK_IS_LIST_BOX (list)) {
+        g_object_unref (dialog);
+        return FALSE;
+    }
     gchar *out = NULL;
     GError *error = NULL;
     GSubprocess *proc = G_SUBPROCESS (source);
