@@ -615,6 +615,7 @@ wifi_action (GtkWidget *dialog)
         g_free (cmd);
         g_free (dev);
         rescan_later (dialog);
+        g_timeout_add (1200, update_tiles_cb, NULL);
         return;
     }
     if (item->known) {
@@ -859,6 +860,34 @@ wifi_radio_on (void)
 }
 
 static void
+connect_known_wifi (void)
+{
+    gchar *out = run_cmd ("nmcli -t -f NAME,TYPE connection show 2>/dev/null");
+    gchar **lines = g_strsplit (out, "\n", -1);
+    gchar *name = NULL;
+    for (guint i = 0; lines[i]; i++) {
+        gchar **p = g_strsplit (lines[i], ":", 2);
+        if (p[0] && p[1] && (strstr (p[1], "wireless") || strstr (p[1], "wifi"))) {
+            name = g_strdup (p[0]);
+            g_strfreev (p);
+            break;
+        }
+        g_strfreev (p);
+    }
+    g_strfreev (lines);
+    g_free (out);
+    if (name) {
+        gchar *cmd = g_strdup_printf ("nmcli connection up id %s 2>&1", g_shell_quote (name));
+        run_async (cmd);
+        g_free (cmd);
+        g_free (name);
+        g_timeout_add (1500, update_tiles_cb, NULL);
+    } else {
+        gtk_label_set_text (GTK_LABEL (net_label), "No known Wi-Fi");
+    }
+}
+
+static void
 on_net_toggle (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
@@ -869,6 +898,7 @@ on_net_toggle (GtkButton *button, gpointer data)
     } else {
         start_net_animation ();
         run_async ("nmcli radio wifi on");
+        g_timeout_add (1500, (GSourceFunc) connect_known_wifi, NULL);
     }
     g_timeout_add (1000, update_tiles_cb, NULL);
 }
@@ -1088,7 +1118,7 @@ build_wifi_confirm_page (void)
     g_signal_connect (forget, "clicked", G_CALLBACK (wifi_confirm_do), NULL);
     g_signal_connect (cancel, "clicked", G_CALLBACK (wifi_confirm_cancel), NULL);
     gtk_box_pack_start (GTK_BOX (actions), forget, FALSE, FALSE, 0);
-    gtk_box_pack_end (GTK_BOX (actions), cancel, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), cancel, FALSE, FALSE, 0);
     gtk_box_pack_end (GTK_BOX (page), actions, FALSE, FALSE, 0);
     gtk_widget_show_all (page);
     return page;
@@ -1138,7 +1168,7 @@ build_wifi_password_page (void)
     g_signal_connect (connect, "clicked", G_CALLBACK (wifi_password_connect), NULL);
     g_signal_connect (cancel, "clicked", G_CALLBACK (wifi_password_cancel), NULL);
     gtk_box_pack_start (GTK_BOX (actions), connect, FALSE, FALSE, 0);
-    gtk_box_pack_end (GTK_BOX (actions), cancel, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), cancel, FALSE, FALSE, 0);
     gtk_box_pack_end (GTK_BOX (page), actions, FALSE, FALSE, 0);
     gtk_widget_show_all (page);
     return page;
