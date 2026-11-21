@@ -371,8 +371,9 @@ typedef struct {
 } WifiItem;
 
 static void
-wifi_item_free (gpointer data)
+wifi_item_free (gpointer data, GClosure *closure)
 {
+    (void) closure;
     WifiItem *item = data;
     g_free (item->ssid);
     g_free (item);
@@ -390,7 +391,7 @@ wifi_password_response (GtkDialog *dialog, gint response, gpointer data)
         connect_wifi (item->ssid, pw);
     }
     gtk_widget_destroy (GTK_WIDGET (dialog));
-    wifi_item_free (item);
+    wifi_item_free (item, NULL);
 }
 
 static void
