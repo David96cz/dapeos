@@ -773,18 +773,15 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
     }
 
     GHashTable *known_map = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-    gchar *profiles = run_cmd ("nmcli -t -f NAME,TYPE,802-11-wireless.ssid connection show 2>/dev/null");
+    gchar *profiles = run_cmd ("nmcli -t -f NAME,TYPE connection show 2>/dev/null");
     gchar **plines = g_strsplit (profiles, "\n", -1);
     for (guint i = 0; plines[i]; i++) {
-        gchar **pp = g_strsplit (plines[i], ":", 3);
-        if (pp[0] && pp[1] && strstr (pp[1], "wireless")) {
-            gchar *ssid = pp[2] && *pp[2] ? g_strdup (pp[2]) : NULL;
-            if (!ssid) {
-                gchar *q = g_shell_quote (pp[0]);
-                gchar *cmd = g_strdup_printf ("nmcli -g 802-11-wireless.ssid connection show %s 2>/dev/null", q);
-                ssid = run_cmd (cmd);
-                g_free (cmd); g_free (q);
-            }
+        gchar **pp = g_strsplit (plines[i], ":", 2);
+        if (pp[0] && pp[1] && (strstr (pp[1], "wireless") || strstr (pp[1], "wifi"))) {
+            gchar *q = g_shell_quote (pp[0]);
+            gchar *cmd = g_strdup_printf ("nmcli -g 802-11-wireless.ssid connection show %s 2>/dev/null", q);
+            gchar *ssid = run_cmd (cmd);
+            g_free (cmd); g_free (q);
             if (ssid && *ssid)
                 g_hash_table_insert (known_map, ssid, g_strdup (pp[0]));
             else
