@@ -1691,6 +1691,8 @@ activate (GtkApplication *app, gpointer data)
     if (window == NULL) {
         build_ui ();
         gtk_application_add_window (app, GTK_WINDOW (window));
+        gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+        gtk_window_resize (GTK_WINDOW (window), 440, 300);
         gtk_widget_show_all (window);
         g_timeout_add (100, update_volume_cb, NULL);
         g_timeout_add (400, update_tiles_cb, NULL);
@@ -1700,6 +1702,8 @@ activate (GtkApplication *app, gpointer data)
     } else if (gtk_widget_get_visible (window)) {
         gtk_widget_hide (window);
     } else {
+        gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+        gtk_window_resize (GTK_WINDOW (window), 440, 300);
         position_window ();
         gtk_widget_show_all (window);
         gtk_window_present (GTK_WINDOW (window));
