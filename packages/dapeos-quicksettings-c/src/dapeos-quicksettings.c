@@ -1301,6 +1301,7 @@ build_wifi_page (void)
     gtk_widget_set_vexpand (scroll, TRUE);
     GtkWidget *list = gtk_list_box_new ();
     gtk_list_box_set_selection_mode (GTK_LIST_BOX (list), GTK_SELECTION_SINGLE);
+    gtk_list_box_set_activate_on_single_click (GTK_LIST_BOX (list), FALSE);
     gtk_container_add (GTK_CONTAINER (scroll), list);
     gtk_box_pack_start (GTK_BOX (page), scroll, TRUE, TRUE, 0);
 
