@@ -4,4 +4,5 @@ if [ -z "$pid" ]; then
     echo "quick settings neběží" >&2
     exit 1
 fi
+echo "USR1 -> $pid"
 kill -USR1 "$pid"

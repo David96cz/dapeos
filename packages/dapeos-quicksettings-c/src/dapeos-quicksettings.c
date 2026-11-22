@@ -1200,6 +1200,10 @@ static gboolean
 toggle_wifi_signal (gpointer data)
 {
     (void) data;
+    {
+        FILE *f = fopen ("/tmp/dapeos-qs-signal.log", "a");
+        if (f) { fprintf (f, "handler pid=%d\n", (int) getpid ()); fclose (f); }
+    }
     log_geometry ("before toggle");
     on_net_open (NULL, NULL);
     log_geometry ("after toggle");
@@ -1744,6 +1748,10 @@ activate (GtkApplication *app, gpointer data)
         static gboolean signal_installed = FALSE;
         if (!signal_installed) {
             g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
+            {
+                FILE *f = fopen ("/tmp/dapeos-qs-signal.log", "a");
+                if (f) { fprintf (f, "registered pid=%d\n", (int) getpid ()); fclose (f); }
+            }
             signal_installed = TRUE;
         }
         g_timeout_add (100, update_volume_cb, NULL);
@@ -1762,6 +1770,10 @@ activate (GtkApplication *app, gpointer data)
         static gboolean signal_installed = FALSE;
         if (!signal_installed) {
             g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
+            {
+                FILE *f = fopen ("/tmp/dapeos-qs-signal.log", "a");
+                if (f) { fprintf (f, "registered pid=%d\n", (int) getpid ()); fclose (f); }
+            }
             signal_installed = TRUE;
         }
         gtk_window_present (GTK_WINDOW (window));
