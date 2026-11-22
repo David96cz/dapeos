@@ -44,6 +44,7 @@ static guint bg_timeout = 0;
 static gboolean night_on = FALSE;
 static gboolean window_dark = TRUE;
 static void position_window (void);
+static void reposition_later (void);
 static gchar *start_page;
 static gboolean apply_start_page (gpointer data);
 static gboolean net_connecting = FALSE;
@@ -883,7 +884,7 @@ on_wifi_forget (GtkButton *button, gpointer data)
     gtk_label_set_text (GTK_LABEL (wifi_confirm_label), item->ssid);
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi-confirm");
     gtk_window_resize (GTK_WINDOW (window), 440, 300);
-    position_window ();
+    reposition_later ();
 }
 
 static void
@@ -1183,7 +1184,7 @@ on_net_open (GtkButton *button, gpointer data)
     (void) button; (void) data;
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
     gtk_window_resize (GTK_WINDOW (window), 440, 420);
-    position_window ();
+    reposition_later ();
     wifi_start_scan (wifi_page);
 }
 
@@ -1300,7 +1301,7 @@ show_main_page (GtkButton *button, gpointer data)
     (void) button; (void) data;
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
     gtk_window_resize (GTK_WINDOW (window), 440, 300);
-    position_window ();
+    reposition_later ();
 }
 
 static void
@@ -1448,7 +1449,7 @@ show_wifi_password (const gchar *ssid, gboolean known)
     gtk_entry_set_text (GTK_ENTRY (wifi_password_entry), "");
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi-password");
     gtk_window_resize (GTK_WINDOW (window), 440, 330);
-    position_window ();
+    reposition_later ();
     gtk_widget_grab_focus (wifi_password_entry);
 }
 
