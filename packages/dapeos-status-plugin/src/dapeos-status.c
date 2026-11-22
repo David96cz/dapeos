@@ -190,7 +190,7 @@ build_svg (DapeosStatus *st)
         g_string_append (s, "<rect x=\"14\" y=\"4\" width=\"2\" height=\"5\" rx=\"1\"/>");
         g_string_append (s, "</g>");
     } else {
-        gdouble op = st->net_type == 2 ? 1.0 : 0.35;
+        gdouble op = (st->net_type == 2 || !st->wifi_enabled) ? 1.0 : 0.35;
         g_string_append_printf (s,
             "<g transform=\"translate(%d,-1.5) scale(%.4f)\" opacity=\"%.2f\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.7\" stroke-linecap=\"round\">",
             x, scale, op, color);
