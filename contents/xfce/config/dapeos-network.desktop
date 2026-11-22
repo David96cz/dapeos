@@ -4,7 +4,7 @@ Name=Network
 Name[cs]=Síť
 Comment=Wi-Fi networks and connections
 Comment[cs]=Wi-Fi sítě a připojení
-Exec=env DAPEOS_QS_PAGE=wifi dapeos-quicksettings-c
+Exec=sh -c "pkill -9 -f dapeos-quicksettings-c; exec env DAPEOS_QS_PAGE=wifi dapeos-quicksettings-c"
 Icon=network-wireless
 Terminal=false
 Categories=Settings;Network;
