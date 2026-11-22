@@ -1156,7 +1156,23 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
             }
             gtk_container_add (GTK_CONTAINER (row), hbox);
             g_object_set_data_full (G_OBJECT (row), "wifi-item", item, wifi_item_destroy);
-            gtk_list_box_insert (GTK_LIST_BOX (list), row, -1);
+            if (connected) {
+                gtk_list_box_insert (GTK_LIST_BOX (list), row, 0);
+            } else if (item->known) {
+                gint pos = 0;
+                GList *kids = gtk_container_get_children (GTK_CONTAINER (list));
+                for (GList *k = kids; k; k = k->next) {
+                    if (!GTK_IS_LIST_BOX_ROW (k->data)) continue;
+                    WifiItem *ki = g_object_get_data (G_OBJECT (k->data), "wifi-item");
+                    if (ki && ki->connected) continue;
+                    break;
+                    pos++;
+                }
+                g_list_free (kids);
+                gtk_list_box_insert (GTK_LIST_BOX (list), row, pos);
+            } else {
+                gtk_list_box_insert (GTK_LIST_BOX (list), row, -1);
+            }
         }
         g_strfreev (parts);
     }
