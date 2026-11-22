@@ -1181,7 +1181,7 @@ on_net_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
-    gtk_window_resize (GTK_WINDOW (window), 440, 420);
+    gtk_window_resize (GTK_WINDOW (window), 440, 300);
     position_window ();
     wifi_start_scan (wifi_page);
 }
@@ -1701,8 +1701,8 @@ activate (GtkApplication *app, gpointer data)
         build_ui ();
         gtk_application_add_window (app, GTK_WINDOW (window));
         if (start_page && g_strcmp0 (start_page, "wifi") == 0) {
-            gtk_window_set_default_size (GTK_WINDOW (window), 440, 420);
-            gtk_window_resize (GTK_WINDOW (window), 440, 420);
+            gtk_window_set_default_size (GTK_WINDOW (window), 440, 300);
+            gtk_window_resize (GTK_WINDOW (window), 440, 300);
             gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
         } else {
             gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
