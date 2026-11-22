@@ -44,6 +44,7 @@ static guint bg_timeout = 0;
 static gboolean night_on = FALSE;
 static gboolean window_dark = TRUE;
 static void position_window (void);
+static gchar *start_page;
 static gboolean net_connecting = FALSE;
 static guint net_anim_id = 0;
 static gint net_anim_phase = 0;
@@ -1508,8 +1509,13 @@ static gboolean
 on_window_map (GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     (void) widget; (void) event; (void) data;
-    if (qstack)
+    if (qstack && start_page) {
+        if (g_strcmp0 (start_page, "wifi") == 0)
+            on_net_open (NULL, NULL);
+        g_clear_pointer (&start_page, g_free);
+    } else if (qstack) {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+    }
     return FALSE;
 }
 
@@ -1704,11 +1710,13 @@ activate (GtkApplication *app, gpointer data)
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         gtk_window_resize (GTK_WINDOW (window), 440, 300);
         gtk_widget_show_all (window);
-        gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+        if (!start_page)
+            gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         g_timeout_add (100, update_volume_cb, NULL);
         g_timeout_add (400, update_tiles_cb, NULL);
         g_timeout_add (1000, refresh_bg, NULL);
-        position_window ();
+        if (!start_page)
+            position_window ();
         gtk_window_present (GTK_WINDOW (window));
     } else if (gtk_widget_get_visible (window)) {
         gtk_widget_hide (window);
@@ -1725,6 +1733,7 @@ activate (GtkApplication *app, gpointer data)
 int main (int argc, char **argv)
 {
     unsetenv ("GTK_THEME");
+    start_page = g_strdup (g_getenv ("DAPEOS_QS_PAGE"));
     application = gtk_application_new ("cz.dapeos.quicksettings", G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect (application, "activate", G_CALLBACK (activate), NULL);
     int status = g_application_run (G_APPLICATION (application), argc, argv);
