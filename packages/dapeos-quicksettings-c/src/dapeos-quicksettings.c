@@ -880,12 +880,47 @@ wifi_gone_error (const gchar *out)
            strstr (out, "not found");
 }
 
+typedef struct {
+    GtkWidget *dialog;
+    gchar *ssid;
+} KnownConnect;
+
+static void
+known_connect_done (GObject *source, GAsyncResult *res, gpointer data)
+{
+    KnownConnect *ctx = data;
+    GError *error = NULL;
+    gchar *out = NULL;
+    g_subprocess_communicate_utf8_finish (G_SUBPROCESS (source), res, &out, NULL, &error);
+    stop_connect_anim ();
+    if (out && wifi_gone_error (out)) {
+        if (wifi_error_label) {
+            gtk_label_set_text (GTK_LABEL (wifi_error_label), "This connection is no longer available");
+            gtk_widget_show (wifi_error_label);
+            if (wifi_error_timeout) g_source_remove (wifi_error_timeout);
+            wifi_error_timeout = g_timeout_add (1500, hide_wifi_error, NULL);
+        }
+        rescan_later (ctx->dialog);
+    } else if (out && (strstr (out, "Secrets") || strstr (out, "key-mgmt") ||
+                       strstr (out, "password") || strstr (out, "Error"))) {
+        show_wifi_password (ctx->ssid, TRUE);
+    } else {
+        g_timeout_add (1500, update_tiles_cb, NULL);
+        rescan_later (ctx->dialog);
+    }
+    if (error) g_error_free (error);
+    g_free (out);
+    g_object_unref (ctx->dialog);
+    g_free (ctx->ssid);
+    g_free (ctx);
+}
+
 static void
 wifi_action (GtkWidget *dialog)
 {
     WifiItem *item = g_object_get_data (G_OBJECT (dialog), "wifi-selected");
     if (!item) return;
-    if (!item->connected && !wifi_is_fresh (item->ssid)) {
+    if (!item->connected && !item->known && !wifi_is_fresh (item->ssid)) {
         if (wifi_error_label) {
             gtk_label_set_text (GTK_LABEL (wifi_error_label), "This connection is no longer available");
             gtk_widget_show (wifi_error_label);
@@ -911,30 +946,20 @@ wifi_action (GtkWidget *dialog)
     }
     if (item->known) {
         start_connect_anim (item);
-        gchar *cmd = g_strdup_printf ("nmcli connection up id %s 2>&1",
-                                      g_shell_quote (item->connection ? item->connection : item->ssid));
-        gchar *out = run_cmd (cmd);
-        g_free (cmd);
-        stop_connect_anim ();
-        if (wifi_gone_error (out)) {
-            g_free (out);
-            if (wifi_error_label) {
-                gtk_label_set_text (GTK_LABEL (wifi_error_label), "This connection is no longer available");
-                gtk_widget_show (wifi_error_label);
-                if (wifi_error_timeout) g_source_remove (wifi_error_timeout);
-                wifi_error_timeout = g_timeout_add (1500, hide_wifi_error, NULL);
-            }
-            rescan_later (dialog);
-            return;
-        }
-        if (g_strrstr (out, "Error") || g_strrstr (out, "Secrets") ||
-            g_strrstr (out, "key-mgmt")) {
-            g_free (out);
-            show_wifi_password (item->ssid, TRUE);
+        const gchar *argv[] = { "nmcli", "connection", "up", "id",
+                                item->connection ? item->connection : item->ssid, NULL };
+        GError *error = NULL;
+        GSubprocess *proc = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE |
+                                               G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
+        if (proc) {
+            KnownConnect *ctx = g_new0 (KnownConnect, 1);
+            ctx->dialog = g_object_ref (dialog);
+            ctx->ssid = g_strdup (item->ssid);
+            g_subprocess_communicate_utf8_async (proc, NULL, NULL, known_connect_done, ctx);
+            g_object_unref (proc);
         } else {
-            g_free (out);
-            g_timeout_add (1500, update_tiles_cb, NULL);
-            rescan_later (dialog);
+            stop_connect_anim ();
+            if (error) g_error_free (error);
         }
         return;
     }
