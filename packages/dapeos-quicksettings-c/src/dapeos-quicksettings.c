@@ -1711,8 +1711,8 @@ static void position_window (void)
     gdk_monitor_get_geometry (monitor, &geo);
     gint w = 0, h = 0;
     gtk_window_get_size (GTK_WINDOW (window), &w, &h);
-    if (w <= 0) w = 440;
-    if (h <= 0) h = 300;
+    if (w < 520) w = 520;
+    if (h < 300) h = 300;
     gint x = geo.x + geo.width - w - 20;
     gint y = geo.y + geo.height - panel_height () - h - 20;
     if (x < geo.x + 8) x = geo.x + 8;
