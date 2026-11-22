@@ -1696,6 +1696,8 @@ set_window_size (gint w, gint h)
 static void
 position_window_size (gint w, gint h)
 {
+    w = 440;
+    h = 420;
     GdkDisplay *display = gdk_display_get_default ();
     GdkMonitor *monitor = gdk_display_get_primary_monitor (display);
     if (!monitor) monitor = gdk_display_get_monitor (display, 0);
