@@ -1030,11 +1030,21 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
     g_strfreev (plines);
     g_free (profiles);
 
+    GHashTable *fresh = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+    gchar *fresh_raw = run_cmd ("dapeos-wifi-fresh 2>/dev/null");
+    gchar **flines = g_strsplit (fresh_raw, "\n", -1);
+    for (guint fi = 0; flines[fi]; fi++)
+        if (*flines[fi]) g_hash_table_add (fresh, g_strdup (flines[fi]));
+    g_strfreev (flines);
+    g_free (fresh_raw);
+
     GHashTable *seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
     gchar **lines = g_strsplit (out, "\n", -1);
     for (guint i = 0; lines[i]; i++) {
         gchar **parts = g_strsplit (lines[i], ":", 3);
-        if (parts[0] && *parts[0] && parts[2] && !g_hash_table_contains (seen, parts[0])) {
+        if (parts[0] && *parts[0] && parts[2] &&
+            !g_hash_table_contains (seen, parts[0]) &&
+            (g_hash_table_size (fresh) == 0 || g_hash_table_contains (fresh, parts[0]))) {
             g_hash_table_add (seen, g_strdup (parts[0]));
             gboolean secured = g_strcmp0 (parts[2], "--") != 0 && *parts[2] != 0;
             gboolean connected = g_hash_table_contains (active_set, parts[0]);
@@ -1068,6 +1078,7 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
         gtk_list_box_insert (GTK_LIST_BOX (list), empty, -1);
     }
     g_hash_table_destroy (seen);
+    g_hash_table_destroy (fresh);
     g_hash_table_destroy (active_set);
     g_hash_table_destroy (known_map);
     g_free (out);

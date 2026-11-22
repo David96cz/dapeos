@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+# Vypíše SSID, která NetworkManager skutečně viděl v posledním skenu.
+import sys
+import time
+
+try:
+    from gi.repository import Gio, GLib
+except Exception:
+    sys.exit(0)
+
+BUS = "org.freedesktop.NetworkManager"
+ROOT = "/org/freedesktop/NetworkManager"
+AP = "org.freedesktop.NetworkManager.AccessPoint"
+
+try:
+    conn = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+    if conn is None:
+        sys.exit(0)
+
+    def call(path, iface, method, params=None, reply=None):
+        return conn.call_sync(BUS, path, iface, method, params, reply,
+                              Gio.DBusCallFlags.NONE, 2000, None)
+
+    devices = call(ROOT, BUS, "GetDevices", None,
+                   GLib.VariantType("(ao)")).unpack()[0]
+    now = time.clock_gettime(time.CLOCK_BOOTTIME)
+    for dev in devices:
+        try:
+            typ = call(dev, "org.freedesktop.DBus.Properties", "Get",
+                       GLib.Variant("(ss)", ("org.freedesktop.NetworkManager.Device",
+                                             "DeviceType")),
+                       GLib.VariantType("(v)")).unpack()[0]
+            if int(typ) != 2:
+                continue
+            aps = call(dev, "org.freedesktop.NetworkManager.Device.Wireless",
+                       "GetAllAccessPoints", None,
+                       GLib.VariantType("(ao)")).unpack()[0]
+            for ap in aps:
+                props = call(ap, "org.freedesktop.DBus.Properties", "GetAll",
+                             GLib.Variant("(s)", (AP,)),
+                             GLib.VariantType("(a{sv})")).unpack()[0]
+                ssids = props.get("Ssids")
+                last = props.get("LastSeen", -1)
+                if not ssids or last is None or int(last) < 0:
+                    continue
+                if now - int(last) > 45:
+                    continue
+                raw = bytes(ssids[0])
+                if raw:
+                    print(raw.decode("utf-8", "replace"))
+        except Exception:
+            continue
+except Exception:
+    pass
