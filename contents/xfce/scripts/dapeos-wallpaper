@@ -48,7 +48,9 @@ for mon in $monitors; do
 done
 
 # fallback: všechny image-path/last-image
+# změna přes jinou cestu vynutí xfdesktop znovu načíst obrázek
 for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E '/(image-path|last-image|last-single-image)$'); do
+    xset "$p" string ""
     xset "$p" string "$WALLPAPER"
 done
 for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E '/image-show$'); do
