@@ -20,7 +20,7 @@ except Exception:  # noqa: BLE001
     apply_theme = lambda app=None: False
     install_theme_watch = lambda app=None: None
 CONF = os.path.expanduser("~/.config/dapeos/tray.json")
-DEFAULTS = {"icon_size": 26, "gap": 5, "pad_left": 4, "pad_right": 0, "clipman_size": 20}
+DEFAULTS = {"icon_size": 24, "gap": 6, "pad_left": 6, "pad_right": 4, "clipman_size": 20}
 SYS_DEFAULT = 24
 
 

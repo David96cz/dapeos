@@ -62,10 +62,10 @@ tray_value (const gchar *key, gint def)
 static void
 load_tray_config (DapeosStatus *st)
 {
-    st->icon_size = tray_value ("\"icon_size\"", 26);
-    st->gap = tray_value ("\"gap\"", 5);
-    st->pad_left = tray_value ("\"pad_left\"", 4);
-    st->pad_right = tray_value ("\"pad_right\"", 0);
+    st->icon_size = tray_value ("\"icon_size\"", 24);
+    st->gap = tray_value ("\"gap\"", 6);
+    st->pad_left = tray_value ("\"pad_left\"", 6);
+    st->pad_right = tray_value ("\"pad_right\"", 4);
     if (st->icon_size < 8) st->icon_size = 8;
     if (st->icon_size > 64) st->icon_size = 64;
     if (st->gap < 0) st->gap = 0;
