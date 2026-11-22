@@ -1549,9 +1549,9 @@ static void build_ui (void)
     gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
     gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
-    gtk_window_set_default_size (GTK_WINDOW (window), 440, 300);
+    gtk_window_set_default_size (GTK_WINDOW (window), 504, 300);
     GdkGeometry hints = { 0 };
-    hints.min_width = 440; hints.max_width = 440;
+    hints.min_width = 504; hints.max_width = 504;
     hints.min_height = 300; hints.max_height = 300;
     gtk_window_set_geometry_hints (GTK_WINDOW (window), NULL, &hints,
                                    GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE);
@@ -1568,7 +1568,7 @@ static void build_ui (void)
     gtk_stack_set_transition_type (GTK_STACK (qstack), GTK_STACK_TRANSITION_TYPE_NONE);
     gtk_stack_set_hhomogeneous (GTK_STACK (qstack), FALSE);
     gtk_stack_set_vhomogeneous (GTK_STACK (qstack), FALSE);
-    gtk_widget_set_size_request (qstack, 440, 300);
+    gtk_widget_set_size_request (qstack, 504, 300);
     gtk_container_add (GTK_CONTAINER (window), qstack);
 
     main_page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
@@ -1762,6 +1762,8 @@ activate (GtkApplication *app, gpointer data)
         g_timeout_add (400, update_tiles_cb, NULL);
         g_timeout_add (1000, refresh_bg, NULL);
         gtk_window_present (GTK_WINDOW (window));
+        if (g_getenv ("DAPEOS_QS_TOGGLE"))
+            toggle_wifi_signal (NULL);
     } else if (gtk_widget_get_visible (window)) {
         gtk_widget_hide (window);
     } else {
