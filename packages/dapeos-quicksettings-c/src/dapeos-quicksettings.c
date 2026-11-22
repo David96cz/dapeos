@@ -1512,7 +1512,7 @@ on_window_map (GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     (void) widget; (void) event; (void) data;
     if (start_page) {
-        apply_start_page (NULL);
+        g_idle_add (apply_start_page, NULL);
     } else if (qstack) {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
     }
