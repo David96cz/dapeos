@@ -1041,6 +1041,8 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
             GtkWidget *row = gtk_list_box_row_new ();
             GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
             GtkWidget *name = gtk_label_new (parts[0]);
+            gtk_label_set_ellipsize (GTK_LABEL (name), PANGO_ELLIPSIZE_END);
+            gtk_label_set_max_width_chars (GTK_LABEL (name), 32);
             gtk_widget_set_halign (name, GTK_ALIGN_START);
             gtk_widget_set_hexpand (name, TRUE);
             gtk_box_pack_start (GTK_BOX (hbox), name, TRUE, TRUE, 0);
@@ -1473,6 +1475,11 @@ build_wifi_page (void)
     gtk_box_pack_start (GTK_BOX (page), header, FALSE, FALSE, 0);
 
     GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+                                    GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_set_propagate_natural_width (GTK_SCROLLED_WINDOW (scroll), FALSE);
+    gtk_scrolled_window_set_propagate_natural_height (GTK_SCROLLED_WINDOW (scroll), FALSE);
+    gtk_widget_set_size_request (scroll, 400, 180);
     gtk_widget_set_vexpand (scroll, TRUE);
     GtkWidget *list = gtk_list_box_new ();
     gtk_list_box_set_selection_mode (GTK_LIST_BOX (list), GTK_SELECTION_SINGLE);

@@ -91,6 +91,9 @@ dapeos_session_setup() {
     if [ -f "$CONTENTS_DIR/xfce/config/dapeos-settings.desktop" ]; then
         install -m 644 "$CONTENTS_DIR/xfce/config/dapeos-settings.desktop" /usr/share/applications/dapeos-settings.desktop
     fi
+    if [ -f "$CONTENTS_DIR/xfce/config/dapeos-network.desktop" ]; then
+        install -m 644 "$CONTENTS_DIR/xfce/config/dapeos-network.desktop" /usr/share/applications/dapeos-network.desktop
+    fi
 
     install -d -m 755 /usr/share/dapeos
     install -d -m 755 /usr/share/locale/cs/LC_MESSAGES
