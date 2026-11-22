@@ -79,6 +79,7 @@ static gboolean wifi_radio_on (void);
 
 static gboolean update_volume_cb (gpointer data) { (void) data; update_volume_ui (); return FALSE; }
 static gboolean update_tiles_cb (gpointer data) { (void) data; update_tiles (); return FALSE; }
+static gboolean tiles_tick (gpointer data) { (void) data; update_tiles (); return G_SOURCE_CONTINUE; }
 
 static gchar *
 active_wifi_ssid (void)
@@ -891,7 +892,14 @@ known_connect_done (GObject *source, GAsyncResult *res, gpointer data)
     KnownConnect *ctx = data;
     GError *error = NULL;
     gchar *out = NULL;
-    g_subprocess_communicate_utf8_finish (G_SUBPROCESS (source), res, &out, NULL, &error);
+    gchar *errout = NULL;
+    g_subprocess_communicate_utf8_finish (G_SUBPROCESS (source), res, &out, &errout, &error);
+    if (errout && *errout) {
+        gchar *both = g_strconcat (out ? out : "", "\n", errout, NULL);
+        g_free (out);
+        out = both;
+    }
+    g_free (errout);
     stop_connect_anim ();
     if (out && wifi_gone_error (out)) {
         if (wifi_error_label) {
@@ -1988,6 +1996,7 @@ activate (GtkApplication *app, gpointer data)
         g_timeout_add (100, update_volume_cb, NULL);
         g_timeout_add (400, update_tiles_cb, NULL);
         g_timeout_add (1000, refresh_bg, NULL);
+        g_timeout_add_seconds (2, tiles_tick, NULL);
         gtk_window_present (GTK_WINDOW (window));
         if (g_getenv ("DAPEOS_QS_TOGGLE"))
             toggle_wifi_signal (NULL);
