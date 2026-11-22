@@ -1707,22 +1707,16 @@ activate (GtkApplication *app, gpointer data)
     if (window == NULL) {
         build_ui ();
         gtk_application_add_window (app, GTK_WINDOW (window));
-        if (start_page && g_strcmp0 (start_page, "wifi") == 0) {
-            gtk_window_set_default_size (GTK_WINDOW (window), 440, 300);
-            gtk_window_resize (GTK_WINDOW (window), 440, 300);
-            gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
-        } else {
-            gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
-        }
+        gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         gtk_widget_show_all (window);
         g_timeout_add (100, update_volume_cb, NULL);
         g_timeout_add (400, update_tiles_cb, NULL);
         g_timeout_add (1000, refresh_bg, NULL);
-        if (start_page && g_strcmp0 (start_page, "wifi") == 0)
-            wifi_start_scan (wifi_page);
-        g_clear_pointer (&start_page, g_free);
         position_window ();
         gtk_window_present (GTK_WINDOW (window));
+        if (start_page && g_strcmp0 (start_page, "wifi") == 0)
+            on_net_open (NULL, NULL);
+        g_clear_pointer (&start_page, g_free);
     } else if (gtk_widget_get_visible (window)) {
         gtk_widget_hide (window);
     } else {
