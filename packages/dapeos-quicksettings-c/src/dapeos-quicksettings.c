@@ -882,8 +882,6 @@ on_wifi_forget (GtkButton *button, gpointer data)
     wifi_confirm_connected = item->connected;
     gtk_label_set_text (GTK_LABEL (wifi_confirm_label), item->ssid);
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi-confirm");
-    gtk_window_resize (GTK_WINDOW (window), 440, 300);
-    position_window ();
 }
 
 static void
@@ -1182,8 +1180,6 @@ on_net_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
-    gtk_window_resize (GTK_WINDOW (window), 440, 420);
-    position_window ();
     wifi_start_scan (wifi_page);
 }
 
@@ -1322,8 +1318,6 @@ show_main_page (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
-    gtk_window_resize (GTK_WINDOW (window), 440, 300);
-    position_window ();
 }
 
 static void
@@ -1470,8 +1464,6 @@ show_wifi_password (const gchar *ssid, gboolean known)
     gtk_label_set_text (GTK_LABEL (wifi_password_label), ssid);
     gtk_entry_set_text (GTK_ENTRY (wifi_password_entry), "");
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi-password");
-    gtk_window_resize (GTK_WINDOW (window), 440, 330);
-    position_window ();
     gtk_widget_grab_focus (wifi_password_entry);
 }
 
@@ -1497,6 +1489,11 @@ build_wifi_page (void)
     gtk_box_pack_start (GTK_BOX (page), header, FALSE, FALSE, 0);
 
     GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+                                    GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_set_propagate_natural_width (GTK_SCROLLED_WINDOW (scroll), FALSE);
+    gtk_scrolled_window_set_propagate_natural_height (GTK_SCROLLED_WINDOW (scroll), FALSE);
+    gtk_widget_set_size_request (scroll, 400, 170);
     gtk_widget_set_vexpand (scroll, TRUE);
     GtkWidget *list = gtk_list_box_new ();
     gtk_list_box_set_selection_mode (GTK_LIST_BOX (list), GTK_SELECTION_SINGLE);
@@ -1548,6 +1545,11 @@ static void build_ui (void)
     gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
     gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
     gtk_window_set_default_size (GTK_WINDOW (window), 440, 300);
+    GdkGeometry hints = { 0 };
+    hints.min_width = 440; hints.max_width = 440;
+    hints.min_height = 300; hints.max_height = 300;
+    gtk_window_set_geometry_hints (GTK_WINDOW (window), NULL, &hints,
+                                   GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE);
     g_signal_connect (window, "key-press-event", G_CALLBACK (on_key_press), NULL);
     g_signal_connect (window, "focus-out-event", G_CALLBACK (on_focus_out), NULL);
     g_signal_connect (window, "map-event", G_CALLBACK (on_window_map), NULL);
@@ -1561,6 +1563,7 @@ static void build_ui (void)
     gtk_stack_set_transition_type (GTK_STACK (qstack), GTK_STACK_TRANSITION_TYPE_NONE);
     gtk_stack_set_hhomogeneous (GTK_STACK (qstack), FALSE);
     gtk_stack_set_vhomogeneous (GTK_STACK (qstack), FALSE);
+    gtk_widget_set_size_request (qstack, 440, 300);
     gtk_container_add (GTK_CONTAINER (window), qstack);
 
     main_page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
@@ -1691,17 +1694,17 @@ static void build_ui (void)
     install_cache_monitors ();
 }
 
+static gboolean position_done = FALSE;
+
 static void position_window (void)
 {
+    if (position_done) return;
     GdkDisplay *display = gdk_display_get_default ();
     GdkMonitor *monitor = gdk_display_get_primary_monitor (display);
     if (!monitor) monitor = gdk_display_get_monitor (display, 0);
     GdkRectangle geo;
     gdk_monitor_get_geometry (monitor, &geo);
-    gint w = 0, h = 0;
-    gtk_window_get_size (GTK_WINDOW (window), &w, &h);
-    if (w <= 0) w = 420;
-    if (h <= 0) h = 340;
+    gint w = 440, h = 300;
     gint x = geo.x + geo.width - w - 20;
     gint y = geo.y + geo.height - panel_height () - h - 20;
     if (x < geo.x + 8) x = geo.x + 8;
