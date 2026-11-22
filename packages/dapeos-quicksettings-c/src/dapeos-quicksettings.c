@@ -1522,22 +1522,25 @@ page_request_path (void)
     return path;
 }
 
-static void
+static gboolean
 consume_page_request (void)
 {
     gchar *path = page_request_path ();
     gchar *data = NULL;
+    gboolean applied = FALSE;
     if (g_file_get_contents (path, &data, NULL, NULL)) {
         g_strstrip (data);
         if (g_strcmp0 (data, "wifi") == 0) {
             gtk_widget_show_all (window);
             on_net_open (NULL, NULL);
             gtk_window_present (GTK_WINDOW (window));
+            applied = TRUE;
         }
         g_free (data);
         g_remove (path);
     }
     g_free (path);
+    return applied;
 }
 
 static void
@@ -1760,6 +1763,8 @@ static void
 activate (GtkApplication *app, gpointer data)
 {
     (void) data;
+    if (window != NULL && consume_page_request ())
+        return;
     if (window == NULL) {
         build_ui ();
         gtk_application_add_window (app, GTK_WINDOW (window));
