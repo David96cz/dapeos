@@ -3,7 +3,4 @@
 dir="${XDG_CACHE_HOME:-$HOME/.cache}/dapeos"
 mkdir -p "$dir"
 printf 'wifi' > "$dir/qs-page"
-if pgrep -f '^/usr/local/bin/dapeos-quicksettings-c' >/dev/null 2>&1; then
-    exit 0
-fi
 exec dapeos-quicksettings-c
