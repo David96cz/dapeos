@@ -35,6 +35,7 @@ monitors=$(printf '%s\n%s\n' "$monitors" "/backdrop/screen0/monitor0" | sort -u)
 
 for mon in $monitors; do
     xset "$mon/image-path" string "$WALLPAPER"
+    xset "$mon/last-image" string "$WALLPAPER"
     xset "$mon/last-single-image" string "$WALLPAPER"
     xset "$mon/image-show" bool true
     xset "$mon/image-style" int 4
@@ -46,9 +47,12 @@ for mon in $monitors; do
     done
 done
 
-# fallback: všechny last-image
-for p in $props; do
+# fallback: všechny image-path/last-image
+for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E '/(image-path|last-image|last-single-image)$'); do
     xset "$p" string "$WALLPAPER"
+done
+for p in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E '/image-show$'); do
+    xset "$p" bool true
 done
 
 log "nastaveno pro: $monitors"
