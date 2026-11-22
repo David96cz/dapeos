@@ -9,6 +9,7 @@ command -v nmcli >/dev/null 2>&1 || exit 0
 write_state() {
     nmcli -t -f TYPE,STATE,CONNECTION device status 2>/dev/null > "$TMP" || return
     printf '%s\n' "$(nmcli networking connectivity 2>/dev/null)" >> "$TMP"
+    printf 'wifi:%s\n' "$(nmcli -t -f WIFI radio 2>/dev/null)" >> "$TMP"
     mv -f "$TMP" "$FILE" 2>/dev/null || true
 }
 

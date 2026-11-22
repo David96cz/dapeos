@@ -12,6 +12,7 @@ typedef struct {
     gint cap;               /* -1 no battery */
     gchar *bat_status;
     gboolean dark;
+    gboolean wifi_enabled;
     GtkWidget *area;
     GPid pactl_pid, nm_pid, upower_pid;
     gboolean volume_busy;
@@ -198,6 +199,8 @@ build_svg (DapeosStatus *st)
         g_string_append_printf (s, "<circle cx=\"11\" cy=\"16.5\" r=\"1.3\" fill=\"%s\" stroke=\"none\"/>", color);
         g_string_append (s, "<path d=\"M6.8 13.4a6.3 6.3 0 0 1 8.4 0\"/>");
         g_string_append (s, "<path d=\"M3.8 10.2a10.6 10.6 0 0 1 14.4 0\"/>");
+        if (!st->wifi_enabled)
+            g_string_append (s, "<path d=\"M3 4l16 16\" stroke=\"#f44336\" stroke-width=\"2\"/>");
         g_string_append (s, "</g>");
     }
 
@@ -386,6 +389,10 @@ network_file_changed (GFileMonitor *monitor, GFile *file, GFile *other,
         st->net_type = 0;
         gchar **lines = g_strsplit (text, "\n", -1);
         for (guint i = 0; lines[i]; i++) {
+            if (g_str_has_prefix (lines[i], "wifi:")) {
+                st->wifi_enabled = g_strcmp0 (lines[i] + 5, "enabled") == 0;
+                continue;
+            }
             gchar **p = g_strsplit (lines[i], ":", 3);
             if (p[1] && g_strcmp0 (p[1], "connected") == 0) {
                 if (g_strcmp0 (p[0], "wifi") == 0) st->net_type = 2;
