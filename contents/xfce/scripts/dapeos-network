@@ -1,0 +1,8 @@
+#!/bin/sh
+# Otevře DapeOS quick settings rovnou na WiFi stránce.
+pkill -9 -f '^/usr/local/bin/dapeos-quicksettings-c' 2>/dev/null || true
+for i in 1 2 3 4 5 6 7 8 9 10; do
+    pgrep -f '^/usr/local/bin/dapeos-quicksettings-c' >/dev/null 2>&1 || break
+    sleep 0.05
+done
+exec env DAPEOS_QS_PAGE=wifi dapeos-quicksettings-c
