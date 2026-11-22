@@ -1203,19 +1203,12 @@ wifi_add_connected_stub (GtkWidget *list)
 }
 
 static void
-wifi_start_scan (GtkWidget *dialog)
+start_wifi_list (GtkWidget *dialog)
 {
     GtkWidget *list = g_object_get_data (G_OBJECT (dialog), "wifi-list");
     if (!list) return;
-    GList *children = gtk_container_get_children (GTK_CONTAINER (list));
-    g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
-    wifi_add_connected_stub (list);
-    GtkWidget *scanning = gtk_label_new ("Scanning for networks…");
-    gtk_list_box_insert (GTK_LIST_BOX (list), scanning, -1);
-    gtk_widget_show_all (list);
-
     const gchar *argv[] = { "nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY",
-                            "device", "wifi", "list", "--rescan", "yes", NULL };
+                            "device", "wifi", "list", NULL };
     GError *error = NULL;
     GSubprocess *proc = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE, &error);
     if (proc) {
@@ -1227,6 +1220,39 @@ wifi_start_scan (GtkWidget *dialog)
         GtkWidget *label = gtk_label_new ("NetworkManager is not available");
         gtk_list_box_insert (GTK_LIST_BOX (list), label, -1);
     }
+}
+
+static gboolean
+wifi_list_cb (gpointer data)
+{
+    GtkWidget *dialog = data;
+    start_wifi_list (dialog);
+    g_object_unref (dialog);
+    return FALSE;
+}
+
+static void
+wifi_start_scan (GtkWidget *dialog)
+{
+    GtkWidget *list = g_object_get_data (G_OBJECT (dialog), "wifi-list");
+    if (!list) return;
+    GList *children = gtk_container_get_children (GTK_CONTAINER (list));
+    g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
+    wifi_add_connected_stub (list);
+    GtkWidget *scanning = gtk_label_new ("Scanning for networks…");
+    gtk_list_box_insert (GTK_LIST_BOX (list), scanning, -1);
+    gtk_widget_show_all (list);
+
+    gchar *dev = wifi_device ();
+    gchar *cmd = dev
+        ? g_strdup_printf ("nmcli device wifi rescan ifname %s 2>/dev/null", g_shell_quote (dev))
+        : g_strdup ("nmcli device wifi rescan 2>/dev/null");
+    run_async (cmd);
+    g_free (cmd);
+    g_free (dev);
+
+    g_object_ref (dialog);
+    g_timeout_add (1500, wifi_list_cb, dialog);
 }
 
 static void
