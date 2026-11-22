@@ -199,6 +199,28 @@ battery_tick (gpointer data)
     return G_SOURCE_CONTINUE;
 }
 
+static gboolean
+ac_online (void)
+{
+    GDir *dir = g_dir_open ("/sys/class/power_supply", 0, NULL);
+    if (!dir) return FALSE;
+    gboolean online = FALSE;
+    const gchar *name;
+    while ((name = g_dir_read_name (dir)) != NULL) {
+        if (g_str_has_prefix (name, "BAT")) continue;
+        gchar *path = g_build_filename ("/sys/class/power_supply", name, "online", NULL);
+        gchar *val = NULL;
+        if (g_file_get_contents (path, &val, NULL, NULL) && g_strstrip (val) &&
+            g_strcmp0 (val, "1") == 0)
+            online = TRUE;
+        g_free (val);
+        g_free (path);
+        if (online) break;
+    }
+    g_dir_close (dir);
+    return online;
+}
+
 static GString *
 build_svg (DapeosStatus *st)
 {
@@ -248,8 +270,8 @@ build_svg (DapeosStatus *st)
         g_string_append_printf (s, "<rect x=\"3\" y=\"7\" width=\"14\" height=\"9\" rx=\"2\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.5\"/>", color);
         g_string_append_printf (s, "<rect x=\"5\" y=\"9\" width=\"%d\" height=\"5\" rx=\"1\" fill=\"%s\"/>", fillw, fill);
         g_string_append_printf (s, "<rect x=\"18\" y=\"9.5\" width=\"2\" height=\"4\" rx=\"1\" fill=\"%s\"/>", color);
-        if (strstr (st->bat_status, "Charging") || strstr (st->bat_status, "charging"))
-            g_string_append (s, "<path d=\"M13 1.5L6 12h5l-2 9 9-12h-5z\" fill=\"#ffd54f\" stroke=\"#333333\" stroke-width=\"0.6\"/>");
+        if ((strstr (st->bat_status, "Charging") || strstr (st->bat_status, "charging")) && ac_online ())
+            g_string_append (s, "<path transform=\"translate(-2,0)\" d=\"M13 1.5L6 12h5l-2 9 9-12h-5z\" fill=\"#ffd54f\" stroke=\"#333333\" stroke-width=\"0.6\"/>");
         g_string_append (s, "</g>");
     }
 
