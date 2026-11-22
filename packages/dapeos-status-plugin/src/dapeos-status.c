@@ -165,6 +165,38 @@ read_state (DapeosStatus *st)
     g_free (props);
 }
 
+static gboolean
+battery_tick (gpointer data)
+{
+    DapeosStatus *st = data;
+    st->cap = -1;
+    g_free (st->bat_status);
+    st->bat_status = g_strdup ("");
+    GDir *dir = g_dir_open ("/sys/class/power_supply", 0, NULL);
+    if (dir) {
+        const gchar *name;
+        while ((name = g_dir_read_name (dir)) != NULL) {
+            if (!g_str_has_prefix (name, "BAT")) continue;
+            gchar *base = g_build_filename ("/sys/class/power_supply", name, NULL);
+            gchar *capf = g_build_filename (base, "capacity", NULL);
+            gchar *stf = g_build_filename (base, "status", NULL);
+            gchar *cap = NULL, *bat = NULL;
+            if (g_file_get_contents (capf, &cap, NULL, NULL)) {
+                st->cap = atoi (cap);
+                if (g_file_get_contents (stf, &bat, NULL, NULL)) {
+                    g_free (st->bat_status);
+                    st->bat_status = g_strdup (g_strstrip (bat));
+                }
+            }
+            g_free (cap); g_free (bat); g_free (capf); g_free (stf); g_free (base);
+            break;
+        }
+        g_dir_close (dir);
+    }
+    update_image (st);
+    return G_SOURCE_CONTINUE;
+}
+
 static GString *
 build_svg (DapeosStatus *st)
 {
@@ -493,6 +525,7 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     gtk_widget_set_size_request (eventbox, layout_width (st), st->icon_size);
     gtk_widget_set_size_request (box, layout_width (st), st->icon_size);
     update_image (st);
+    g_timeout_add_seconds (5, battery_tick, st);
 
     g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
 
