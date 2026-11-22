@@ -1,4 +1,6 @@
 #include <gtk/gtk.h>
+#include <glib-unix.h>
+#include <signal.h>
 #include <gio/gio.h>
 #include <glib/gstdio.h>
 #include <stdlib.h>
@@ -1705,6 +1707,8 @@ activate (GtkApplication *app, gpointer data)
         gtk_window_resize (GTK_WINDOW (window), 440, 300);
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+        log_geometry ("initial show");
+        g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
         g_timeout_add (100, update_volume_cb, NULL);
         g_timeout_add (400, update_tiles_cb, NULL);
         g_timeout_add (1000, refresh_bg, NULL);
@@ -1718,6 +1722,8 @@ activate (GtkApplication *app, gpointer data)
         position_window ();
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+        log_geometry ("initial show");
+        g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
         gtk_window_present (GTK_WINDOW (window));
     }
 }

@@ -1,0 +1,7 @@
+#!/bin/sh
+pid=$(pgrep -f '^/usr/local/bin/dapeos-quicksettings-c' | head -1)
+if [ -z "$pid" ]; then
+    echo "quick settings neběží" >&2
+    exit 1
+fi
+kill -USR1 "$pid"
