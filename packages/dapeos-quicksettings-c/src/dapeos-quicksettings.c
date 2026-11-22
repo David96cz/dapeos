@@ -45,6 +45,7 @@ static gboolean night_on = FALSE;
 static gboolean window_dark = TRUE;
 static void position_window (void);
 static gchar *start_page;
+static gboolean apply_start_page (gpointer data);
 static gboolean net_connecting = FALSE;
 static guint net_anim_id = 0;
 static gint net_anim_phase = 0;
@@ -1509,8 +1510,11 @@ static gboolean
 on_window_map (GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     (void) widget; (void) event; (void) data;
-    if (qstack && !start_page)
+    if (start_page) {
+        apply_start_page (NULL);
+    } else if (qstack) {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+    }
     return FALSE;
 }
 
@@ -1730,9 +1734,7 @@ activate (GtkApplication *app, gpointer data)
             gtk_window_resize (GTK_WINDOW (window), 440, 300);
         }
         gtk_widget_show_all (window);
-        if (start_page)
-            g_idle_add (apply_start_page, NULL);
-        else
+        if (!start_page)
             gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         g_timeout_add (100, update_volume_cb, NULL);
         g_timeout_add (400, update_tiles_cb, NULL);

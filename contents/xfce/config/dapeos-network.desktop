@@ -8,4 +8,5 @@ Exec=env DAPEOS_QS_PAGE=wifi dapeos-quicksettings-c
 Icon=network-wireless
 Terminal=false
 Categories=Settings;Network;
+X-XFCE-SettingsDialog=1
 Keywords=network;wifi;wi-fi;síť;
