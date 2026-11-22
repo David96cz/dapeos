@@ -820,11 +820,36 @@ wifi_device (void)
     return dev;
 }
 
+static gboolean
+wifi_is_fresh (const gchar *ssid)
+{
+    gchar *out = run_cmd ("dapeos-wifi-fresh 2>/dev/null");
+    if (!out || !*out) { g_free (out); return TRUE; }
+    gboolean found = FALSE;
+    gchar **lines = g_strsplit (out, "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        if (g_strcmp0 (lines[i], ssid) == 0) { found = TRUE; break; }
+    }
+    g_strfreev (lines);
+    g_free (out);
+    return found;
+}
+
 static void
 wifi_action (GtkWidget *dialog)
 {
     WifiItem *item = g_object_get_data (G_OBJECT (dialog), "wifi-selected");
     if (!item) return;
+    if (!item->connected && !wifi_is_fresh (item->ssid)) {
+        if (wifi_error_label) {
+            gtk_label_set_text (GTK_LABEL (wifi_error_label), "This connection is no longer available");
+            gtk_widget_show (wifi_error_label);
+            if (wifi_error_timeout) g_source_remove (wifi_error_timeout);
+            wifi_error_timeout = g_timeout_add (1500, hide_wifi_error, NULL);
+        }
+        rescan_later (dialog);
+        return;
+    }
     if (item->connected) {
         gchar *dev = wifi_device ();
         gchar *cmd;
@@ -955,7 +980,10 @@ connect_wifi (const gchar *ssid, const gchar *password, gboolean was_known)
     g_free (out);
     g_free (cmd);
     g_free (qssid);
-    if (ok) start_net_animation ();
+    if (ok) {
+        start_net_animation ();
+        g_timeout_add (1500, update_tiles_cb, NULL);
+    }
     return ok;
 }
 
