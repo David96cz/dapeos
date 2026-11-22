@@ -39,11 +39,12 @@ for mon in $monitors; do
     xset "$mon/last-single-image" string "$WALLPAPER"
     xset "$mon/image-show" bool true
     xset "$mon/image-style" int 4
-    for ws in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E "^${mon}/workspace[0-9]+/last-image$"); do
-        xset "$ws" string "$WALLPAPER"
-    done
-    for ws in $(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E "^${mon}/workspace[0-9]+/image-style$"); do
-        xset "$ws" int 4
+    for wsn in 0 1 2 3; do
+        xset "$mon/workspace$wsn/last-image" string "$WALLPAPER"
+        xset "$mon/workspace$wsn/image-path" string "$WALLPAPER"
+        xset "$mon/workspace$wsn/last-single-image" string "$WALLPAPER"
+        xset "$mon/workspace$wsn/image-style" int 4
+        xset "$mon/workspace$wsn/image-show" bool true
     done
 done
 
