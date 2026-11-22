@@ -248,8 +248,8 @@ build_svg (DapeosStatus *st)
         g_string_append_printf (s, "<rect x=\"3\" y=\"7\" width=\"14\" height=\"9\" rx=\"2\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.5\"/>", color);
         g_string_append_printf (s, "<rect x=\"5\" y=\"9\" width=\"%d\" height=\"5\" rx=\"1\" fill=\"%s\"/>", fillw, fill);
         g_string_append_printf (s, "<rect x=\"18\" y=\"9.5\" width=\"2\" height=\"4\" rx=\"1\" fill=\"%s\"/>", color);
-        if (strstr (st->bat_status, "Charging"))
-            g_string_append (s, "<path d=\"M12 4l-3 7h3l-1 7 4-8h-3z\" fill=\"#ffd54f\"/>");
+        if (strstr (st->bat_status, "Charging") || strstr (st->bat_status, "charging"))
+            g_string_append (s, "<path d=\"M13 1.5L6 12h5l-2 9 9-12h-5z\" fill=\"#ffd54f\" stroke=\"#333333\" stroke-width=\"0.6\"/>");
         g_string_append (s, "</g>");
     }
 
