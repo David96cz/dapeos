@@ -875,6 +875,7 @@ wifi_action (GtkWidget *dialog)
             show_wifi_password (item->ssid, TRUE);
         } else {
             g_free (out);
+            g_timeout_add (1500, update_tiles_cb, NULL);
             rescan_later (dialog);
         }
         return;
