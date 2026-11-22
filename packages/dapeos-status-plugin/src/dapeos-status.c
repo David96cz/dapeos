@@ -404,7 +404,6 @@ network_file_changed (GFileMonitor *monitor, GFile *file, GFile *other,
                 if (st->net_type) {
                     g_free (st->net_name);
                     st->net_name = g_strdup (p[2] ? p[2] : "");
-                    g_strfreev (p);
                 }
             }
             g_strfreev (p);
