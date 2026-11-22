@@ -1533,7 +1533,7 @@ static void build_ui (void)
     gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
     gtk_window_set_resizable (GTK_WINDOW (window), TRUE);
-    gtk_window_set_default_size (GTK_WINDOW (window), 440, 300);
+    gtk_window_set_default_size (GTK_WINDOW (window), 440, 420);
     g_signal_connect (window, "key-press-event", G_CALLBACK (on_key_press), NULL);
     g_signal_connect (window, "focus-out-event", G_CALLBACK (on_focus_out), NULL);
     g_signal_connect (window, "map-event", G_CALLBACK (on_window_map), NULL);
@@ -1680,15 +1680,16 @@ static void build_ui (void)
 static void
 set_window_size (gint w, gint h)
 {
-    gtk_window_set_resizable (GTK_WINDOW (window), TRUE);
+    (void) w; (void) h;
     GdkGeometry hints = { 0 };
-    hints.min_width = w;
-    hints.min_height = h;
-    hints.max_width = w;
-    hints.max_height = h;
+    hints.min_width = 440;
+    hints.min_height = 420;
+    hints.max_width = 440;
+    hints.max_height = 420;
+    gtk_window_set_resizable (GTK_WINDOW (window), TRUE);
     gtk_window_set_geometry_hints (GTK_WINDOW (window), NULL, &hints,
                                    GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE);
-    gtk_window_resize (GTK_WINDOW (window), w, h);
+    gtk_window_resize (GTK_WINDOW (window), 440, 420);
     gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 }
 
