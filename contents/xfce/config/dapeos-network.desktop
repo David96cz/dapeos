@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Network
+Name[cs]=Síť
+Comment=Wi-Fi networks and connections
+Comment[cs]=Wi-Fi sítě a připojení
+Exec=dapeos-network
+Icon=network-wireless
+Terminal=false
+NoDisplay=true
+X-XFCE-SettingsDialog=1
+Categories=Settings;Network;
+Keywords=network;wifi;wi-fi;síť;
