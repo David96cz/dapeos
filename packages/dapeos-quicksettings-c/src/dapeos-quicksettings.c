@@ -732,6 +732,7 @@ typedef struct {
     gboolean connected;
     gboolean known;
     gchar *connection;
+    GtkWidget *status_label;
 } WifiItem;
 
 static void
@@ -836,6 +837,48 @@ wifi_is_fresh (const gchar *ssid)
 }
 
 static gboolean hide_wifi_error (gpointer data);
+static guint connect_anim_id = 0;
+static GtkWidget *connect_label = NULL;
+static gint connect_phase = 0;
+
+static gboolean
+connect_anim_cb (gpointer data)
+{
+    (void) data;
+    if (!connect_label) return G_SOURCE_REMOVE;
+    connect_phase = (connect_phase + 1) % 4;
+    gchar *text = g_strdup_printf ("Connecting%.*s", connect_phase, "...");
+    gtk_label_set_text (GTK_LABEL (connect_label), text);
+    g_free (text);
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+start_connect_anim (WifiItem *item)
+{
+    if (connect_anim_id) g_source_remove (connect_anim_id);
+    connect_label = item ? item->status_label : NULL;
+    connect_phase = 0;
+    if (connect_label) {
+        g_object_ref (connect_label);
+        gtk_label_set_text (GTK_LABEL (connect_label), "Connecting...");
+        connect_anim_id = g_timeout_add (350, connect_anim_cb, NULL);
+    }
+}
+
+static void
+stop_connect_anim (void)
+{
+    if (connect_anim_id) { g_source_remove (connect_anim_id); connect_anim_id = 0; }
+    if (connect_label) { g_object_unref (connect_label); connect_label = NULL; }
+}
+
+static gboolean
+wifi_gone_error (const gchar *out)
+{
+    return strstr (out, "not be found") || strstr (out, "No network with SSID") ||
+           strstr (out, "not found");
+}
 
 static void
 wifi_action (GtkWidget *dialog)
@@ -867,10 +910,23 @@ wifi_action (GtkWidget *dialog)
         return;
     }
     if (item->known) {
+        start_connect_anim (item);
         gchar *cmd = g_strdup_printf ("nmcli connection up id %s 2>&1",
                                       g_shell_quote (item->connection ? item->connection : item->ssid));
         gchar *out = run_cmd (cmd);
         g_free (cmd);
+        stop_connect_anim ();
+        if (wifi_gone_error (out)) {
+            g_free (out);
+            if (wifi_error_label) {
+                gtk_label_set_text (GTK_LABEL (wifi_error_label), "This connection is no longer available");
+                gtk_widget_show (wifi_error_label);
+                if (wifi_error_timeout) g_source_remove (wifi_error_timeout);
+                wifi_error_timeout = g_timeout_add (1500, hide_wifi_error, NULL);
+            }
+            rescan_later (dialog);
+            return;
+        }
         if (g_strrstr (out, "Error") || g_strrstr (out, "Secrets") ||
             g_strrstr (out, "key-mgmt")) {
             g_free (out);
@@ -1096,6 +1152,7 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
                 gtk_widget_set_halign (state, GTK_ALIGN_END);
                 gtk_style_context_add_class (gtk_widget_get_style_context (state), "dim-label");
                 gtk_box_pack_end (GTK_BOX (hbox), state, FALSE, FALSE, 0);
+                item->status_label = state;
             }
             gtk_container_add (GTK_CONTAINER (row), hbox);
             g_object_set_data_full (G_OBJECT (row), "wifi-item", item, wifi_item_destroy);
@@ -1278,6 +1335,7 @@ wifi_start_scan (GtkWidget *dialog)
 {
     GtkWidget *list = g_object_get_data (G_OBJECT (dialog), "wifi-list");
     if (!list) return;
+    stop_connect_anim ();
     GList *children = gtk_container_get_children (GTK_CONTAINER (list));
     g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
     wifi_add_connected_stub (list);

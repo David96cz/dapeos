@@ -43,7 +43,7 @@ try:
                 last = props.get("LastSeen", -1)
                 if not ssids or last is None or int(last) < 0:
                     continue
-                if now - int(last) > 45:
+                if now - int(last) > 10:
                     continue
                 raw = bytes(ssids[0])
                 if raw:
