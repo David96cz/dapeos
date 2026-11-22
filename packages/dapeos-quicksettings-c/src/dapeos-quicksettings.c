@@ -1071,7 +1071,12 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
         if (!GTK_IS_LIST_BOX_ROW (l->data)) continue;
         WifiItem *it = g_object_get_data (G_OBJECT (l->data), "wifi-item");
         if (it && it->connected) {
-            gtk_list_box_select_row (GTK_LIST_BOX (list), GTK_LIST_BOX_ROW (l->data));
+            GtkWidget *row = GTK_WIDGET (l->data);
+            g_object_ref (row);
+            gtk_container_remove (GTK_CONTAINER (list), row);
+            gtk_list_box_insert (GTK_LIST_BOX (list), row, 0);
+            g_object_unref (row);
+            gtk_list_box_select_row (GTK_LIST_BOX (list), GTK_LIST_BOX_ROW (row));
             break;
         }
     }
@@ -1150,12 +1155,54 @@ on_net_toggle (GtkButton *button, gpointer data)
 }
 
 static void
+wifi_add_connected_stub (GtkWidget *list)
+{
+    gchar *active = run_cmd ("nmcli -t -f ACTIVE,SSID device wifi list 2>/dev/null");
+    gchar **lines = g_strsplit (active, "\n", -1);
+    gchar *ssid = NULL;
+    for (guint i = 0; lines[i]; i++) {
+        gchar **p = g_strsplit (lines[i], ":", 2);
+        if (p[0] && g_strcmp0 (p[0], "yes") == 0 && p[1] && *p[1]) {
+            ssid = g_strdup (p[1]);
+            g_strfreev (p);
+            break;
+        }
+        g_strfreev (p);
+    }
+    g_strfreev (lines);
+    g_free (active);
+    if (!ssid) return;
+
+    WifiItem *item = g_new0 (WifiItem, 1);
+    item->ssid = ssid;
+    item->connected = TRUE;
+    item->known = TRUE;
+    item->secured = TRUE;
+
+    GtkWidget *row = gtk_list_box_row_new ();
+    GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget *name = gtk_label_new (item->ssid);
+    gtk_label_set_ellipsize (GTK_LABEL (name), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_halign (name, GTK_ALIGN_START);
+    gtk_widget_set_hexpand (name, TRUE);
+    gtk_box_pack_start (GTK_BOX (hbox), name, TRUE, TRUE, 0);
+    GtkWidget *state = gtk_label_new ("✓ Connected");
+    gtk_widget_set_halign (state, GTK_ALIGN_END);
+    gtk_style_context_add_class (gtk_widget_get_style_context (state), "dim-label");
+    gtk_box_pack_end (GTK_BOX (hbox), state, FALSE, FALSE, 0);
+    gtk_container_add (GTK_CONTAINER (row), hbox);
+    g_object_set_data_full (G_OBJECT (row), "wifi-item", item, wifi_item_destroy);
+    gtk_list_box_insert (GTK_LIST_BOX (list), row, 0);
+}
+
+static void
 wifi_start_scan (GtkWidget *dialog)
 {
     GtkWidget *list = g_object_get_data (G_OBJECT (dialog), "wifi-list");
     if (!list) return;
     GList *children = gtk_container_get_children (GTK_CONTAINER (list));
     g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
+    wifi_add_connected_stub (list);
     GtkWidget *scanning = gtk_label_new ("Scanning for networks…");
     gtk_list_box_insert (GTK_LIST_BOX (list), scanning, -1);
     gtk_widget_show_all (list);
