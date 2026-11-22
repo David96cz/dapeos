@@ -26,12 +26,12 @@ xset() {
 monitors=$(xfconf-query -c xfce4-desktop -l 2>/dev/null \
     | grep -oE '/backdrop/screen0/[^/]+' | sort -u)
 
-for name in $(xrandr --listmonitors 2>/dev/null \
+for name in $(xrandr --listactivemonitors 2>/dev/null \
     | sed -n 's/^[ 0-9]*: [+*]*\([^ ]*\).*/\1/p'); do
     monitors="$monitors
 /backdrop/screen0/monitor${name}"
 done
-monitors=$(printf '%s\n' "$monitors" | sort -u)
+monitors=$(printf '%s\n%s\n' "$monitors" "/backdrop/screen0/monitor0" | sort -u)
 
 for mon in $monitors; do
     xset "$mon/image-path" string "$WALLPAPER"
