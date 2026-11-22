@@ -1700,6 +1700,7 @@ apply_start_page (gpointer data)
 {
     (void) data;
     if (!start_page) return FALSE;
+    g_printerr ("DAPEOS-QS: applying page '%s'\n", start_page);
     if (g_strcmp0 (start_page, "wifi") == 0) {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
         gtk_window_resize (GTK_WINDOW (window), 440, 420);
@@ -1710,6 +1711,7 @@ apply_start_page (gpointer data)
         gtk_window_resize (GTK_WINDOW (window), 440, 300);
         position_window ();
     }
+    g_printerr ("DAPEOS-QS: page now '%s'\n", gtk_stack_get_visible_child_name (GTK_STACK (qstack)));
     g_clear_pointer (&start_page, g_free);
     return FALSE;
 }
