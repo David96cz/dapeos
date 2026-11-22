@@ -1159,14 +1159,16 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
             if (connected) {
                 gtk_list_box_insert (GTK_LIST_BOX (list), row, 0);
             } else if (item->known) {
-                gint pos = 0;
+                gint pos = 0, idx = 0;
                 GList *kids = gtk_container_get_children (GTK_CONTAINER (list));
-                for (GList *k = kids; k; k = k->next) {
+                for (GList *k = kids; k; k = k->next, idx++) {
                     if (!GTK_IS_LIST_BOX_ROW (k->data)) continue;
                     WifiItem *ki = g_object_get_data (G_OBJECT (k->data), "wifi-item");
-                    if (ki && ki->connected) continue;
+                    if (ki && (ki->connected || ki->known)) {
+                        pos = idx + 1;
+                        continue;
+                    }
                     break;
-                    pos++;
                 }
                 g_list_free (kids);
                 gtk_list_box_insert (GTK_LIST_BOX (list), row, pos);
