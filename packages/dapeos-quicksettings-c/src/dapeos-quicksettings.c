@@ -44,6 +44,7 @@ static guint bg_timeout = 0;
 static gboolean night_on = FALSE;
 static gboolean window_dark = TRUE;
 static void position_window (void);
+static void set_window_size (gint w, gint h);
 static void reposition_later (void);
 static gchar *start_page;
 static gboolean apply_start_page (gpointer data);
@@ -1714,6 +1715,12 @@ position_window (void)
     if (w <= 0) w = 440;
     if (h <= 0) h = 300;
     position_window_size (w, h);
+}
+
+static void
+reposition_later (void)
+{
+    position_window ();
 }
 
 static gboolean refresh_bg (gpointer data)
