@@ -1512,6 +1512,61 @@ build_wifi_page (void)
     return page;
 }
 
+static gchar *
+page_request_path (void)
+{
+    gchar *dir = g_build_filename (g_get_user_cache_dir (), "dapeos", NULL);
+    g_mkdir_with_parents (dir, 0700);
+    gchar *path = g_build_filename (dir, "qs-page", NULL);
+    g_free (dir);
+    return path;
+}
+
+static void
+consume_page_request (void)
+{
+    gchar *path = page_request_path ();
+    gchar *data = NULL;
+    if (g_file_get_contents (path, &data, NULL, NULL)) {
+        g_strstrip (data);
+        if (g_strcmp0 (data, "wifi") == 0) {
+            gtk_widget_show_all (window);
+            on_net_open (NULL, NULL);
+            gtk_window_present (GTK_WINDOW (window));
+        }
+        g_free (data);
+        g_remove (path);
+    }
+    g_free (path);
+}
+
+static void
+page_request_changed (GFileMonitor *monitor, GFile *file, GFile *other,
+                      GFileMonitorEvent event, gpointer data)
+{
+    (void) monitor; (void) file; (void) other; (void) data;
+    if (event == G_FILE_MONITOR_EVENT_CHANGED ||
+        event == G_FILE_MONITOR_EVENT_CREATED ||
+        event == G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT)
+        consume_page_request ();
+}
+
+static void
+install_page_monitor (void)
+{
+    gchar *path = page_request_path ();
+    if (!g_file_test (path, G_FILE_TEST_EXISTS))
+        g_file_set_contents (path, "", 0, NULL);
+    GFile *file = g_file_new_for_path (path);
+    GFileMonitor *mon = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, NULL);
+    if (mon) {
+        g_signal_connect (mon, "changed", G_CALLBACK (page_request_changed), NULL);
+        g_object_set_data_full (G_OBJECT (window), "dapeos-page-monitor", mon, g_object_unref);
+    }
+    g_object_unref (file);
+    g_free (path);
+}
+
 static gboolean
 on_window_map (GtkWidget *widget, GdkEvent *event, gpointer data)
 {
@@ -1670,6 +1725,7 @@ static void build_ui (void)
     g_free (bat);
     update_brightness_ui ();
     install_cache_monitors ();
+    install_page_monitor ();
 }
 
 static void position_window (void)
@@ -1717,8 +1773,16 @@ activate (GtkApplication *app, gpointer data)
         if (start_page && g_strcmp0 (start_page, "wifi") == 0)
             on_net_open (NULL, NULL);
         g_clear_pointer (&start_page, g_free);
+        consume_page_request ();
     } else if (gtk_widget_get_visible (window)) {
-        gtk_widget_hide (window);
+        gchar *req = page_request_path ();
+        gboolean pending = g_file_test (req, G_FILE_TEST_EXISTS) &&
+                           g_file_get_contents (req, NULL, NULL, NULL);
+        g_free (req);
+        if (pending)
+            consume_page_request ();
+        else
+            gtk_widget_hide (window);
     } else {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         gtk_window_resize (GTK_WINDOW (window), 440, 300);
