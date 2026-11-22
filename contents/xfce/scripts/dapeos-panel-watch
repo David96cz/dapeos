@@ -21,6 +21,7 @@ restart_panel() {
 
 watch_channel() {
     xfconf-query -c "$1" -m 2>/dev/null | while IFS= read -r line; do
+        printf '%s %s: %s\n' "$(date +%H:%M:%S)" "$1" "$line" >> /tmp/dapeos-panel-watch.log
         case "$line" in
             *ThemeName*)
                 dapeos-theme-sync
