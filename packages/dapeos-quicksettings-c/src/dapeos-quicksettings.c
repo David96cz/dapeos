@@ -897,6 +897,13 @@ on_wifi_advanced (GtkButton *button, gpointer data)
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
 }
 
+static void
+on_wifi_refresh (GtkButton *button, gpointer data)
+{
+    (void) button;
+    wifi_start_scan (GTK_WIDGET (data));
+}
+
 static gboolean
 hide_wifi_error (gpointer data)
 {
@@ -1558,12 +1565,16 @@ build_wifi_page (void)
     GtkWidget *action = gtk_button_new_with_label ("Connect");
     GtkWidget *forget = gtk_button_new_with_label ("Forget");
     GtkWidget *advanced = gtk_button_new_with_label ("Advanced…");
+    GtkWidget *refresh = gtk_button_new_with_label ("Refresh");
+    gtk_widget_set_tooltip_text (refresh, "Scan Wi-Fi networks again");
     g_signal_connect (action, "clicked", G_CALLBACK (on_wifi_action), page);
     g_signal_connect (forget, "clicked", G_CALLBACK (on_wifi_forget), page);
     g_signal_connect (advanced, "clicked", G_CALLBACK (on_wifi_advanced), page);
+    g_signal_connect (refresh, "clicked", G_CALLBACK (on_wifi_refresh), page);
     gtk_box_pack_start (GTK_BOX (actions), action, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), forget, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), advanced, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), refresh, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), actions, FALSE, FALSE, 0);
 
     g_object_set_data (G_OBJECT (page), "wifi-list", list);
