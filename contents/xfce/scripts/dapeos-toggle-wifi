@@ -1,5 +1,5 @@
 #!/bin/sh
-pid=$(pgrep -f '^/usr/local/bin/dapeos-quicksettings-c' | head -1)
+pid=$(pgrep -f '[d]apeos-quicksettings-c' | head -1)
 if [ -z "$pid" ]; then
     echo "quick settings neběží" >&2
     exit 1

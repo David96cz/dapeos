@@ -1707,6 +1707,13 @@ static void position_window (void)
     if (x < geo.x + 8) x = geo.x + 8;
     if (y < geo.y + 8) y = geo.y + 8;
     gtk_window_move (GTK_WINDOW (window), x, y);
+    {
+        gint aw = 0, ah = 0, ax = 0, ay = 0;
+        gtk_window_get_size (GTK_WINDOW (window), &aw, &ah);
+        gtk_window_get_position (GTK_WINDOW (window), &ax, &ay);
+        FILE *f = fopen ("/tmp/dapeos-qs-geometry.log", "a");
+        if (f) { fprintf (f, "positioned: %dx%d at %d,%d\n", aw, ah, ax, ay); fclose (f); }
+    }
 }
 
 static gboolean refresh_bg (gpointer data)
