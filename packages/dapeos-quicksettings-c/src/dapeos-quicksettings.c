@@ -883,7 +883,7 @@ on_wifi_forget (GtkButton *button, gpointer data)
     wifi_confirm_connected = item->connected;
     gtk_label_set_text (GTK_LABEL (wifi_confirm_label), item->ssid);
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi-confirm");
-    gtk_window_resize (GTK_WINDOW (window), 440, 300);
+    set_window_size (440, 300);
     reposition_later ();
 }
 
@@ -1183,7 +1183,7 @@ on_net_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
-    gtk_window_resize (GTK_WINDOW (window), 440, 420);
+    set_window_size (440, 420);
     reposition_later ();
     wifi_start_scan (wifi_page);
 }
@@ -1300,7 +1300,7 @@ show_main_page (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
-    gtk_window_resize (GTK_WINDOW (window), 440, 300);
+    set_window_size (440, 300);
     reposition_later ();
 }
 
@@ -1448,7 +1448,7 @@ show_wifi_password (const gchar *ssid, gboolean known)
     gtk_label_set_text (GTK_LABEL (wifi_password_label), ssid);
     gtk_entry_set_text (GTK_ENTRY (wifi_password_entry), "");
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi-password");
-    gtk_window_resize (GTK_WINDOW (window), 440, 330);
+    set_window_size (440, 330);
     reposition_later ();
     gtk_widget_grab_focus (wifi_password_entry);
 }
@@ -1527,7 +1527,7 @@ static void build_ui (void)
     gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
-    gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
+    gtk_window_set_resizable (GTK_WINDOW (window), TRUE);
     gtk_window_set_default_size (GTK_WINDOW (window), 440, 300);
     g_signal_connect (window, "key-press-event", G_CALLBACK (on_key_press), NULL);
     g_signal_connect (window, "focus-out-event", G_CALLBACK (on_focus_out), NULL);
@@ -1673,6 +1673,19 @@ static void build_ui (void)
 }
 
 static void
+set_window_size (gint w, gint h)
+{
+    GdkGeometry hints = { 0 };
+    hints.min_width = w;
+    hints.min_height = h;
+    hints.max_width = w;
+    hints.max_height = h;
+    gtk_window_set_geometry_hints (GTK_WINDOW (window), NULL, &hints,
+                                   GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE);
+    gtk_window_resize (GTK_WINDOW (window), w, h);
+}
+
+static void
 position_window_size (gint w, gint h)
 {
     GdkDisplay *display = gdk_display_get_default ();
@@ -1715,12 +1728,12 @@ apply_start_page (gpointer data)
     g_printerr ("DAPEOS-QS: applying page '%s'\n", start_page);
     if (g_strcmp0 (start_page, "wifi") == 0) {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
-        gtk_window_resize (GTK_WINDOW (window), 440, 420);
+        set_window_size (440, 420);
         position_window_size (440, 420);
         wifi_start_scan (wifi_page);
     } else {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
-        gtk_window_resize (GTK_WINDOW (window), 440, 300);
+        set_window_size (440, 300);
         position_window_size (440, 300);
     }
     g_printerr ("DAPEOS-QS: page now '%s'\n", gtk_stack_get_visible_child_name (GTK_STACK (qstack)));
@@ -1739,7 +1752,7 @@ activate (GtkApplication *app, gpointer data)
             gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         } else {
             gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
-            gtk_window_resize (GTK_WINDOW (window), 440, 300);
+            set_window_size (440, 300);
         }
         gtk_widget_show_all (window);
         if (!start_page)
@@ -1758,7 +1771,7 @@ activate (GtkApplication *app, gpointer data)
         }
     } else {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
-        gtk_window_resize (GTK_WINDOW (window), 440, 300);
+        set_window_size (440, 300);
         position_window ();
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
