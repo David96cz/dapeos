@@ -22,6 +22,8 @@ typedef struct {
     gint pad_right;
 } DapeosStatus;
 
+static void update_image (DapeosStatus *st);
+
 static gchar *
 run_cmd (const gchar *cmd)
 {
