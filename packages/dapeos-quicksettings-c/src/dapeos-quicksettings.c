@@ -1209,7 +1209,7 @@ toggle_wifi_signal (gpointer data)
     log_geometry ("before toggle");
     on_net_open (NULL, NULL);
     log_geometry ("after toggle");
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -1736,6 +1736,7 @@ static gboolean refresh_bg (gpointer data)
 }
 
 static GtkApplication *application;
+static gboolean signal_installed = FALSE;
 
 static void
 activate (GtkApplication *app, gpointer data)
@@ -1749,7 +1750,6 @@ activate (GtkApplication *app, gpointer data)
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         log_geometry ("initial show");
-        static gboolean signal_installed = FALSE;
         if (!signal_installed) {
             g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
             {
@@ -1772,7 +1772,6 @@ activate (GtkApplication *app, gpointer data)
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         log_geometry ("initial show");
-        static gboolean signal_installed = FALSE;
         if (!signal_installed) {
             g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
             {
