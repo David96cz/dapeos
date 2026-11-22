@@ -1745,7 +1745,7 @@ activate (GtkApplication *app, gpointer data)
         build_ui ();
         gtk_application_add_window (app, GTK_WINDOW (window));
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
-        gtk_window_resize (GTK_WINDOW (window), 440, 300);
+        gtk_window_resize (GTK_WINDOW (window), 504, 300);
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         log_geometry ("initial show");
@@ -1768,7 +1768,7 @@ activate (GtkApplication *app, gpointer data)
         gtk_widget_hide (window);
     } else {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
-        gtk_window_resize (GTK_WINDOW (window), 440, 300);
+        gtk_window_resize (GTK_WINDOW (window), 504, 300);
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         log_geometry ("initial show");
