@@ -1512,7 +1512,7 @@ on_window_map (GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     (void) widget; (void) event; (void) data;
     if (start_page) {
-        g_timeout_add (250, apply_start_page, NULL);
+        apply_start_page (NULL);
     } else if (qstack) {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
     }
@@ -1672,22 +1672,29 @@ static void build_ui (void)
     install_cache_monitors ();
 }
 
-static void position_window (void)
+static void
+position_window_size (gint w, gint h)
 {
     GdkDisplay *display = gdk_display_get_default ();
     GdkMonitor *monitor = gdk_display_get_primary_monitor (display);
     if (!monitor) monitor = gdk_display_get_monitor (display, 0);
     GdkRectangle geo;
     gdk_monitor_get_geometry (monitor, &geo);
-    gint w = 0, h = 0;
-    gtk_window_get_size (GTK_WINDOW (window), &w, &h);
-    if (w <= 0) w = 420;
-    if (h <= 0) h = 340;
     gint x = geo.x + geo.width - w - 20;
     gint y = geo.y + geo.height - panel_height () - h - 20;
     if (x < geo.x + 8) x = geo.x + 8;
     if (y < geo.y + 8) y = geo.y + 8;
     gtk_window_move (GTK_WINDOW (window), x, y);
+}
+
+static void
+position_window (void)
+{
+    gint w = 0, h = 0;
+    gtk_window_get_size (GTK_WINDOW (window), &w, &h);
+    if (w <= 0) w = 440;
+    if (h <= 0) h = 300;
+    position_window_size (w, h);
 }
 
 static gboolean refresh_bg (gpointer data)
@@ -1709,12 +1716,12 @@ apply_start_page (gpointer data)
     if (g_strcmp0 (start_page, "wifi") == 0) {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "wifi");
         gtk_window_resize (GTK_WINDOW (window), 440, 420);
-        position_window ();
+        position_window_size (440, 420);
         wifi_start_scan (wifi_page);
     } else {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         gtk_window_resize (GTK_WINDOW (window), 440, 300);
-        position_window ();
+        position_window_size (440, 300);
     }
     g_printerr ("DAPEOS-QS: page now '%s'\n", gtk_stack_get_visible_child_name (GTK_STACK (qstack)));
     g_clear_pointer (&start_page, g_free);
@@ -1740,7 +1747,8 @@ activate (GtkApplication *app, gpointer data)
         g_timeout_add (100, update_volume_cb, NULL);
         g_timeout_add (400, update_tiles_cb, NULL);
         g_timeout_add (1000, refresh_bg, NULL);
-        position_window ();
+        if (!start_page)
+            position_window ();
         gtk_window_present (GTK_WINDOW (window));
     } else if (gtk_widget_get_visible (window)) {
         if (start_page) {
