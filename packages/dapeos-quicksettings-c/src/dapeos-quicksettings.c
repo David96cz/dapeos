@@ -1679,6 +1679,7 @@ static void build_ui (void)
 static void
 set_window_size (gint w, gint h)
 {
+    gtk_window_set_resizable (GTK_WINDOW (window), TRUE);
     GdkGeometry hints = { 0 };
     hints.min_width = w;
     hints.min_height = h;
