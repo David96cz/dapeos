@@ -1536,8 +1536,7 @@ static gboolean
 on_window_map (GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     (void) widget; (void) event; (void) data;
-    if (qstack)
-        gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
+    position_window ();
     return FALSE;
 }
 
@@ -1710,7 +1709,10 @@ static void position_window (void)
     if (!monitor) monitor = gdk_display_get_monitor (display, 0);
     GdkRectangle geo;
     gdk_monitor_get_geometry (monitor, &geo);
-    gint w = 440, h = 300;
+    gint w = 0, h = 0;
+    gtk_window_get_size (GTK_WINDOW (window), &w, &h);
+    if (w <= 0) w = 440;
+    if (h <= 0) h = 300;
     gint x = geo.x + geo.width - w - 20;
     gint y = geo.y + geo.height - panel_height () - h - 20;
     if (x < geo.x + 8) x = geo.x + 8;
@@ -1765,7 +1767,6 @@ activate (GtkApplication *app, gpointer data)
     } else {
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         gtk_window_resize (GTK_WINDOW (window), 440, 300);
-        position_window ();
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         log_geometry ("initial show");
