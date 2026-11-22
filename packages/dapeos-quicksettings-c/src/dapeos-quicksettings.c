@@ -1749,7 +1749,6 @@ activate (GtkApplication *app, gpointer data)
         g_timeout_add (100, update_volume_cb, NULL);
         g_timeout_add (400, update_tiles_cb, NULL);
         g_timeout_add (1000, refresh_bg, NULL);
-        position_window ();
         gtk_window_present (GTK_WINDOW (window));
     } else if (gtk_widget_get_visible (window)) {
         gtk_widget_hide (window);
