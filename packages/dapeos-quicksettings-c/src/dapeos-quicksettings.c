@@ -1204,6 +1204,8 @@ toggle_wifi_signal (gpointer data)
         FILE *f = fopen ("/tmp/dapeos-qs-signal.log", "a");
         if (f) { fprintf (f, "handler pid=%d\n", (int) getpid ()); fclose (f); }
     }
+    gtk_widget_show_all (window);
+    gtk_window_present (GTK_WINDOW (window));
     log_geometry ("before toggle");
     on_net_open (NULL, NULL);
     log_geometry ("after toggle");
