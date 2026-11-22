@@ -1208,7 +1208,7 @@ start_wifi_list (GtkWidget *dialog)
     GtkWidget *list = g_object_get_data (G_OBJECT (dialog), "wifi-list");
     if (!list) return;
     const gchar *argv[] = { "nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY",
-                            "device", "wifi", "list", NULL };
+                            "device", "wifi", "list", "--rescan", "yes", NULL };
     GError *error = NULL;
     GSubprocess *proc = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE, &error);
     if (proc) {
@@ -1252,7 +1252,7 @@ wifi_start_scan (GtkWidget *dialog)
     g_free (dev);
 
     g_object_ref (dialog);
-    g_timeout_add (1500, wifi_list_cb, dialog);
+    g_timeout_add (3000, wifi_list_cb, dialog);
 }
 
 static void
