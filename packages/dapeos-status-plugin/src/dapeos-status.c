@@ -390,8 +390,14 @@ network_file_changed (GFileMonitor *monitor, GFile *file, GFile *other,
         gchar **lines = g_strsplit (text, "\n", -1);
         for (guint i = 0; lines[i]; i++) {
             if (g_str_has_prefix (lines[i], "wifi:")) {
-                st->wifi_enabled = g_strcmp0 (lines[i] + 5, "enabled") == 0;
-                continue;
+                const gchar *value = lines[i] + 5;
+                if (g_strcmp0 (value, "enabled") == 0)
+                    st->wifi_enabled = TRUE;
+                else if (g_strcmp0 (value, "disabled") == 0)
+                    st->wifi_enabled = FALSE;
+                if (g_strcmp0 (value, "enabled") == 0 ||
+                    g_strcmp0 (value, "disabled") == 0)
+                    continue;
             }
             gchar **p = g_strsplit (lines[i], ":", 3);
             if (p[1] && g_strcmp0 (p[1], "connected") == 0) {
