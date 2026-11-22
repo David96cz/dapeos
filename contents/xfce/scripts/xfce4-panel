@@ -24,4 +24,7 @@ else
     fi
 fi
 
+if [ -x /usr/bin/xfce4-panel.real ]; then
+    exec /usr/bin/xfce4-panel.real "$@"
+fi
 exec /usr/bin/xfce4-panel "$@"
