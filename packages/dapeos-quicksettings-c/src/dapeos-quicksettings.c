@@ -835,6 +835,8 @@ wifi_is_fresh (const gchar *ssid)
     return found;
 }
 
+static gboolean hide_wifi_error (gpointer data);
+
 static void
 wifi_action (GtkWidget *dialog)
 {
