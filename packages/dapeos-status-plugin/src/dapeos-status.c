@@ -143,7 +143,7 @@ build_svg (DapeosStatus *st)
     } else {
         gdouble op = st->net_type == 2 ? 1.0 : 0.35;
         g_string_append_printf (s,
-            "<g transform=\"translate(%d,0)\" opacity=\"%.2f\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.7\" stroke-linecap=\"round\">",
+            "<g transform=\"translate(%d,-1.5)\" opacity=\"%.2f\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.7\" stroke-linecap=\"round\">",
             x, op, color);
         g_string_append_printf (s, "<circle cx=\"11\" cy=\"16.5\" r=\"1.3\" fill=\"%s\" stroke=\"none\"/>", color);
         g_string_append (s, "<path d=\"M6.8 13.4a6.3 6.3 0 0 1 8.4 0\"/>");
