@@ -15,6 +15,10 @@ typedef struct {
     GtkWidget *area;
     GPid pactl_pid, nm_pid, upower_pid;
     gboolean volume_busy;
+    gint icon_size;
+    gint gap;
+    gint pad_left;
+    gint pad_right;
 } DapeosStatus;
 
 static gchar *
@@ -33,6 +37,46 @@ run_cmd (const gchar *cmd)
         return g_strdup ("");
     g_strstrip (out);
     return out;
+}
+
+static gint
+tray_value (const gchar *key, gint def)
+{
+    gchar *path = g_build_filename (g_get_user_config_dir (), "dapeos", "tray.json", NULL);
+    gchar *data = NULL;
+    if (!g_file_get_contents (path, &data, NULL, NULL)) {
+        g_free (path);
+        return def;
+    }
+    gint value = def;
+    gchar *p = strstr (data, key);
+    if (p) {
+        p = strchr (p, ':');
+        if (p) value = atoi (p + 1);
+    }
+    g_free (data);
+    g_free (path);
+    return value;
+}
+
+static void
+load_tray_config (DapeosStatus *st)
+{
+    st->icon_size = tray_value ("\"icon_size\"", 26);
+    st->gap = tray_value ("\"gap\"", 5);
+    st->pad_left = tray_value ("\"pad_left\"", 4);
+    st->pad_right = tray_value ("\"pad_right\"", 0);
+    if (st->icon_size < 8) st->icon_size = 8;
+    if (st->icon_size > 64) st->icon_size = 64;
+    if (st->gap < 0) st->gap = 0;
+    if (st->pad_left < 0) st->pad_left = 0;
+    if (st->pad_right < 0) st->pad_right = 0;
+}
+
+static gint
+layout_width (DapeosStatus *st)
+{
+    return st->pad_left + 3 * st->icon_size + 2 * st->gap + st->pad_right;
 }
 
 static void
@@ -125,16 +169,22 @@ read_state (DapeosStatus *st)
 static GString *
 build_svg (DapeosStatus *st)
 {
-    const gint W = 22, H = 22, GAP = 4;
-    gint x = 0;
+    const gint W = st->icon_size;
+    const gint H = st->icon_size;
+    const gint GAP = st->gap;
+    const gint PADL = st->pad_left;
+    const gint PADR = st->pad_right;
+    const gdouble scale = (gdouble) W / 22.0;
+    gint total = PADL + 3 * W + 2 * GAP + PADR;
+    gint x = PADL;
     gchar *color = st->dark ? "#dfdfdf" : "#444444";
     GString *s = g_string_new ("");
     g_string_append_printf (s,
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\">",
-        3 * W + 2 * GAP, H, 3 * W + 2 * GAP, H);
+        total, H, total, H);
 
     if (st->net_type == 1) {
-        g_string_append_printf (s, "<g transform=\"translate(%d,1)\" fill=\"%s\">", x, color);
+        g_string_append_printf (s, "<g transform=\"translate(%d,0) scale(%.4f)\" fill=\"%s\">", x, scale, color);
         g_string_append (s, "<rect x=\"4\" y=\"8\" width=\"14\" height=\"8\" rx=\"2\"/>");
         g_string_append (s, "<rect x=\"6\" y=\"4\" width=\"2\" height=\"5\" rx=\"1\"/>");
         g_string_append (s, "<rect x=\"10\" y=\"4\" width=\"2\" height=\"5\" rx=\"1\"/>");
@@ -143,31 +193,31 @@ build_svg (DapeosStatus *st)
     } else {
         gdouble op = st->net_type == 2 ? 1.0 : 0.35;
         g_string_append_printf (s,
-            "<g transform=\"translate(%d,-1.5)\" opacity=\"%.2f\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.7\" stroke-linecap=\"round\">",
-            x, op, color);
+            "<g transform=\"translate(%d,-1.5) scale(%.4f)\" opacity=\"%.2f\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.7\" stroke-linecap=\"round\">",
+            x, scale, op, color);
         g_string_append_printf (s, "<circle cx=\"11\" cy=\"16.5\" r=\"1.3\" fill=\"%s\" stroke=\"none\"/>", color);
         g_string_append (s, "<path d=\"M6.8 13.4a6.3 6.3 0 0 1 8.4 0\"/>");
         g_string_append (s, "<path d=\"M3.8 10.2a10.6 10.6 0 0 1 14.4 0\"/>");
         g_string_append (s, "</g>");
     }
 
-    x = W + GAP;
+    x = PADL + W + GAP;
     if (st->cap < 0) {
-        g_string_append_printf (s, "<g transform=\"translate(%d,0.5)\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.5\" opacity=\"0.35\">", x, color);
+        g_string_append_printf (s, "<g transform=\"translate(%d,0) scale(%.4f)\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.5\" opacity=\"0.35\">", x, scale, color);
         g_string_append (s, "<rect x=\"3\" y=\"7\" width=\"14\" height=\"9\" rx=\"2\"/>");
         g_string_append (s, "</g>");
     } else {
         gint fillw = MAX (2, MIN (10, 10 * st->cap / 100));
         gchar *fill = st->cap > 30 ? "#4caf50" : (st->cap > 15 ? "#ff9800" : "#f44336");
-        g_string_append_printf (s, "<g transform=\"translate(%d,-0.5)\">", x);
+        g_string_append_printf (s, "<g transform=\"translate(%d,0) scale(%.4f)\">", x, scale);
         g_string_append_printf (s, "<rect x=\"3\" y=\"7\" width=\"14\" height=\"9\" rx=\"2\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.5\"/>", color);
         g_string_append_printf (s, "<rect x=\"5\" y=\"9\" width=\"%d\" height=\"5\" rx=\"1\" fill=\"%s\"/>", fillw, fill);
         g_string_append_printf (s, "<rect x=\"18\" y=\"9.5\" width=\"2\" height=\"4\" rx=\"1\" fill=\"%s\"/>", color);
         g_string_append (s, "</g>");
     }
 
-    x = 2 * (W + GAP);
-    g_string_append_printf (s, "<g transform=\"translate(%d,0)\" fill=\"%s\">", x, color);
+    x = PADL + 2 * (W + GAP);
+    g_string_append_printf (s, "<g transform=\"translate(%d,0) scale(%.4f)\" fill=\"%s\">", x, scale, color);
     g_string_append (s, "<path d=\"M4 8.5h3l4.5-3.5v12L7 13.5H4z\"/>");
     if (st->mute) {
         g_string_append (s, "<path d=\"M13.5 8.5l5 5M18.5 8.5l-5 5\" fill=\"none\" stroke=\"#f44336\" stroke-width=\"1.7\" stroke-linecap=\"round\"/>");
@@ -185,7 +235,9 @@ update_image (DapeosStatus *st)
     GString *svg = build_svg (st);
     GError *error = NULL;
     RsvgHandle *handle = rsvg_handle_new_from_data ((const guint8 *) svg->str, svg->len, &error);
-    cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 74, 22);
+    gint out_w = layout_width (st);
+    gint out_h = st->icon_size;
+    cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, out_w, out_h);
     cairo_t *cr = cairo_create (surface);
 
     if (handle) {
@@ -200,7 +252,7 @@ update_image (DapeosStatus *st)
     cairo_destroy (cr);
     g_string_free (svg, TRUE);
 
-    GdkPixbuf *pix = gdk_pixbuf_get_from_surface (surface, 0, 0, 74, 22);
+    GdkPixbuf *pix = gdk_pixbuf_get_from_surface (surface, 0, 0, out_w, out_h);
     cairo_surface_destroy (surface);
     if (pix) {
         gtk_image_set_from_pixbuf (GTK_IMAGE (st->area), pix);
@@ -310,7 +362,7 @@ static gboolean
 on_size_changed (XfcePanelPlugin *plugin, gint size, gpointer data)
 {
     DapeosStatus *st = data;
-    gtk_widget_set_size_request (st->area, 74, 22);
+    gtk_widget_set_size_request (st->area, layout_width (st), st->icon_size);
     gtk_widget_set_size_request (GTK_WIDGET (plugin), 74, 22);
     update_image (st);
     return TRUE;
@@ -403,10 +455,11 @@ static void
 dapeos_status_construct (XfcePanelPlugin *plugin)
 {
     DapeosStatus *st = g_new0 (DapeosStatus, 1);
+    load_tray_config (st);
     read_state (st);
 
     st->area = gtk_image_new ();
-    gtk_widget_set_size_request (st->area, 74, 22);
+    gtk_widget_set_size_request (st->area, layout_width (st), st->icon_size);
     gtk_widget_show (st->area);
     gtk_widget_add_events (st->area, GDK_BUTTON_PRESS_MASK);
     g_signal_connect (st->area, "button-press-event", G_CALLBACK (on_click), st);
@@ -426,8 +479,8 @@ dapeos_status_construct (XfcePanelPlugin *plugin)
     gtk_widget_set_valign (box, GTK_ALIGN_CENTER);
     gtk_container_add (GTK_CONTAINER (eventbox), box);
     gtk_box_pack_start (GTK_BOX (box), st->area, FALSE, FALSE, 0);
-    gtk_widget_set_size_request (eventbox, 74, 22);
-    gtk_widget_set_size_request (box, 74, 22);
+    gtk_widget_set_size_request (eventbox, layout_width (st), st->icon_size);
+    gtk_widget_set_size_request (box, layout_width (st), st->icon_size);
     update_image (st);
 
     g_signal_connect (plugin, "size-changed", G_CALLBACK (on_size_changed), st);
