@@ -81,12 +81,6 @@ layout_width (DapeosStatus *st)
 }
 
 static void
-read_volume (DapeosStatus *st)
-{
-    read_volume (st);
-}
-
-static void
 read_state (DapeosStatus *st)
 {
     g_free (st->net_name);
@@ -108,6 +102,10 @@ read_state (DapeosStatus *st)
     }
     g_strfreev (lines);
     g_free (nm);
+
+    gchar *radio = run_cmd ("nmcli -t -f WIFI radio 2>/dev/null");
+    st->wifi_enabled = strstr (radio, "enabled") != NULL;
+    g_free (radio);
 
     gchar *v = run_cmd ("pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null");
     st->vol = 0;
