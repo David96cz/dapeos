@@ -1188,6 +1188,29 @@ on_net_open (GtkButton *button, gpointer data)
 }
 
 static void
+log_geometry (const gchar *tag)
+{
+    gint w = 0, h = 0, x = 0, y = 0;
+    gtk_window_get_size (GTK_WINDOW (window), &w, &h);
+    gtk_window_get_position (GTK_WINDOW (window), &x, &y);
+    FILE *f = fopen ("/tmp/dapeos-qs-geometry.log", "a");
+    if (f) {
+        fprintf (f, "%s: %dx%d at %d,%d\n", tag, w, h, x, y);
+        fclose (f);
+    }
+}
+
+static gboolean
+toggle_wifi_signal (gpointer data)
+{
+    (void) data;
+    log_geometry ("before toggle");
+    on_net_open (NULL, NULL);
+    log_geometry ("after toggle");
+    return G_SOURCE_REMOVE;
+}
+
+static void
 on_bt_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
@@ -1708,7 +1731,11 @@ activate (GtkApplication *app, gpointer data)
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         log_geometry ("initial show");
-        g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
+        static gboolean signal_installed = FALSE;
+        if (!signal_installed) {
+            g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
+            signal_installed = TRUE;
+        }
         g_timeout_add (100, update_volume_cb, NULL);
         g_timeout_add (400, update_tiles_cb, NULL);
         g_timeout_add (1000, refresh_bg, NULL);
@@ -1723,7 +1750,11 @@ activate (GtkApplication *app, gpointer data)
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
         log_geometry ("initial show");
-        g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
+        static gboolean signal_installed = FALSE;
+        if (!signal_installed) {
+            g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
+            signal_installed = TRUE;
+        }
         gtk_window_present (GTK_WINDOW (window));
     }
 }
