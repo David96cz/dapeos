@@ -1905,10 +1905,8 @@ night_schedule_tick (gpointer data)
     gint end = th * 60 + tm;
     gboolean should = (start <= end) ? (cur >= start && cur < end)
                                      : (cur >= start || cur < end);
-    if (should != night_on) {
-        on_night_clicked (NULL, NULL);
-        if (night_page_toggle) gtk_button_set_label (GTK_BUTTON (night_page_toggle), night_on ? "On" : "Off");
-    }
+    if (should != night_on)
+        night_set_on (should);
     return G_SOURCE_CONTINUE;
 }
 
