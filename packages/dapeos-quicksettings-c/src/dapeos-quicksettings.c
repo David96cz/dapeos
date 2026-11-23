@@ -2120,6 +2120,17 @@ build_wifi_page (void)
     return page;
 }
 
+static void
+on_window_realize (GtkWidget *widget, gpointer data)
+{
+    (void) data;
+    GdkWindow *gw = gtk_widget_get_window (widget);
+    if (gw) {
+        gdk_window_set_skip_taskbar_hint (gw, TRUE);
+        gdk_window_set_skip_pager_hint (gw, TRUE);
+    }
+}
+
 static gboolean
 on_window_map (GtkWidget *widget, GdkEvent *event, gpointer data)
 {
@@ -2140,7 +2151,7 @@ static void build_ui (void)
     gtk_widget_set_name (window, "dapeos-qs");
     gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
-    gtk_window_set_type_hint (GTK_WINDOW (window), GDK_WINDOW_TYPE_HINT_UTILITY);
+    gtk_window_set_type_hint (GTK_WINDOW (window), GDK_WINDOW_TYPE_HINT_DOCK);
     gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
     gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
     gtk_window_set_default_size (GTK_WINDOW (window), 504, 300);
@@ -2152,6 +2163,7 @@ static void build_ui (void)
     g_signal_connect (window, "key-press-event", G_CALLBACK (on_key_press), NULL);
     g_signal_connect (window, "focus-out-event", G_CALLBACK (on_focus_out), NULL);
     g_signal_connect (window, "map-event", G_CALLBACK (on_window_map), NULL);
+    g_signal_connect (window, "realize", G_CALLBACK (on_window_realize), NULL);
     GdkScreen *screen = gtk_widget_get_screen (window);
     GdkVisual *visual = gdk_screen_get_rgba_visual (screen);
     if (visual) gtk_widget_set_visual (window, visual);
