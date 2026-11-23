@@ -1527,6 +1527,36 @@ night_schedule_save (GtkButton *button, gpointer data)
     g_free (fp); g_free (tp);
 }
 
+static gboolean
+night_schedule_tick (gpointer data)
+{
+    (void) data;
+    gchar *fp = night_state_path ("nightlight_from");
+    gchar *tp = night_state_path ("nightlight_to");
+    gchar *from = NULL, *to = NULL;
+    g_file_get_contents (fp, &from, NULL, NULL);
+    g_file_get_contents (tp, &to, NULL, NULL);
+    g_free (fp); g_free (tp);
+    if (!from || !to || !*from || !*to) { g_free (from); g_free (to); return G_SOURCE_CONTINUE; }
+    gint fh = 0, fm = 0, th = 0, tm = 0;
+    if (sscanf (from, "%d:%d", &fh, &fm) != 2 || sscanf (to, "%d:%d", &th, &tm) != 2) {
+        g_free (from); g_free (to); return G_SOURCE_CONTINUE;
+    }
+    g_free (from); g_free (to);
+    time_t now = time (NULL);
+    struct tm *lt = localtime (&now);
+    gint cur = lt->tm_hour * 60 + lt->tm_min;
+    gint start = fh * 60 + fm;
+    gint end = th * 60 + tm;
+    gboolean should = (start <= end) ? (cur >= start && cur < end)
+                                     : (cur >= start || cur < end);
+    if (should != night_on) {
+        on_night_clicked (NULL, NULL);
+        if (night_page_toggle) gtk_button_set_label (GTK_BUTTON (night_page_toggle), night_on ? "On" : "Off");
+    }
+    return G_SOURCE_CONTINUE;
+}
+
 static GtkWidget *
 build_night_page (void)
 {
@@ -2306,6 +2336,7 @@ activate (GtkApplication *app, gpointer data)
         g_timeout_add (400, update_tiles_cb, NULL);
         g_timeout_add (1000, refresh_bg, NULL);
         g_timeout_add_seconds (2, tiles_tick, NULL);
+        g_timeout_add_seconds (30, night_schedule_tick, NULL);
         gtk_window_present (GTK_WINDOW (window));
         if (g_getenv ("DAPEOS_QS_TOGGLE"))
             toggle_wifi_signal (NULL);
