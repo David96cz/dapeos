@@ -6,7 +6,9 @@ flock -n 9 || exit 0
 restart_panel() {
     local reopen=0
     pgrep -f 'xfce4-panel --settings' >/dev/null 2>&1 && reopen=1
-    pkill -x xfce4-panel 2>/dev/null
+    for _p in $(pgrep -f '^/usr/bin/xfce4-panel' 2>/dev/null); do
+        kill -9 "$_p" 2>/dev/null || true
+    done
     pkill -x xfce4-clipman 2>/dev/null
     pkill -x nm-applet 2>/dev/null
     pkill -x blueman-applet 2>/dev/null
