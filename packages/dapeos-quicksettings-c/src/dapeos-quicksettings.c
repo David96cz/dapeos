@@ -28,7 +28,7 @@ static GtkWidget *bt_auto_switch;
 static gboolean bt_power_updating = FALSE;
 static gboolean bt_auto_updating = FALSE;
 static gboolean bt_off_shown = FALSE;
-static GtkWidget *bt_status_label = NULL;
+static GtkWidget *bt_page_status_label = NULL;
 static guint bt_status_timer = 0;
 static gint bt_status_phase = 0;
 static gboolean bt_scanning = FALSE;
@@ -2724,10 +2724,10 @@ static gboolean
 bt_status_tick (gpointer data)
 {
     (void) data;
-    if (!bt_status_label) { bt_status_timer = 0; return G_SOURCE_REMOVE; }
+    if (!bt_page_status_label) { bt_status_timer = 0; return G_SOURCE_REMOVE; }
     bt_status_phase = (bt_status_phase + 1) % 4;
     gchar *txt = g_strdup_printf ("Searching devices%.*s", bt_status_phase, "...");
-    gtk_label_set_text (GTK_LABEL (bt_status_label), txt);
+    gtk_label_set_text (GTK_LABEL (bt_page_status_label), txt);
     g_free (txt);
     return G_SOURCE_CONTINUE;
 }
@@ -2736,9 +2736,9 @@ static void
 bt_clear_status (void)
 {
     if (bt_status_timer) { g_source_remove (bt_status_timer); bt_status_timer = 0; }
-    if (bt_status_label) {
-        gtk_widget_destroy (bt_status_label);
-        bt_status_label = NULL;
+    if (bt_page_status_label) {
+        gtk_widget_destroy (bt_page_status_label);
+        bt_page_status_label = NULL;
     }
 }
 
@@ -2746,9 +2746,11 @@ static void
 bt_show_status (const gchar *text, gboolean animate)
 {
     bt_clear_status ();
-    bt_status_label = gtk_label_new (text);
-    gtk_widget_set_halign (bt_status_label, GTK_ALIGN_START);
-    gtk_list_box_insert (GTK_LIST_BOX (bt_list), bt_status_label, -1);
+    bt_page_status_label = gtk_label_new (text);
+    gtk_widget_set_halign (bt_page_status_label, GTK_ALIGN_CENTER);
+    gtk_label_set_xalign (GTK_LABEL (bt_page_status_label), 0.5);
+    gtk_widget_set_hexpand (bt_page_status_label, TRUE);
+    gtk_list_box_insert (GTK_LIST_BOX (bt_list), bt_page_status_label, -1);
     gtk_widget_show_all (bt_list);
     if (animate) {
         bt_status_phase = 0;
