@@ -230,9 +230,12 @@ class SettingsHub(QWidget):
         if not prog or prog in ("sh", "env", "bash"):
             return False
         try:
+            pattern = "(^|/)" + re.escape(prog) + "( |$)"
             pids = subprocess.run(
-                ["pgrep", "-f", "/" + re.escape(prog)],
+                ["pgrep", "-f", pattern],
                 capture_output=True, text=True, timeout=2).stdout.split()
+            with open("/tmp/dapeos-settings.log", "a", encoding="utf-8") as lf:
+                lf.write(f"launch {args[0]} prog={prog} pids={pids}\n")
             if not pids:
                 return False
             windows = subprocess.run(
