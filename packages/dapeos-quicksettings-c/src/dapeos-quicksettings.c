@@ -26,6 +26,10 @@ static GtkWidget *bt_auto_switch;
 static gboolean bt_power_updating = FALSE;
 static gboolean bt_auto_updating = FALSE;
 static gboolean bt_off_shown = FALSE;
+static GtkWidget *bt_status_label = NULL;
+static guint bt_status_timer = 0;
+static gint bt_status_phase = 0;
+static gboolean bt_scanning = FALSE;
 static GtkWidget *night_page;
 static GtkWidget *night_page_scale;
 static GtkWidget *night_page_toggle;
@@ -2614,6 +2618,7 @@ static void
 bt_clear_list (void)
 {
     if (!bt_list) return;
+    bt_clear_status ();
     GList *children = gtk_container_get_children (GTK_CONTAINER (bt_list));
     g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
 }
@@ -2639,6 +2644,7 @@ bt_scan_done (GObject *source, GAsyncResult *res, gpointer data)
     g_free (out);
     g_object_unref (bt_scan_proc);
     bt_scan_proc = NULL;
+    bt_scanning = FALSE;
 }
 
 static void
@@ -2649,8 +2655,10 @@ bt_start_scan (void)
     GError *error = NULL;
     bt_scan_proc = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE |
                                       G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
-    if (bt_scan_proc)
+    if (bt_scan_proc) {
+        bt_scanning = TRUE;
         g_subprocess_communicate_utf8_async (bt_scan_proc, NULL, NULL, bt_scan_done, NULL);
+    }
     else if (error)
         g_error_free (error);
 }
@@ -2699,10 +2707,50 @@ bt_update_list (void)
     g_free (dev);
 
     if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
-        GtkWidget *empty = gtk_label_new ("No Bluetooth devices found");
-        gtk_list_box_insert (GTK_LIST_BOX (bt_list), empty, -1);
+        if (bt_scanning)
+            bt_show_status ("Searching devices", TRUE);
+        else
+            bt_show_status ("No Bluetooth devices found", FALSE);
+    } else {
+        bt_clear_status ();
     }
     gtk_widget_show_all (bt_list);
+}
+
+static gboolean
+bt_status_tick (gpointer data)
+{
+    (void) data;
+    if (!bt_status_label) { bt_status_timer = 0; return G_SOURCE_REMOVE; }
+    bt_status_phase = (bt_status_phase + 1) % 4;
+    gchar *txt = g_strdup_printf ("Searching devices%.*s", bt_status_phase, "...");
+    gtk_label_set_text (GTK_LABEL (bt_status_label), txt);
+    g_free (txt);
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+bt_clear_status (void)
+{
+    if (bt_status_timer) { g_source_remove (bt_status_timer); bt_status_timer = 0; }
+    if (bt_status_label) {
+        gtk_widget_destroy (bt_status_label);
+        bt_status_label = NULL;
+    }
+}
+
+static void
+bt_show_status (const gchar *text, gboolean animate)
+{
+    bt_clear_status ();
+    bt_status_label = gtk_label_new (text);
+    gtk_widget_set_halign (bt_status_label, GTK_ALIGN_START);
+    gtk_list_box_insert (GTK_LIST_BOX (bt_list), bt_status_label, -1);
+    gtk_widget_show_all (bt_list);
+    if (animate) {
+        bt_status_phase = 0;
+        bt_status_timer = g_timeout_add (350, bt_status_tick, NULL);
+    }
 }
 
 static gboolean
@@ -2718,8 +2766,7 @@ bt_poll_cb (gpointer data)
         if (!bt_is_on ()) {
             if (!bt_off_shown) {
                 bt_clear_list ();
-                gtk_list_box_insert (GTK_LIST_BOX (bt_list), gtk_label_new ("Bluetooth is off"), -1);
-                gtk_widget_show_all (bt_list);
+                bt_show_status ("Bluetooth is off", FALSE);
                 bt_off_shown = TRUE;
             }
             return G_SOURCE_CONTINUE;
@@ -2760,12 +2807,12 @@ bt_refresh (GtkWidget *page)
     if (!bt_list) return;
     bt_clear_list ();
     if (!bt_is_on ()) {
-        gtk_list_box_insert (GTK_LIST_BOX (bt_list), gtk_label_new ("Bluetooth is off"), -1);
-        gtk_widget_show_all (bt_list);
+        bt_show_status ("Bluetooth is off", FALSE);
         bt_off_shown = TRUE;
         return;
     }
     bt_off_shown = FALSE;
+    bt_show_status ("Searching devices", TRUE);
     bt_start_scan ();
     bt_update_list ();
     if (!bt_poll_id)
