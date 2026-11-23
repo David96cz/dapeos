@@ -1975,6 +1975,26 @@ bt_cache_add (const gchar *mac, const gchar *name)
     g_free (path);
 }
 
+static void
+bt_cache_remove (const gchar *mac)
+{
+    gchar *path = bt_cache_path ();
+    gchar *data = NULL;
+    g_file_get_contents (path, &data, NULL, NULL);
+    gchar **lines = g_strsplit (data ? data : "", "\n", -1);
+    FILE *f = fopen (path, "w");
+    if (f) {
+        for (guint i = 0; lines[i]; i++) {
+            if (!g_str_has_prefix (lines[i], mac))
+                fprintf (f, "%s\n", lines[i]);
+        }
+        fclose (f);
+    }
+    g_strfreev (lines);
+    g_free (data);
+    g_free (path);
+}
+
 static gboolean
 bt_cache_has_name (const gchar *name)
 {
@@ -2007,6 +2027,50 @@ bt_valid_name (const gchar *name)
     }
     if (colons >= 5 || dashes >= 5) return FALSE;
     return TRUE;
+}
+
+static void
+bt_add_cache_rows (GtkWidget *list)
+{
+    gchar *cpath = bt_cache_path ();
+    gchar *cache = NULL;
+    g_file_get_contents (cpath, &cache, NULL, NULL);
+    gchar **cl = g_strsplit (cache ? cache : "", "\n", -1);
+    for (guint i = 0; cl[i]; i++) {
+        gchar **kv = g_strsplit (cl[i], "\t", 2);
+        if (kv[0] && kv[1]) {
+            gboolean dup = FALSE;
+            GList *rows = gtk_container_get_children (GTK_CONTAINER (list));
+            for (GList *l = rows; l; l = l->next) {
+                if (!GTK_IS_LIST_BOX_ROW (l->data)) continue;
+                BtItem *bi = g_object_get_data (G_OBJECT (l->data), "bt-item");
+                if (bi && g_strcmp0 (bi->mac, kv[0]) == 0) { dup = TRUE; break; }
+            }
+            g_list_free (rows);
+            if (!dup) {
+                GtkWidget *row = gtk_list_box_row_new ();
+                GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+                GtkWidget *label = gtk_label_new (kv[1]);
+                gtk_label_set_ellipsize (GTK_LABEL (label), PANGO_ELLIPSIZE_END);
+                gtk_widget_set_hexpand (label, TRUE);
+                GtkWidget *state = gtk_label_new ("Paired");
+                gtk_style_context_add_class (gtk_widget_get_style_context (state), "dim-label");
+                gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+                gtk_box_pack_end (GTK_BOX (hbox), state, FALSE, FALSE, 0);
+                gtk_container_add (GTK_CONTAINER (row), hbox);
+                BtItem *it = g_new0 (BtItem, 1);
+                it->mac = g_strdup (kv[0]);
+                it->name = g_strdup (kv[1]);
+                it->paired = TRUE;
+                g_object_set_data_full (G_OBJECT (row), "bt-item", it, bt_item_free);
+                gtk_list_box_insert (GTK_LIST_BOX (list), row, 0);
+            }
+        }
+        g_strfreev (kv);
+    }
+    g_strfreev (cl);
+    g_free (cache);
+    g_free (cpath);
 }
 
 static gboolean
@@ -2063,6 +2127,7 @@ bt_list_cb (gpointer data)
     g_strfreev (lines);
     g_free (connected);
     g_free (out);
+    bt_add_cache_rows (bt_list);
     if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
         bt_add_known_stub (bt_list);
         if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
@@ -2071,6 +2136,16 @@ bt_list_cb (gpointer data)
         }
     }
     gtk_widget_show_all (bt_list);
+    GList *rws = gtk_container_get_children (GTK_CONTAINER (bt_list));
+    for (GList *l = rws; l; l = l->next) {
+        if (!GTK_IS_LIST_BOX_ROW (l->data)) continue;
+        BtItem *it = g_object_get_data (G_OBJECT (l->data), "bt-item");
+        if (it && (it->paired || it->connected)) {
+            gtk_list_box_select_row (GTK_LIST_BOX (bt_list), GTK_LIST_BOX_ROW (l->data));
+            break;
+        }
+    }
+    g_list_free (rws);
     g_object_unref (page);
     return FALSE;
 }
@@ -2225,6 +2300,7 @@ on_bt_forget (GtkButton *button, gpointer data)
     gchar *cmd = g_strdup_printf ("bluetoothctl remove %s 2>/dev/null", it->mac);
     run_async (cmd);
     g_free (cmd);
+    bt_cache_remove (it->mac);
     g_object_ref (GTK_WIDGET (data));
     g_timeout_add (1000, bt_scan_cb, data);
 }
