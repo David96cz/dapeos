@@ -350,6 +350,25 @@ install_cache_monitors (void)
     g_free (vpath); g_free (bpath); g_free (dir);
 }
 
+static gboolean
+bt_connect_known_cb (gpointer data)
+{
+    (void) data;
+    gchar *out = run_cmd ("bluetoothctl devices Paired 2>/dev/null");
+    gchar **lines = g_strsplit (out, "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        gchar mac[64] = "", name[256] = "";
+        if (sscanf (lines[i], "Device %63s %255[^\n]", mac, name) == 2) {
+            gchar *cmd = g_strdup_printf ("bluetoothctl connect %s >/dev/null 2>&1", mac);
+            run_async (cmd);
+            g_free (cmd);
+        }
+    }
+    g_strfreev (lines);
+    g_free (out);
+    return FALSE;
+}
+
 static void on_bt_clicked (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
@@ -357,6 +376,11 @@ static void on_bt_clicked (GtkButton *button, gpointer data)
         run_async ("bluetoothctl power off");
     else
         run_async ("rfkill unblock bluetooth; bluetoothctl power on");
+    if (bt_page) {
+        g_object_ref (bt_page);
+        g_timeout_add (800, (GSourceFunc) bt_refresh, bt_page);
+    }
+    g_timeout_add (1200, bt_connect_known_cb, NULL);
     g_timeout_add (400, update_tiles_cb, NULL);
 }
 
@@ -756,6 +780,8 @@ make_tile (const gchar *title, const gchar *sub, GtkWidget **sub_label,
     gtk_box_pack_start (GTK_BOX (top), t, TRUE, TRUE, 0);
     gtk_box_pack_end (GTK_BOX (top), st, FALSE, FALSE, 0);
     GtkWidget *s = gtk_label_new (sub);
+    gtk_label_set_xalign (GTK_LABEL (s), 0.0);
+    gtk_label_set_justify (GTK_LABEL (s), GTK_JUSTIFY_LEFT);
     gtk_widget_set_halign (s, GTK_ALIGN_START);
     gtk_style_context_add_class (gtk_widget_get_style_context (s), "dim-label");
     gtk_box_pack_start (GTK_BOX (content), top, FALSE, FALSE, 0);
@@ -2044,6 +2070,10 @@ on_bt_power (GtkButton *button, gpointer data)
     else
         run_async ("rfkill unblock bluetooth; bluetoothctl power on");
     gtk_button_set_label (GTK_BUTTON (data), on ? "Off" : "On");
+    if (bt_page) {
+        g_object_ref (bt_page);
+        g_timeout_add (800, (GSourceFunc) bt_refresh, bt_page);
+    }
 }
 
 static GtkWidget *
