@@ -2037,8 +2037,11 @@ bt_list_cb (gpointer data)
     g_free (connected);
     g_free (out);
     if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
-        GtkWidget *empty = gtk_label_new ("No Bluetooth devices found");
-        gtk_list_box_insert (GTK_LIST_BOX (bt_list), empty, -1);
+        bt_add_known_stub (bt_list);
+        if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
+            GtkWidget *empty = gtk_label_new ("No Bluetooth devices found");
+            gtk_list_box_insert (GTK_LIST_BOX (bt_list), empty, -1);
+        }
     }
     gtk_widget_show_all (bt_list);
     g_object_unref (page);
@@ -2100,6 +2103,15 @@ bt_add_known_stub (GtkWidget *list)
     for (guint i = 0; cl[i]; i++) {
         gchar **kv = g_strsplit (cl[i], "\t", 2);
         if (kv[0] && kv[1]) {
+            gboolean dup = FALSE;
+            GList *rows0 = gtk_container_get_children (GTK_CONTAINER (list));
+            for (GList *l0 = rows0; l0; l0 = l0->next) {
+                if (!GTK_IS_LIST_BOX_ROW (l0->data)) continue;
+                BtItem *bi = g_object_get_data (G_OBJECT (l0->data), "bt-item");
+                if (bi && g_strcmp0 (bi->mac, kv[0]) == 0) { dup = TRUE; break; }
+            }
+            g_list_free (rows0);
+            if (dup) { g_strfreev (kv); continue; }
             GtkWidget *row = gtk_list_box_row_new ();
             GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
             GtkWidget *label = gtk_label_new (kv[1]);
