@@ -25,6 +25,7 @@ static GtkWidget *bt_page;
 static GtkWidget *bt_list;
 static GtkWidget *bt_power_switch;
 static GtkWidget *bt_auto_switch;
+static GtkWidget *bt_auto_label;
 static gboolean bt_power_updating = FALSE;
 static gboolean bt_auto_updating = FALSE;
 static gboolean bt_off_shown = FALSE;
@@ -2175,6 +2176,8 @@ bt_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
         gtk_widget_set_sensitive (act, TRUE);
         gtk_widget_set_sensitive (forget, it->paired);
         if (bt_auto_switch) {
+            gtk_widget_set_visible (bt_auto_switch, it->paired);
+            if (bt_auto_label) gtk_widget_set_visible (bt_auto_label, it->paired);
             gtk_widget_set_sensitive (bt_auto_switch, it->paired);
             gboolean auto_updating_prev = bt_auto_updating;
             bt_auto_updating = TRUE;
@@ -2184,6 +2187,8 @@ bt_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
     } else {
         gtk_widget_set_sensitive (act, FALSE);
         gtk_widget_set_sensitive (forget, FALSE);
+        if (bt_auto_switch) gtk_widget_set_visible (bt_auto_switch, FALSE);
+        if (bt_auto_label) gtk_widget_set_visible (bt_auto_label, FALSE);
     }
 }
 
@@ -2692,7 +2697,7 @@ bt_update_list (void)
             connected = strstr (info, "Connected: yes") != NULL;
             g_free (info);
         }
-        if (!bt_seen_recent (mac) && !connected) continue;
+        if (!bt_seen_recent (mac) && !connected && !paired) continue;
         g_hash_table_add (seen, g_strdup (mac));
         bt_upsert (mac, name, connected, paired);
     }
@@ -2963,8 +2968,11 @@ build_bt_page (void)
     GtkWidget *forget = gtk_button_new_with_label ("Forget");
     GtkWidget *refresh = gtk_button_new_with_label ("Refresh");
     GtkWidget *auto_label = gtk_label_new ("Auto-connect");
+    bt_auto_label = auto_label;
     bt_auto_switch = dapeos_switch_new ();
     gtk_widget_set_sensitive (bt_auto_switch, FALSE);
+    gtk_widget_set_visible (bt_auto_switch, FALSE);
+    gtk_widget_set_visible (auto_label, FALSE);
     g_signal_connect (bt_auto_switch, "toggled", G_CALLBACK (bt_auto_toggle), NULL);
     g_signal_connect (action, "clicked", G_CALLBACK (on_bt_action), page);
     g_signal_connect (forget, "clicked", G_CALLBACK (on_bt_forget), page);
