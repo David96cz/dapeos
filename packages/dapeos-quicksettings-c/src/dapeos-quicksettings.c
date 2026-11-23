@@ -14,6 +14,7 @@ static GtkWidget *window;
 static GtkWidget *qstack;
 static GtkWidget *main_page;
 static GtkWidget *wifi_page;
+static GtkWidget *wifi_page_toggle;
 static GtkWidget *bt_page;
 static GtkWidget *bt_list;
 static GtkWidget *night_page;
@@ -228,6 +229,7 @@ static void update_tiles (void)
 
     gboolean on = wifi_radio_on ();
     gtk_label_set_text (GTK_LABEL (net_status_label), on ? "On" : "Off");
+    if (wifi_page_toggle) gtk_button_set_label (GTK_BUTTON (wifi_page_toggle), on ? "On" : "Off");
     if (!on) {
         gtk_label_set_text (GTK_LABEL (net_label), "");
     } else {
@@ -2019,8 +2021,11 @@ build_wifi_page (void)
     gtk_widget_set_hexpand (title, TRUE);
     gtk_widget_set_halign (title, GTK_ALIGN_START);
     g_signal_connect (back, "clicked", G_CALLBACK (show_main_page), NULL);
+    wifi_page_toggle = gtk_button_new_with_label (wifi_radio_on () ? "On" : "Off");
+    g_signal_connect (wifi_page_toggle, "clicked", G_CALLBACK (on_net_toggle), NULL);
     gtk_box_pack_start (GTK_BOX (header), back, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (header), title, TRUE, TRUE, 0);
+    gtk_box_pack_end (GTK_BOX (header), wifi_page_toggle, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), header, FALSE, FALSE, 0);
 
     GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
