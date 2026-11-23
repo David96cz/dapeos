@@ -36,6 +36,7 @@ static gint bt_status_phase = 0;
 static gboolean bt_scanning = FALSE;
 static GtkWidget *night_page;
 static GtkWidget *night_page_scale;
+static GtkWidget *night_page_value_label;
 static GtkWidget *night_page_toggle;
 static gboolean night_page_updating = FALSE;
 static GtkWidget *night_from_hour;
@@ -869,7 +870,7 @@ static void apply_css (void)
             "#dapeos-qs label#wifi-error { color: #ff6b6b; }"
             "#dapeos-qs label#brightness-icon { color: #eaeaea; font-size: 16pt; }"
             "#dapeos-qs entry, #dapeos-qs spinbutton, #dapeos-qs combobox button { background: #3a3a3a; color: #eaeaea; border: 1px solid #4a4a4a; border-radius: 6px; }"
-            "#dapeos-qs spinbutton button { background: #3a3a3a; color: #eaeaea; border: none; }"
+            "#dapeos-qs spinbutton button { background: #3a3a3a; color: #eaeaea; border: none; min-width: 22px; padding: 0 4px; }"
             "#dapeos-qs switch, #dapeos-qs switch.dapeos-switch { background: #555; padding: 0; min-width: 48px; min-height: 28px; border-radius: 999px; }"
             "#dapeos-qs switch:checked { background: #34c759; }"
             "#dapeos-qs switch slider { background: #fff; border-radius: 10px; min-width: 20px; min-height: 20px; margin: 4px; }";
@@ -890,7 +891,7 @@ static void apply_css (void)
             "#dapeos-qs label#wifi-error { color: #c62828; }"
             "#dapeos-qs label#brightness-icon { color: #1a1a1a; font-size: 16pt; }"
             "#dapeos-qs entry, #dapeos-qs spinbutton, #dapeos-qs combobox button { background: #ffffff; color: #1a1a1a; border: 1px solid #dcdcdc; border-radius: 6px; }"
-            "#dapeos-qs spinbutton button { background: #ffffff; color: #1a1a1a; border: none; }"
+            "#dapeos-qs spinbutton button { background: #ffffff; color: #1a1a1a; border: none; min-width: 22px; padding: 0 4px; }"
             "#dapeos-qs switch, #dapeos-qs switch.dapeos-switch { background: #ccc; padding: 0; min-width: 48px; min-height: 28px; border-radius: 999px; }"
             "#dapeos-qs switch:checked { background: #34c759; }"
             "#dapeos-qs switch slider { background: #fff; border-radius: 10px; min-width: 20px; min-height: 20px; margin: 4px; }";
@@ -1871,6 +1872,11 @@ night_scale_changed (GtkRange *range, gpointer data)
         gtk_label_set_text (GTK_LABEL (night_label), t);
         g_free (t);
     }
+    if (night_page_value_label) {
+        gchar *t = g_strdup_printf ("%d K", temp);
+        gtk_label_set_text (GTK_LABEL (night_page_value_label), t);
+        g_free (t);
+    }
 }
 
 static void
@@ -1958,6 +1964,11 @@ night_load_schedule (void)
     gtk_spin_button_set_value (GTK_SPIN_BUTTON (night_from_min), fm);
     gtk_spin_button_set_value (GTK_SPIN_BUTTON (night_to_min), tm);
     gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (night_sched_switch), g_file_test (sp, G_FILE_TEST_EXISTS));
+    if (night_page_value_label) {
+        gchar *v = g_strdup_printf ("%d K", (gint) gtk_range_get_value (GTK_RANGE (night_page_scale)));
+        gtk_label_set_text (GTK_LABEL (night_page_value_label), v);
+        g_free (v);
+    }
     night_sched_loading = FALSE;
     g_free (fp); g_free (tp); g_free (sp); g_free (from); g_free (to);
 }
@@ -2019,8 +2030,14 @@ build_night_page (void)
     night_page_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1000, 6500, 100);
     gtk_range_set_value (GTK_RANGE (night_page_scale), 4000);
     g_signal_connect (night_page_scale, "value-changed", G_CALLBACK (night_scale_changed), NULL);
+    GtkWidget *temprow = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+    night_page_value_label = gtk_label_new ("4000 K");
+    gtk_widget_set_size_request (night_page_value_label, 58, -1);
+    gtk_widget_set_halign (night_page_value_label, GTK_ALIGN_END);
+    gtk_box_pack_start (GTK_BOX (temprow), night_page_scale, TRUE, TRUE, 0);
+    gtk_box_pack_end (GTK_BOX (temprow), night_page_value_label, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), label, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (page), night_page_scale, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), temprow, FALSE, FALSE, 0);
 
     night_12h = night_clock_is_12h ();
 
@@ -2044,6 +2061,14 @@ build_night_page (void)
     gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (night_to_hour), TRUE);
     gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (night_from_min), TRUE);
     gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (night_to_min), TRUE);
+    gtk_spin_button_set_width_chars (GTK_SPIN_BUTTON (night_from_hour), 2);
+    gtk_spin_button_set_width_chars (GTK_SPIN_BUTTON (night_to_hour), 2);
+    gtk_spin_button_set_width_chars (GTK_SPIN_BUTTON (night_from_min), 2);
+    gtk_spin_button_set_width_chars (GTK_SPIN_BUTTON (night_to_min), 2);
+    gtk_widget_set_size_request (night_from_hour, 74, -1);
+    gtk_widget_set_size_request (night_to_hour, 74, -1);
+    gtk_widget_set_size_request (night_from_min, 74, -1);
+    gtk_widget_set_size_request (night_to_min, 74, -1);
 
     gtk_grid_attach (GTK_GRID (sched), fl, 0, 0, 1, 1);
     gtk_grid_attach (GTK_GRID (sched), night_from_hour, 1, 0, 1, 1);
@@ -2071,7 +2096,6 @@ build_night_page (void)
 
     GtkWidget *schedrow = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget *schedlabel = gtk_label_new ("Schedule");
-    gtk_widget_set_hexpand (schedlabel, TRUE);
     gtk_widget_set_halign (schedlabel, GTK_ALIGN_START);
     night_sched_switch = dapeos_switch_new ();
     gtk_box_pack_start (GTK_BOX (schedrow), schedlabel, TRUE, TRUE, 0);
