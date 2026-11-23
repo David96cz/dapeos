@@ -2568,9 +2568,31 @@ bt_poll_cb (gpointer data)
 }
 
 static void
+bt_untrust_cached (void)
+{
+    gchar *path = bt_cache_path ();
+    gchar *cache = NULL;
+    g_file_get_contents (path, &cache, NULL, NULL);
+    gchar **lines = g_strsplit (cache ? cache : "", "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        gchar **kv = g_strsplit (lines[i], "\t", 2);
+        if (kv[0]) {
+            gchar *cmd = g_strdup_printf ("bluetoothctl untrust %s >/dev/null 2>&1", kv[0]);
+            run_async (cmd);
+            g_free (cmd);
+        }
+        g_strfreev (kv);
+    }
+    g_strfreev (lines);
+    g_free (cache);
+    g_free (path);
+}
+
+static void
 bt_refresh (GtkWidget *page)
 {
     qs_trace_mark ("bt-refresh-start");
+    bt_untrust_cached ();
     if (!bt_list) return;
     bt_clear_list ();
     if (!bt_is_on ()) {
