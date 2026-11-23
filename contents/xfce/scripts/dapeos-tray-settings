@@ -139,8 +139,7 @@ class TraySettings(QWidget):
              "/plugins/plugin-8/icon-size", "-s", str(self.spins["systray"].value())])
         subprocess.Popen(
             ["sh", "-c",
-             "pkill -x xfce4-panel; sleep 0.3; "
-             "setsid /usr/local/bin/xfce4-panel >/dev/null 2>&1 < /dev/null &"])
+             "dapeos-panel-restart"])
         self.status.setText(_("Saved. Panel restarts to apply the clipman size."))
 
 

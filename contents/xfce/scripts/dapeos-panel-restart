@@ -1,0 +1,26 @@
+#!/bin/sh
+LOG=/tmp/dapeos-panel-restart.log
+echo "$(date +%H:%M:%S) restart requested" >> "$LOG"
+reopen=0
+pgrep -f 'xfce4-panel --settings' >/dev/null 2>&1 && reopen=1
+
+for _p in $(pgrep -f 'xfce4-panel' 2>/dev/null); do
+    _cmd=$(tr '\0' ' ' </proc/$_p/cmdline 2>/dev/null || true)
+    case "$_cmd" in
+        *dapeos-panel-restart*|*dapeos-panel-watch*) continue ;;
+    esac
+    echo "$(date +%H:%M:%S) kill $_p: $_cmd" >> "$LOG"
+    kill -9 "$_p" 2>/dev/null || true
+done
+pkill -x xfce4-clipman 2>/dev/null || true
+pkill -x nm-applet 2>/dev/null || true
+pkill -x blueman-applet 2>/dev/null || true
+sleep 0.4
+
+setsid /usr/bin/xfce4-panel >/dev/null 2>&1 < /dev/null &
+echo "$(date +%H:%M:%S) started new panel" >> "$LOG"
+dapeos-touchpad >/dev/null 2>&1 &
+if [ "$reopen" = "1" ]; then
+    sleep 0.3
+    setsid /usr/bin/xfce4-panel --settings >/dev/null 2>&1 < /dev/null &
+fi

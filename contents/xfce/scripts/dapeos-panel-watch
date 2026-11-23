@@ -12,25 +12,7 @@ fi
 echo "$(date +%H:%M:%S) watcher: started pid=$$" >> /tmp/dapeos-panel-watch.log
 
 restart_panel() {
-    local reopen=0
-    pgrep -f 'xfce4-panel --settings' >/dev/null 2>&1 && reopen=1
-    for _p in $(pgrep -f 'xfce4-panel' 2>/dev/null); do
-        _cmd=$(tr '\0' ' ' </proc/$_p/cmdline 2>/dev/null || true)
-        case "$_cmd" in
-            *dapeos-panel-watch*) continue ;;
-        esac
-        kill -9 "$_p" 2>/dev/null || true
-    done
-    pkill -x xfce4-clipman 2>/dev/null
-    pkill -x nm-applet 2>/dev/null
-    pkill -x blueman-applet 2>/dev/null
-    sleep 0.5
-    setsid /usr/local/bin/xfce4-panel >/dev/null 2>&1 < /dev/null &
-    dapeos-touchpad >/dev/null 2>&1 &
-    if [ "$reopen" = "1" ]; then
-        sleep 0.3
-        setsid /usr/local/bin/xfce4-panel --settings >/dev/null 2>&1 < /dev/null &
-    fi
+    /usr/local/bin/dapeos-panel-restart
 }
 
 watch_channel() {
