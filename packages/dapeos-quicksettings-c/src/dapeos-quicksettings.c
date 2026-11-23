@@ -92,19 +92,26 @@ static gchar *night_state_path (const gchar *name)
 static gchar *
 bt_connected_name (void)
 {
-    gchar *out = run_cmd ("bluetoothctl devices Connected 2>/dev/null");
-    gchar *name = NULL;
-    gchar **lines = g_strsplit (out, "\n", -1);
+    gchar *path = bt_cache_path ();
+    gchar *cache = NULL;
+    g_file_get_contents (path, &cache, NULL, NULL);
+    gchar *found = NULL;
+    gchar **lines = g_strsplit (cache ? cache : "", "\n", -1);
     for (guint i = 0; lines[i]; i++) {
-        gchar mac[64] = "", n[256] = "";
-        if (sscanf (lines[i], "Device %63s %255[^\n]", mac, n) == 2 && *n) {
-            name = g_strdup (n);
-            break;
+        gchar **kv = g_strsplit (lines[i], "\t", 2);
+        if (kv[0] && kv[1]) {
+            gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", kv[0]));
+            if (strstr (info, "Connected: yes"))
+                found = g_strdup (kv[1]);
+            g_free (info);
+            if (found) { g_strfreev (kv); break; }
         }
+        g_strfreev (kv);
     }
     g_strfreev (lines);
-    g_free (out);
-    return name;
+    g_free (cache);
+    g_free (path);
+    return found;
 }
 
 static gboolean bt_is_on (void)
@@ -518,7 +525,6 @@ static void on_bt_clicked (GtkButton *button, gpointer data)
         g_object_ref (bt_page);
         g_timeout_add (800, bt_refresh_cb, bt_page);
     }
-    if (!was_on) g_timeout_add (2500, bt_connect_known_cb, NULL);
     g_timeout_add (400, update_tiles_cb, NULL);
 }
 
@@ -2505,7 +2511,6 @@ bt_update_list (void)
     }
     g_list_free (old_rows);
     gchar *dev = run_cmd ("bluetoothctl devices 2>/dev/null");
-    gchar *conn_out = run_cmd ("bluetoothctl devices Connected 2>/dev/null");
     GHashTable *seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
     gchar **lines = g_strsplit (dev, "\n", -1);
@@ -2531,7 +2536,7 @@ bt_update_list (void)
     }
     g_list_free (rows);
     g_hash_table_destroy (seen);
-    g_free (dev); g_free (conn_out);
+    g_free (dev);
 
     if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
         GtkWidget *empty = gtk_label_new ("No Bluetooth devices found");
