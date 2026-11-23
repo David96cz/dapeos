@@ -228,8 +228,8 @@ static gchar *
 short_name (const gchar *s)
 {
     if (!s) return g_strdup ("");
-    if (g_utf8_strlen (s, -1) <= 20) return g_strdup (s);
-    const gchar *end = g_utf8_offset_to_pointer (s, 20);
+    if (g_utf8_strlen (s, -1) <= 12) return g_strdup (s);
+    const gchar *end = g_utf8_offset_to_pointer (s, 12);
     return g_strdup_printf ("%.*s…", (int) (end - s), s);
 }
 
@@ -2257,7 +2257,8 @@ static void build_ui (void)
     GtkWidget *net = make_tile ("Network", "", &net_label, &net_status_label, &net_t, &net_o);
     GtkWidget *bt = make_tile ("Bluetooth", "", &bt_label, &bt_status_label, &bt_t, &bt_o);
     gtk_label_set_ellipsize (GTK_LABEL (bt_label), PANGO_ELLIPSIZE_END);
-    gtk_label_set_max_width_chars (GTK_LABEL (bt_label), 22);
+    gtk_label_set_max_width_chars (GTK_LABEL (bt_label), 12);
+    gtk_widget_set_size_request (bt_label, 110, -1);
     GtkWidget *night = make_tile ("Night light", "", &night_label, &night_status_label, &night_t, &night_o);
     g_signal_connect (net_t, "clicked", G_CALLBACK (on_net_toggle), NULL);
     g_signal_connect (net_o, "clicked", G_CALLBACK (on_net_open), NULL);
