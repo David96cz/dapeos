@@ -3101,6 +3101,7 @@ static void build_ui (void)
     g_signal_connect (window, "key-press-event", G_CALLBACK (on_key_press), NULL);
     g_signal_connect (window, "focus-out-event", G_CALLBACK (on_focus_out), NULL);
     g_signal_connect (window, "map-event", G_CALLBACK (on_window_map), NULL);
+    g_signal_connect (window, "size-allocate", G_CALLBACK (on_window_size_allocate), NULL);
     g_signal_connect (window, "realize", G_CALLBACK (on_window_realize), NULL);
     GdkScreen *screen = gtk_widget_get_screen (window);
     GdkVisual *visual = gdk_screen_get_rgba_visual (screen);
@@ -3252,10 +3253,11 @@ static void build_ui (void)
 }
 
 static gboolean position_done = FALSE;
+static gint last_window_width = 0;
+static gint last_window_height = 0;
 
 static void position_window (void)
 {
-    if (position_done) return;
     GdkDisplay *display = gdk_display_get_default ();
     GdkMonitor *monitor = gdk_display_get_primary_monitor (display);
     if (!monitor) monitor = gdk_display_get_monitor (display, 0);
@@ -3265,6 +3267,9 @@ static void position_window (void)
     gtk_window_get_size (GTK_WINDOW (window), &w, &h);
     if (w < 504) w = 504;
     if (h < 300) h = 300;
+    if (position_done && w == last_window_width && h == last_window_height) return;
+    last_window_width = w;
+    last_window_height = h;
     gint x = geo.x + geo.width - w - 20;
     gint y = geo.y + geo.height - panel_height () - h - 20;
     if (x < geo.x + 8) x = geo.x + 8;
