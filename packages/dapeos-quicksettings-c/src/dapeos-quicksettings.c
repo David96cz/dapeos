@@ -610,6 +610,12 @@ static void on_bt_clicked (GtkButton *button, gpointer data)
     qs_trace_mark ("bt-toggle");
     (void) button; (void) data;
     gboolean was_on = bt_is_on ();
+    bt_off_shown = was_on;
+    if (bt_power_switch) {
+        bt_power_updating = TRUE;
+        dapeos_switch_set_active (bt_power_switch, !was_on);
+        bt_power_updating = FALSE;
+    }
     if (was_on)
         run_async ("bluetoothctl power off");
     else
@@ -2806,7 +2812,14 @@ bt_refresh (GtkWidget *page)
 {
     qs_trace_mark ("bt-refresh-start");
     bt_untrust_cached ();
-    if (bt_off_shown) {
+    gboolean power_on = bt_is_on ();
+    bt_off_shown = !power_on;
+    if (bt_power_switch) {
+        bt_power_updating = TRUE;
+        dapeos_switch_set_active (bt_power_switch, power_on);
+        bt_power_updating = FALSE;
+    }
+    if (!power_on) {
         if (!bt_list) return;
         bt_clear_list ();
         bt_show_status ("Bluetooth is off", FALSE);
