@@ -104,8 +104,10 @@ static void update_tiles (void);
 static gboolean wifi_radio_on (void);
 static void on_bt_open (GtkButton *button, gpointer data);
 static void bt_refresh (GtkWidget *page);
+static void bt_add_known_stub (GtkWidget *list);
 static gboolean bt_refresh_cb (gpointer data);
 static void bt_refresh (GtkWidget *page);
+static void bt_add_known_stub (GtkWidget *list);
 static void show_main_page (GtkButton *button, gpointer data);
 static void on_night_open (GtkButton *button, gpointer data);
 
@@ -1938,6 +1940,7 @@ bt_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
 }
 
 static void bt_refresh (GtkWidget *page);
+static void bt_add_known_stub (GtkWidget *list);
 
 static gchar *
 bt_cache_path (void)
