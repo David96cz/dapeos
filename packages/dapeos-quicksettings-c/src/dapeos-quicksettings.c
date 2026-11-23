@@ -1976,6 +1976,26 @@ bt_cache_add (const gchar *mac, const gchar *name)
 }
 
 static gboolean
+bt_cache_has_name (const gchar *name)
+{
+    if (!name || !*name) return FALSE;
+    gchar *path = bt_cache_path ();
+    gchar *cache = NULL;
+    g_file_get_contents (path, &cache, NULL, NULL);
+    gboolean found = FALSE;
+    gchar **lines = g_strsplit (cache ? cache : "", "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        gchar **kv = g_strsplit (lines[i], "\t", 2);
+        if (kv[1] && g_strcmp0 (kv[1], name) == 0) { found = TRUE; break; }
+        g_strfreev (kv);
+    }
+    if (!found) g_strfreev (lines);
+    g_free (cache);
+    g_free (path);
+    return found;
+}
+
+static gboolean
 bt_valid_name (const gchar *name)
 {
     if (!name || !*name) return FALSE;
@@ -2006,7 +2026,8 @@ bt_list_cb (gpointer data)
         if (sscanf (lines[i], "Device %63s %255[^\n]", mac, name) != 2) continue;
         if (!bt_valid_name (name)) continue;
         gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", mac));
-        gboolean paired = strstr (info, "Paired: yes") != NULL;
+        gboolean paired = strstr (info, "Paired: yes") != NULL ||
+                          bt_cache_has_name (name);
         gboolean conn = strstr (connected, mac) != NULL;
         g_free (info);
         if (paired) bt_cache_add (mac, name);
