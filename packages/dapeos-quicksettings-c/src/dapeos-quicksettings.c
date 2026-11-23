@@ -1863,6 +1863,20 @@ bt_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
 static void bt_refresh (GtkWidget *page);
 
 static gboolean
+bt_valid_name (const gchar *name)
+{
+    if (!name || !*name) return FALSE;
+    if (g_str_has_prefix (name, "Device ")) return FALSE;
+    gint colons = 0, dashes = 0;
+    for (const gchar *p = name; *p; p++) {
+        if (*p == ':') colons++;
+        else if (*p == '-') dashes++;
+    }
+    if (colons >= 5 || dashes >= 5) return FALSE;
+    return TRUE;
+}
+
+static gboolean
 bt_list_cb (gpointer data)
 {
     GtkWidget *page = data;
@@ -1877,6 +1891,7 @@ bt_list_cb (gpointer data)
     for (guint i = 0; lines[i]; i++) {
         gchar mac[64] = "", name[256] = "";
         if (sscanf (lines[i], "Device %63s %255[^\n]", mac, name) != 2) continue;
+        if (!bt_valid_name (name)) continue;
         gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", mac));
         gboolean paired = strstr (info, "Paired: yes") != NULL;
         gboolean conn = strstr (connected, mac) != NULL;
@@ -1957,8 +1972,10 @@ on_bt_action (GtkButton *button, gpointer data)
     (void) button;
     BtItem *it = g_object_get_data (G_OBJECT (data), "bt-selected");
     if (!it) return;
-    gchar *cmd = g_strdup_printf ("bluetoothctl %s %s 2>/dev/null",
-        it->connected ? "disconnect" : "connect", it->mac);
+    gchar *cmd = it->connected
+        ? g_strdup_printf ("bluetoothctl disconnect %s 2>/dev/null", it->mac)
+        : g_strdup_printf ("bluetoothctl pair %s 2>/dev/null; bluetoothctl trust %s 2>/dev/null; bluetoothctl connect %s 2>/dev/null",
+                           it->mac, it->mac, it->mac);
     run_async (cmd);
     g_free (cmd);
     g_object_ref (GTK_WIDGET (data));
@@ -2107,6 +2124,11 @@ static gboolean
 on_window_map (GtkWidget *widget, GdkEvent *event, gpointer data)
 {
     (void) widget; (void) event; (void) data;
+    GdkWindow *gw = gtk_widget_get_window (window);
+    if (gw) {
+        gdk_window_set_skip_taskbar_hint (gw, TRUE);
+        gdk_window_set_skip_pager_hint (gw, TRUE);
+    }
     position_window ();
     return FALSE;
 }
@@ -2118,6 +2140,7 @@ static void build_ui (void)
     gtk_widget_set_name (window, "dapeos-qs");
     gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
+    gtk_window_set_type_hint (GTK_WINDOW (window), GTK_WINDOW_TYPE_HINT_UTILITY);
     gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
     gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
     gtk_window_set_default_size (GTK_WINDOW (window), 504, 300);
