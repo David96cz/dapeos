@@ -104,6 +104,7 @@ static void update_tiles (void);
 static gboolean wifi_radio_on (void);
 static void on_bt_open (GtkButton *button, gpointer data);
 static void bt_refresh (GtkWidget *page);
+static gboolean bt_refresh_cb (gpointer data);
 static void bt_refresh (GtkWidget *page);
 static void show_main_page (GtkButton *button, gpointer data);
 static void on_night_open (GtkButton *button, gpointer data);
@@ -378,7 +379,7 @@ static void on_bt_clicked (GtkButton *button, gpointer data)
         run_async ("rfkill unblock bluetooth; bluetoothctl power on");
     if (bt_page) {
         g_object_ref (bt_page);
-        g_timeout_add (800, (GSourceFunc) bt_refresh, bt_page);
+        g_timeout_add (800, bt_refresh_cb, bt_page);
     }
     g_timeout_add (1200, bt_connect_known_cb, NULL);
     g_timeout_add (400, update_tiles_cb, NULL);
@@ -2024,6 +2025,14 @@ bt_refresh (GtkWidget *page)
     g_timeout_add (5500, bt_scan_cb, page);
 }
 
+static gboolean
+bt_refresh_cb (gpointer data)
+{
+    bt_refresh (GTK_WIDGET (data));
+    g_object_unref (data);
+    return FALSE;
+}
+
 static void
 on_bt_refresh (GtkButton *button, gpointer data)
 {
@@ -2072,7 +2081,7 @@ on_bt_power (GtkButton *button, gpointer data)
     gtk_button_set_label (GTK_BUTTON (data), on ? "Off" : "On");
     if (bt_page) {
         g_object_ref (bt_page);
-        g_timeout_add (800, (GSourceFunc) bt_refresh, bt_page);
+        g_timeout_add (800, bt_refresh_cb, bt_page);
     }
 }
 
