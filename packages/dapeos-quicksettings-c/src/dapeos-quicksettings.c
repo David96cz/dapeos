@@ -1937,8 +1937,8 @@ night_pad_spin (GtkSpinButton *spin)
 {
     gchar buf[8];
     g_snprintf (buf, sizeof buf, "%02d", gtk_spin_button_get_value_as_int (spin));
-    GtkEntry *entry = gtk_spin_button_get_entry (spin);
-    if (entry && g_strcmp0 (gtk_entry_get_text (entry), buf) != 0)
+    GtkEntry *entry = GTK_ENTRY (spin);
+    if (g_strcmp0 (gtk_entry_get_text (entry), buf) != 0)
         gtk_entry_set_text (entry, buf);
 }
 
@@ -2079,10 +2079,10 @@ build_night_page (void)
     gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (night_to_hour), TRUE);
     gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (night_from_min), TRUE);
     gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (night_to_min), TRUE);
-    gtk_spin_button_set_width_chars (GTK_SPIN_BUTTON (night_from_hour), 2);
-    gtk_spin_button_set_width_chars (GTK_SPIN_BUTTON (night_to_hour), 2);
-    gtk_spin_button_set_width_chars (GTK_SPIN_BUTTON (night_from_min), 2);
-    gtk_spin_button_set_width_chars (GTK_SPIN_BUTTON (night_to_min), 2);
+    gtk_entry_set_width_chars (GTK_ENTRY (night_from_hour), 2);
+    gtk_entry_set_width_chars (GTK_ENTRY (night_to_hour), 2);
+    gtk_entry_set_width_chars (GTK_ENTRY (night_from_min), 2);
+    gtk_entry_set_width_chars (GTK_ENTRY (night_to_min), 2);
     gtk_widget_set_size_request (night_from_hour, 74, -1);
     gtk_widget_set_size_request (night_to_hour, 74, -1);
     gtk_widget_set_size_request (night_from_min, 74, -1);
