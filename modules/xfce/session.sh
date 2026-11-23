@@ -94,6 +94,12 @@ dapeos_session_setup() {
     if [ -f "$CONTENTS_DIR/xfce/config/dapeos-network.desktop" ]; then
         install -m 644 "$CONTENTS_DIR/xfce/config/dapeos-network.desktop" /usr/share/applications/dapeos-network.desktop
     fi
+    if [ -f "$CONTENTS_DIR/xfce/config/dapeos-bluetooth.desktop" ]; then
+        install -m 644 "$CONTENTS_DIR/xfce/config/dapeos-bluetooth.desktop" /usr/share/applications/dapeos-bluetooth.desktop
+    fi
+    if [ -f "$CONTENTS_DIR/xfce/config/dapeos-nightlight.desktop" ]; then
+        install -m 644 "$CONTENTS_DIR/xfce/config/dapeos-nightlight.desktop" /usr/share/applications/dapeos-nightlight.desktop
+    fi
 
     install -d -m 755 /usr/share/dapeos
     install -d -m 755 /usr/share/locale/cs/LC_MESSAGES

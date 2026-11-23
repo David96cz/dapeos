@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Bluetooth
+Name[cs]=Bluetooth
+Comment=Bluetooth devices
+Comment[cs]=Bluetooth zařízení
+Exec=dapeos-bluetooth
+Icon=bluetooth
+Terminal=false
+NoDisplay=true
+X-XFCE-SettingsDialog=1
+Categories=Settings;HardwareSettings;Network;

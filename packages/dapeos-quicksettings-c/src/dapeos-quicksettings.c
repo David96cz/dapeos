@@ -1450,6 +1450,26 @@ toggle_wifi_signal (gpointer data)
     return G_SOURCE_CONTINUE;
 }
 
+static gboolean
+show_bt_signal (gpointer data)
+{
+    (void) data;
+    gtk_widget_show_all (window);
+    gtk_window_present (GTK_WINDOW (window));
+    on_bt_open (NULL, NULL);
+    return G_SOURCE_CONTINUE;
+}
+
+static gboolean
+show_night_signal (gpointer data)
+{
+    (void) data;
+    gtk_widget_show_all (window);
+    gtk_window_present (GTK_WINDOW (window));
+    on_night_open (NULL, NULL);
+    return G_SOURCE_CONTINUE;
+}
+
 static void
 on_bt_open (GtkButton *button, gpointer data)
 {
@@ -2266,6 +2286,8 @@ activate (GtkApplication *app, gpointer data)
         log_geometry ("initial show");
         if (!signal_installed) {
             g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
+            g_unix_signal_add (SIGUSR2, show_bt_signal, NULL);
+            g_unix_signal_add (SIGHUP, show_night_signal, NULL);
             {
                 FILE *f = fopen ("/tmp/dapeos-qs-signal.log", "a");
                 if (f) { fprintf (f, "registered pid=%d\n", (int) getpid ()); fclose (f); }
@@ -2289,6 +2311,8 @@ activate (GtkApplication *app, gpointer data)
         log_geometry ("initial show");
         if (!signal_installed) {
             g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
+            g_unix_signal_add (SIGUSR2, show_bt_signal, NULL);
+            g_unix_signal_add (SIGHUP, show_night_signal, NULL);
             {
                 FILE *f = fopen ("/tmp/dapeos-qs-signal.log", "a");
                 if (f) { fprintf (f, "registered pid=%d\n", (int) getpid ()); fclose (f); }

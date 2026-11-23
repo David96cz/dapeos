@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Night light
+Name[cs]=Noční světlo
+Comment=Color temperature and schedule
+Comment[cs]=Teplota barev a rozvrh
+Exec=dapeos-nightlight
+Icon=night-light
+Terminal=false
+NoDisplay=true
+X-XFCE-SettingsDialog=1
+Categories=Settings;HardwareSettings;
