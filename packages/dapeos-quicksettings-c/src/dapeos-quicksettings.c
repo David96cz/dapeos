@@ -37,6 +37,7 @@ static gboolean bt_scanning = FALSE;
 static GtkWidget *night_page;
 static GtkWidget *night_page_scale;
 static GtkWidget *night_page_toggle;
+static gboolean night_page_updating = FALSE;
 static GtkWidget *night_from_entry;
 static GtkWidget *night_to_entry;
 static GtkWidget *wifi_password_page;
@@ -436,6 +437,11 @@ static void update_tiles (void)
     night_on = g_file_test (nightfile, G_FILE_TEST_EXISTS);
     g_free (nightfile);
     gtk_label_set_text (GTK_LABEL (night_status_label), night_on ? "On" : "Off");
+    if (night_page_toggle) {
+        night_page_updating = TRUE;
+        dapeos_switch_set_active (night_page_toggle, night_on);
+        night_page_updating = FALSE;
+    }
     if (night_on) {
         gchar *state = night_state_path ("nightlight");
         gchar *temp = NULL;
@@ -684,23 +690,34 @@ static void apply_gamma (gint temp)
     g_free (cmd);
 }
 
-static void on_night_clicked (GtkButton *button, gpointer data)
+static void
+night_set_on (gboolean on)
 {
-    (void) button; (void) data;
+    if (night_page_toggle) {
+        night_page_updating = TRUE;
+        dapeos_switch_set_active (night_page_toggle, on);
+        night_page_updating = FALSE;
+    }
     gchar *dir = g_build_filename (g_get_user_cache_dir (), "dapeos", NULL);
     gchar *onfile = night_state_path ("nightlight_on");
     g_mkdir_with_parents (dir, 0700);
-    if (night_on) {
-        g_unlink (onfile);
-        apply_gamma (0);
-    } else {
+    if (on) {
         g_file_set_contents (onfile, "", 0, NULL);
         apply_gamma (4000);
+    } else {
+        g_unlink (onfile);
+        apply_gamma (0);
     }
-    night_on = !night_on;
+    night_on = on;
     gtk_label_set_text (GTK_LABEL (night_status_label), night_on ? "On" : "Off");
     gtk_label_set_text (GTK_LABEL (night_label), night_on ? "4000 K" : "");
     g_free (onfile); g_free (dir);
+}
+
+static void on_night_clicked (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    night_set_on (!night_on);
 }
 
 static gchar *run_cmd (const gchar *cmd)
@@ -1845,11 +1862,11 @@ night_scale_changed (GtkRange *range, gpointer data)
 }
 
 static void
-on_night_page_toggle (GtkButton *button, gpointer data)
+on_night_page_switch (GtkToggleButton *button, gpointer data)
 {
-    (void) button; (void) data;
-    on_night_clicked (NULL, NULL);
-    gtk_button_set_label (GTK_BUTTON (night_page_toggle), night_on ? "On" : "Off");
+    (void) data;
+    if (night_page_updating) return;
+    night_set_on (gtk_toggle_button_get_active (button));
 }
 
 static void
@@ -1906,9 +1923,10 @@ build_night_page (void)
     GtkWidget *title = gtk_label_new ("Night light");
     gtk_widget_set_hexpand (title, TRUE);
     gtk_widget_set_halign (title, GTK_ALIGN_START);
-    night_page_toggle = gtk_button_new_with_label (night_on ? "On" : "Off");
+    night_page_toggle = dapeos_switch_new ();
+    dapeos_switch_set_active (night_page_toggle, night_on);
     g_signal_connect (back, "clicked", G_CALLBACK (show_main_page), NULL);
-    g_signal_connect (night_page_toggle, "clicked", G_CALLBACK (on_night_page_toggle), NULL);
+    g_signal_connect (night_page_toggle, "toggled", G_CALLBACK (on_night_page_switch), NULL);
     gtk_box_pack_start (GTK_BOX (header), back, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (header), title, TRUE, TRUE, 0);
     gtk_box_pack_end (GTK_BOX (header), night_page_toggle, FALSE, FALSE, 0);
@@ -1955,7 +1973,11 @@ on_night_open (GtkButton *button, gpointer data)
         g_free (text);
     }
     g_free (path);
-    gtk_button_set_label (GTK_BUTTON (night_page_toggle), night_on ? "On" : "Off");
+    if (night_page_toggle) {
+        night_page_updating = TRUE;
+        dapeos_switch_set_active (night_page_toggle, night_on);
+        night_page_updating = FALSE;
+    }
 }
 
 static void
