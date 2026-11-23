@@ -87,6 +87,7 @@ static void update_tiles (void);
 static gboolean wifi_radio_on (void);
 static void on_bt_open (GtkButton *button, gpointer data);
 static void bt_refresh (GtkWidget *page);
+static void bt_refresh (GtkWidget *page);
 static void show_main_page (GtkButton *button, gpointer data);
 static void on_night_open (GtkButton *button, gpointer data);
 
@@ -1509,7 +1510,7 @@ night_scale_changed (GtkRange *range, gpointer data)
 }
 
 static void
-night_page_toggle (GtkButton *button, gpointer data)
+on_night_page_toggle (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     on_night_clicked (NULL, NULL);
@@ -1572,7 +1573,7 @@ build_night_page (void)
     gtk_widget_set_halign (title, GTK_ALIGN_START);
     night_page_toggle = gtk_button_new_with_label (night_on ? "On" : "Off");
     g_signal_connect (back, "clicked", G_CALLBACK (show_main_page), NULL);
-    g_signal_connect (night_page_toggle, "clicked", G_CALLBACK (night_page_toggle), NULL);
+    g_signal_connect (night_page_toggle, "clicked", G_CALLBACK (on_night_page_toggle), NULL);
     gtk_box_pack_start (GTK_BOX (header), back, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (header), title, TRUE, TRUE, 0);
     gtk_box_pack_end (GTK_BOX (header), night_page_toggle, FALSE, FALSE, 0);
