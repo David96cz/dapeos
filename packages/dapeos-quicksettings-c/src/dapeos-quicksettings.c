@@ -1894,7 +1894,8 @@ night_clock_is_12h (void)
     gchar **lines = g_strsplit (list, "\n", -1);
     gboolean twelve = FALSE;
     for (guint i = 0; lines[i]; i++) {
-        if (!g_str_has_suffix (lines[i], "/digital-format")) continue;
+        if (!g_str_has_suffix (lines[i], "/digital-time-format") &&
+            !g_str_has_suffix (lines[i], "/digital-format")) continue;
         gchar *val = run_cmd (g_strdup_printf ("xfconf-query -c xfce4-panel -p %s 2>/dev/null", g_shell_quote (lines[i])));
         if (strstr (val, "%I") || strstr (val, "%l") || strstr (val, "%r") ||
             strstr (val, "%p")) twelve = TRUE;
@@ -1908,7 +1909,8 @@ night_clock_is_12h (void)
                                        "xfce4-panel.xml", NULL);
         gchar *text = NULL;
         if (g_file_get_contents (xml, &text, NULL, NULL)) {
-            gchar *p = strstr (text, "digital-format");
+            gchar *p = strstr (text, "digital-time-format");
+            if (!p) p = strstr (text, "digital-format");
             if (p) {
                 gchar *v = strstr (p, "value=\"");
                 if (v) {
@@ -1965,7 +1967,12 @@ static void
 night_pad_spin (GtkSpinButton *spin)
 {
     gchar buf[8];
-    g_snprintf (buf, sizeof buf, "%02d", gtk_spin_button_get_value_as_int (spin));
+    if (night_12h && spin == GTK_SPIN_BUTTON (night_from_hour))
+        g_snprintf (buf, sizeof buf, "%d", gtk_spin_button_get_value_as_int (spin));
+    else if (night_12h && spin == GTK_SPIN_BUTTON (night_to_hour))
+        g_snprintf (buf, sizeof buf, "%d", gtk_spin_button_get_value_as_int (spin));
+    else
+        g_snprintf (buf, sizeof buf, "%02d", gtk_spin_button_get_value_as_int (spin));
     GtkEntry *entry = GTK_ENTRY (spin);
     if (g_strcmp0 (gtk_entry_get_text (entry), buf) != 0)
         gtk_entry_set_text (entry, buf);
