@@ -1,7 +1,11 @@
 #!/bin/sh
 # Restartuje panel po zmene dark-mode nebo motivu/ikon (whiskermenu ikony).
 exec 9>/tmp/dapeos-panel-watch.lock
-flock -n 9 || exit 0
+if ! flock -n 9; then
+    echo "$(date +%H:%M:%S) watcher: lock busy, exiting" >> /tmp/dapeos-panel-watch.log
+    exit 0
+fi
+echo "$(date +%H:%M:%S) watcher: started pid=$$" >> /tmp/dapeos-panel-watch.log
 
 restart_panel() {
     local reopen=0
