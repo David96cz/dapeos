@@ -18,6 +18,9 @@ static GtkWidget *wifi_page;
 static GtkWidget *wifi_page_toggle;
 static GtkWidget *bt_page;
 static GtkWidget *bt_list;
+static GtkWidget *bt_power_switch;
+static GtkWidget *bt_auto_switch;
+static gboolean bt_power_updating = FALSE;
 static GtkWidget *night_page;
 static GtkWidget *night_page_scale;
 static GtkWidget *night_page_toggle;
@@ -354,6 +357,11 @@ static void update_tiles (void)
     if (page_main || page_bt) {
         gboolean bt = bt_is_on ();
         gtk_label_set_text (GTK_LABEL (bt_status_label), bt ? "On" : "Off");
+        if (bt_power_switch) {
+            bt_power_updating = TRUE;
+            gtk_switch_set_active (GTK_SWITCH (bt_power_switch), bt);
+            bt_power_updating = FALSE;
+        }
         gchar *btdev = bt_connected_name ();
         gchar *shortdev = short_name (btdev);
         gtk_label_set_text (GTK_LABEL (bt_label), shortdev);
@@ -509,6 +517,29 @@ bt_connect_known_cb (gpointer data)
     g_strfreev (cl);
     g_free (cache);
     g_free (cpath);
+    return FALSE;
+}
+
+static gboolean
+bt_auto_connect_cb (gpointer data)
+{
+    (void) data;
+    if (!bt_is_on ()) return FALSE;
+    gchar *path = bt_cache_path ();
+    gchar *cache = NULL;
+    g_file_get_contents (path, &cache, NULL, NULL);
+    gchar **lines = g_strsplit (cache ? cache : "", "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        gchar **kv = g_strsplit (lines[i], "\t", 2);
+        if (kv[0] && bt_auto_enabled (kv[0])) {
+            gchar *cmd = g_strdup_printf ("bluetoothctl connect %s >/dev/null 2>&1", kv[0]);
+            run_async (cmd);
+            g_free (cmd);
+        }
+        g_strfreev (kv);
+    }
+    g_strfreev (lines);
+    g_free (cache); g_free (path);
     return FALSE;
 }
 
@@ -730,7 +761,10 @@ static void apply_css (void)
             "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
             "#dapeos-qs button { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 8px; padding: 6px 10px; }"
             "#dapeos-qs label#wifi-error { color: #ff6b6b; }"
-            "#dapeos-qs label#brightness-icon { color: #eaeaea; font-size: 16pt; }";
+            "#dapeos-qs label#brightness-icon { color: #eaeaea; font-size: 16pt; }"
+            "#dapeos-qs switch { background: #555; border-radius: 999px; min-width: 44px; min-height: 24px; }"
+            "#dapeos-qs switch:checked { background: #34c759; }"
+            "#dapeos-qs switch slider { background: #fff; border-radius: 999px; min-width: 20px; min-height: 20px; margin: 2px; }";
     } else {
         data =
             "#dapeos-qs { background: transparent; }"
@@ -746,7 +780,10 @@ static void apply_css (void)
             "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
             "#dapeos-qs button { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px; padding: 6px 10px; }"
             "#dapeos-qs label#wifi-error { color: #c62828; }"
-            "#dapeos-qs label#brightness-icon { color: #1a1a1a; font-size: 16pt; }";
+            "#dapeos-qs label#brightness-icon { color: #1a1a1a; font-size: 16pt; }"
+            "#dapeos-qs switch { background: #ccc; border-radius: 999px; min-width: 44px; min-height: 24px; }"
+            "#dapeos-qs switch:checked { background: #34c759; }"
+            "#dapeos-qs switch slider { background: #fff; border-radius: 999px; min-width: 20px; min-height: 20px; margin: 2px; }";
     }
     gtk_css_provider_load_from_data (css, data, -1, NULL);
     gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
@@ -2076,6 +2113,10 @@ bt_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
         gtk_button_set_label (GTK_BUTTON (act), it->connected ? "Disconnect" : "Connect");
         gtk_widget_set_sensitive (act, TRUE);
         gtk_widget_set_sensitive (forget, it->paired);
+        if (bt_auto_switch) {
+            gtk_widget_set_sensitive (bt_auto_switch, it->paired);
+            gtk_switch_set_active (GTK_SWITCH (bt_auto_switch), it->paired && bt_auto_enabled (it->mac));
+        }
     } else {
         gtk_widget_set_sensitive (act, FALSE);
         gtk_widget_set_sensitive (forget, FALSE);
@@ -2136,6 +2177,62 @@ bt_cache_remove (const gchar *mac, const gchar *name)
     g_strfreev (lines);
     g_free (data);
     g_free (path);
+}
+
+static gchar *
+bt_auto_path (void)
+{
+    gchar *dir = g_build_filename (g_get_user_config_dir (), "dapeos", NULL);
+    g_mkdir_with_parents (dir, 0700);
+    gchar *path = g_build_filename (dir, "bt-autoconnect", NULL);
+    g_free (dir);
+    return path;
+}
+
+static gboolean
+bt_auto_enabled (const gchar *mac)
+{
+    gchar *path = bt_auto_path ();
+    gchar *data = NULL;
+    g_file_get_contents (path, &data, NULL, NULL);
+    gboolean on = FALSE;
+    gchar **lines = g_strsplit (data ? data : "", "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        gchar **kv = g_strsplit (lines[i], "=", 2);
+        if (kv[0] && g_strcmp0 (kv[0], mac) == 0 && kv[1] && atoi (kv[1]) != 0)
+            on = TRUE;
+        g_strfreev (kv);
+    }
+    g_strfreev (lines);
+    g_free (data); g_free (path);
+    return on;
+}
+
+static void
+bt_auto_set (const gchar *mac, gboolean on)
+{
+    gchar *path = bt_auto_path ();
+    gchar *data = NULL;
+    g_file_get_contents (path, &data, NULL, NULL);
+    gchar **lines = g_strsplit (data ? data : "", "\n", -1);
+    GString *out = g_string_new ("");
+    gboolean found = FALSE;
+    for (guint i = 0; lines[i]; i++) {
+        if (!*lines[i]) continue;
+        gchar **kv = g_strsplit (lines[i], "=", 2);
+        if (kv[0] && g_strcmp0 (kv[0], mac) == 0) {
+            g_string_append_printf (out, "%s=%d\n", mac, on ? 1 : 0);
+            found = TRUE;
+        } else {
+            g_string_append_printf (out, "%s\n", lines[i]);
+        }
+        g_strfreev (kv);
+    }
+    if (!found) g_string_append_printf (out, "%s=%d\n", mac, on ? 1 : 0);
+    g_file_set_contents (path, out->str, -1, NULL);
+    g_string_free (out, TRUE);
+    g_strfreev (lines);
+    g_free (data); g_free (path);
 }
 
 static gboolean
@@ -2656,6 +2753,34 @@ on_bt_forget (GtkButton *button, gpointer data)
     g_timeout_add (1000, bt_refresh_cb, data);
 }
 
+static gboolean bt_auto_connect_cb (gpointer data);
+
+static void
+on_bt_power_switch (GObject *obj, GParamSpec *pspec, gpointer data)
+{
+    (void) pspec; (void) data;
+    if (bt_power_updating) return;
+    gboolean active = gtk_switch_get_active (GTK_SWITCH (obj));
+    if (active)
+        run_async ("rfkill unblock bluetooth; bluetoothctl power on; bluetoothctl bondable on; bluetoothctl pairable on");
+    else
+        run_async ("bluetoothctl power off");
+    if (bt_page) {
+        g_object_ref (bt_page);
+        g_timeout_add (800, bt_refresh_cb, bt_page);
+    }
+    g_timeout_add (2500, bt_auto_connect_cb, NULL);
+    g_timeout_add (400, update_tiles_cb, NULL);
+}
+
+static void
+bt_auto_toggle (GObject *obj, GParamSpec *pspec, gpointer data)
+{
+    (void) data;
+    BtItem *it = g_object_get_data (G_OBJECT (bt_page), "bt-selected");
+    if (it) bt_auto_set (it->mac, gtk_switch_get_active (GTK_SWITCH (obj)));
+}
+
 static void
 on_bt_power (GtkButton *button, gpointer data)
 {
@@ -2683,9 +2808,10 @@ build_bt_page (void)
     GtkWidget *title = gtk_label_new ("Bluetooth devices");
     gtk_widget_set_hexpand (title, TRUE);
     gtk_widget_set_halign (title, GTK_ALIGN_START);
-    GtkWidget *power = gtk_button_new_with_label ("On");
+    GtkWidget *power = gtk_switch_new ();
+    bt_power_switch = power;
+    g_signal_connect (power, "notify::active", G_CALLBACK (on_bt_power_switch), NULL);
     g_signal_connect (back, "clicked", G_CALLBACK (show_main_page), NULL);
-    g_signal_connect (power, "clicked", G_CALLBACK (on_bt_power), power);
     gtk_box_pack_start (GTK_BOX (header), back, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (header), title, TRUE, TRUE, 0);
     gtk_box_pack_end (GTK_BOX (header), power, FALSE, FALSE, 0);
@@ -2704,6 +2830,10 @@ build_bt_page (void)
     GtkWidget *action = gtk_button_new_with_label ("Connect");
     GtkWidget *forget = gtk_button_new_with_label ("Forget");
     GtkWidget *refresh = gtk_button_new_with_label ("Refresh");
+    GtkWidget *auto_label = gtk_label_new ("Auto-connect");
+    bt_auto_switch = gtk_switch_new ();
+    gtk_widget_set_sensitive (bt_auto_switch, FALSE);
+    g_signal_connect (bt_auto_switch, "notify::active", G_CALLBACK (bt_auto_toggle), NULL);
     g_signal_connect (action, "clicked", G_CALLBACK (on_bt_action), page);
     g_signal_connect (forget, "clicked", G_CALLBACK (on_bt_forget), page);
     g_signal_connect (refresh, "clicked", G_CALLBACK (on_bt_refresh), page);
@@ -2771,6 +2901,8 @@ build_wifi_page (void)
     gtk_box_pack_start (GTK_BOX (actions), forget, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), advanced, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), refresh, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), auto_label, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), bt_auto_switch, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), actions, FALSE, FALSE, 0);
 
     g_object_set_data (G_OBJECT (page), "wifi-list", list);
