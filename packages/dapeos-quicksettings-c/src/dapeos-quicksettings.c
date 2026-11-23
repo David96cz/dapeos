@@ -2669,6 +2669,7 @@ static void
 bt_update_list (void)
 {
     if (!bt_list) return;
+    if (bt_off_shown) return;
     bt_clear_status ();
     GList *old_rows = gtk_container_get_children (GTK_CONTAINER (bt_list));
     for (GList *l = old_rows; l; l = l->next) {
@@ -2766,6 +2767,7 @@ bt_poll_cb (gpointer data)
         bt_poll_id = 0;
         return G_SOURCE_REMOVE;
     }
+    if (bt_off_shown) return G_SOURCE_CONTINUE;
     static guint tick = 0;
     if ((tick++ % 5) == 0) {
         if (!bt_is_on ()) {
@@ -2809,6 +2811,12 @@ bt_refresh (GtkWidget *page)
 {
     qs_trace_mark ("bt-refresh-start");
     bt_untrust_cached ();
+    if (bt_off_shown) {
+        if (!bt_list) return;
+        bt_clear_list ();
+        bt_show_status ("Bluetooth is off", FALSE);
+        return;
+    }
     if (!bt_list) return;
     bt_clear_list ();
     if (!bt_is_on ()) {
@@ -2882,6 +2890,8 @@ on_bt_power_switch (GtkToggleButton *button, gpointer data)
     (void) data;
     if (bt_power_updating) return;
     gboolean active = gtk_toggle_button_get_active (button);
+    bt_off_shown = !active;
+    if (!active) bt_scanning = FALSE;
     if (active)
         run_async ("rfkill unblock bluetooth; bluetoothctl power on; bluetoothctl bondable on; bluetoothctl pairable on");
     else
