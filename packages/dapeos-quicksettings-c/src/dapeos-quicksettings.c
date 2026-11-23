@@ -2299,9 +2299,9 @@ on_bt_action (GtkButton *button, gpointer data)
     gchar *cmd = it->connected
         ? g_strdup_printf ("bluetoothctl disconnect %s 2>/dev/null", it->mac)
         : (it->paired
-            ? g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; bluetoothctl trust %s 2>/dev/null; bluetoothctl connect %s 2>/dev/null; sleep 2; bluetoothctl bond %s 2>/dev/null",
+            ? g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; (bluetoothctl trust %s; bluetoothctl connect %s; sleep 2; bluetoothctl bond %s) >>/tmp/dapeos-bt.log 2>&1",
                                it->mac, it->mac, it->mac)
-            : g_strdup_printf ("bluetoothctl pair %s 2>/dev/null; bluetoothctl trust %s 2>/dev/null; bluetoothctl connect %s 2>/dev/null; sleep 2; bluetoothctl bond %s 2>/dev/null",
+            : g_strdup_printf ("(bluetoothctl pair %s; bluetoothctl trust %s; bluetoothctl connect %s; sleep 2; bluetoothctl bond %s) >>/tmp/dapeos-bt.log 2>&1",
                                it->mac, it->mac, it->mac, it->mac));
     run_async (cmd);
     g_free (cmd);
