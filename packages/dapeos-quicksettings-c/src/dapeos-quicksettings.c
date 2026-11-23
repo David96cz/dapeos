@@ -16,6 +16,11 @@ static GtkWidget *main_page;
 static GtkWidget *wifi_page;
 static GtkWidget *bt_page;
 static GtkWidget *bt_list;
+static GtkWidget *night_page;
+static GtkWidget *night_page_scale;
+static GtkWidget *night_page_toggle;
+static GtkWidget *night_from_entry;
+static GtkWidget *night_to_entry;
 static GtkWidget *wifi_password_page;
 static GtkWidget *wifi_password_label;
 static GtkWidget *wifi_password_entry;
@@ -1477,29 +1482,87 @@ night_scale_changed (GtkRange *range, gpointer data)
 }
 
 static void
+night_page_toggle (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    on_night_clicked (NULL, NULL);
+    gtk_button_set_label (GTK_BUTTON (night_page_toggle), night_on ? "On" : "Off");
+}
+
+static void
+night_schedule_save (GtkButton *button, gpointer data)
+{
+    (void) button; (void) data;
+    const gchar *from = gtk_entry_get_text (GTK_ENTRY (night_from_entry));
+    const gchar *to = gtk_entry_get_text (GTK_ENTRY (night_to_entry));
+    gchar *fp = night_state_path ("nightlight_from");
+    gchar *tp = night_state_path ("nightlight_to");
+    g_file_set_contents (fp, from, -1, NULL);
+    g_file_set_contents (tp, to, -1, NULL);
+    g_free (fp); g_free (tp);
+}
+
+static GtkWidget *
+build_night_page (void)
+{
+    GtkWidget *page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 8);
+    gtk_container_set_border_width (GTK_CONTAINER (page), 16);
+    GtkWidget *header = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget *back = gtk_button_new_with_label ("‹ Back");
+    gtk_style_context_add_class (gtk_widget_get_style_context (back), "flat");
+    GtkWidget *title = gtk_label_new ("Night light");
+    gtk_widget_set_hexpand (title, TRUE);
+    gtk_widget_set_halign (title, GTK_ALIGN_START);
+    night_page_toggle = gtk_button_new_with_label (night_on ? "On" : "Off");
+    g_signal_connect (back, "clicked", G_CALLBACK (show_main_page), NULL);
+    g_signal_connect (night_page_toggle, "clicked", G_CALLBACK (night_page_toggle), NULL);
+    gtk_box_pack_start (GTK_BOX (header), back, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (header), title, TRUE, TRUE, 0);
+    gtk_box_pack_end (GTK_BOX (header), night_page_toggle, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), header, FALSE, FALSE, 0);
+
+    GtkWidget *label = gtk_label_new ("Color temperature");
+    gtk_widget_set_halign (label, GTK_ALIGN_START);
+    night_page_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1000, 6500, 100);
+    gtk_range_set_value (GTK_RANGE (night_page_scale), 4000);
+    g_signal_connect (night_page_scale, "value-changed", G_CALLBACK (night_scale_changed), NULL);
+    gtk_box_pack_start (GTK_BOX (page), label, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), night_page_scale, FALSE, FALSE, 0);
+
+    GtkWidget *sched = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget *fl = gtk_label_new ("From");
+    GtkWidget *tl = gtk_label_new ("To");
+    night_from_entry = gtk_entry_new ();
+    night_to_entry = gtk_entry_new ();
+    gtk_entry_set_width_chars (GTK_ENTRY (night_from_entry), 6);
+    gtk_entry_set_width_chars (GTK_ENTRY (night_to_entry), 6);
+    gtk_entry_set_placeholder_text (GTK_ENTRY (night_from_entry), "22:00");
+    gtk_entry_set_placeholder_text (GTK_ENTRY (night_to_entry), "07:00");
+    gtk_box_pack_start (GTK_BOX (sched), fl, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (sched), night_from_entry, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (sched), tl, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (sched), night_to_entry, FALSE, FALSE, 0);
+    GtkWidget *save = gtk_button_new_with_label ("Save schedule");
+    g_signal_connect (save, "clicked", G_CALLBACK (night_schedule_save), NULL);
+    gtk_box_pack_start (GTK_BOX (sched), save, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), sched, FALSE, FALSE, 0);
+    gtk_widget_show_all (page);
+    return page;
+}
+
+static void
 on_night_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
-    gtk_widget_hide (window);
-    GtkWidget *dialog = gtk_dialog_new_with_buttons ("Night light", NULL,
-        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-        "_Close", GTK_RESPONSE_CLOSE, NULL);
-    GtkWidget *box = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
-    GtkWidget *label = gtk_label_new ("Color temperature");
-    GtkWidget *scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1000, 6500, 100);
-    gint temp = 4000;
+    gtk_stack_set_visible_child_name (GTK_STACK (qstack), "night");
     gchar *path = night_state_path ("nightlight");
     gchar *text = NULL;
-    if (g_file_get_contents (path, &text, NULL, NULL)) { temp = atoi (text); g_free (text); }
-    gtk_range_set_value (GTK_RANGE (scale), temp);
-    gtk_scale_set_draw_value (GTK_SCALE (scale), TRUE);
-    gtk_box_pack_start (GTK_BOX (box), label, FALSE, FALSE, 6);
-    gtk_box_pack_start (GTK_BOX (box), scale, FALSE, FALSE, 6);
-    g_signal_connect (scale, "value-changed", G_CALLBACK (night_scale_changed), NULL);
+    if (g_file_get_contents (path, &text, NULL, NULL)) {
+        gtk_range_set_value (GTK_RANGE (night_page_scale), atoi (text));
+        g_free (text);
+    }
     g_free (path);
-    gtk_widget_show_all (dialog);
-    gtk_dialog_run (GTK_DIALOG (dialog));
-    gtk_widget_destroy (dialog);
+    gtk_button_set_label (GTK_BUTTON (night_page_toggle), night_on ? "On" : "Off");
 }
 
 static void
@@ -2026,6 +2089,8 @@ static void build_ui (void)
     gtk_stack_add_named (GTK_STACK (qstack), wifi_page, "wifi");
     bt_page = build_bt_page ();
     gtk_stack_add_named (GTK_STACK (qstack), bt_page, "bluetooth");
+    night_page = build_night_page ();
+    gtk_stack_add_named (GTK_STACK (qstack), night_page, "night");
     wifi_password_page = build_wifi_password_page ();
     gtk_stack_add_named (GTK_STACK (qstack), wifi_password_page, "wifi-password");
     wifi_confirm_page = build_wifi_confirm_page ();
