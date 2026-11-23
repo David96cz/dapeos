@@ -269,7 +269,8 @@ class SettingsHub(QWidget):
                     ["wmctrl", "-l"], capture_output=True, text=True, timeout=2).stdout
                 for line in windows.splitlines():
                     low = line.lower()
-                    if "thunar" in low and ("preference" in low or "file manager" in low or "soubor" in low):
+                    if ("thunar" in low and ("preference" in low or "soubor" in low)) or \
+                       ("file manager" in low and "settings" in low):
                         subprocess.run(["wmctrl", "-ia", line.split(None, 1)[0]],
                                        stdout=subprocess.DEVNULL,
                                        stderr=subprocess.DEVNULL)
