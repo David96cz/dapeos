@@ -231,7 +231,7 @@ class SettingsHub(QWidget):
             return False
         try:
             pids = subprocess.run(
-                ["pgrep", "-f", "^" + re.escape(args[0])],
+                ["pgrep", "-f", "/" + re.escape(prog)],
                 capture_output=True, text=True, timeout=2).stdout.split()
             if not pids:
                 return False

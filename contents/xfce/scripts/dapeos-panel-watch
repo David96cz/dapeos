@@ -6,7 +6,11 @@ flock -n 9 || exit 0
 restart_panel() {
     local reopen=0
     pgrep -f 'xfce4-panel --settings' >/dev/null 2>&1 && reopen=1
-    for _p in $(pgrep -f '^/usr/bin/xfce4-panel' 2>/dev/null); do
+    for _p in $(pgrep -f 'xfce4-panel' 2>/dev/null); do
+        _cmd=$(tr '\0' ' ' </proc/$_p/cmdline 2>/dev/null || true)
+        case "$_cmd" in
+            *dapeos-panel-watch*) continue ;;
+        esac
         kill -9 "$_p" 2>/dev/null || true
     done
     pkill -x xfce4-clipman 2>/dev/null
@@ -47,6 +51,7 @@ watch_dark_poll() {
         now=$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)
         if [ "$now" != "$last" ]; then
             last="$now"
+            echo "$(date +%H:%M:%S) dark-mode $now -> restart" >> /tmp/dapeos-panel-watch.log
             sleep 0.3
             restart_panel
         fi
