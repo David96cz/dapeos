@@ -300,6 +300,8 @@ class SettingsHub(QWidget):
         args = [a for a in shlex.split(command) if not a.startswith("%")]
         if not args:
             return
+        if self.focus_existing(args, item):
+            return
         key = (item or {}).get("file", "settings")
         lockdir = os.path.expanduser("~/.cache/dapeos/settings-locks")
         os.makedirs(lockdir, exist_ok=True)
