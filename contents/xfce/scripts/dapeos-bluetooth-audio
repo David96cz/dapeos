@@ -1,8 +1,8 @@
 #!/bin/sh
-# Zpřístupní Bluetooth audio zařízení v PipeWire/PulseAudio.
+# Zpřístupní Bluetooth audio zařízení a zajistí bondable adaptér.
 bluetoothctl bondable on >/dev/null 2>&1 || true
 if command -v wpctl >/dev/null 2>&1; then
-    systemctl --user restart wireplumber 2>/dev/null || pkill -HUP wireplumber 2>/dev/null || true
+    :
 else
     pactl load-module module-bluetooth-discover 2>/dev/null || true
 fi

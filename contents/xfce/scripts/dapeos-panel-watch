@@ -5,11 +5,9 @@ if ! flock -n 9; then
     rm -f /tmp/dapeos-panel-watch.lock
     exec 9>/tmp/dapeos-panel-watch.lock
     if ! flock -n 9; then
-        echo "$(date +%H:%M:%S) watcher: lock busy, exiting" >> /tmp/dapeos-panel-watch.log
-        exit 0
+            exit 0
     fi
 fi
-echo "$(date +%H:%M:%S) watcher: started pid=$$" >> /tmp/dapeos-panel-watch.log
 
 restart_panel() {
     /usr/local/bin/dapeos-panel-restart
@@ -18,7 +16,6 @@ restart_panel() {
 watch_channel() {
     exec 9>&-
     xfconf-query -c "$1" -m 2>/dev/null | while IFS= read -r line; do
-        printf '%s %s: %s\n' "$(date +%H:%M:%S)" "$1" "$line" >> /tmp/dapeos-panel-watch.log
         case "$line" in
             *ThemeName*)
                 dapeos-theme-sync
@@ -43,7 +40,6 @@ watch_dark_poll() {
         now=$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)
         if [ "$now" != "$last" ]; then
             last="$now"
-            echo "$(date +%H:%M:%S) dark-mode $now -> restart" >> /tmp/dapeos-panel-watch.log
             sleep 0.3
             restart_panel
         fi

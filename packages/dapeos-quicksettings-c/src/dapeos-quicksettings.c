@@ -386,10 +386,8 @@ bt_connect_known_cb (gpointer data)
         if (kv[0]) {
             gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", kv[0]));
             if (strstr (info, "Paired: yes")) {
-                gchar *cmd = g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; bluetoothctl bondable on >/dev/null 2>&1; bluetoothctl trust %s >/dev/null 2>&1; bluetoothctl connect %s >/dev/null 2>&1",
+                gchar *cmd = g_strdup_printf ("bluetoothctl bondable on >/dev/null 2>&1; bluetoothctl trust %s >/dev/null 2>&1; bluetoothctl connect %s >/dev/null 2>&1",
                                                kv[0], kv[0]);
-                FILE *bf = fopen ("/tmp/dapeos-bt.log", "a");
-                if (bf) { fprintf (bf, "autoconnect %s\n", kv[0]); fclose (bf); }
                 run_async (cmd);
                 g_free (cmd);
             }
@@ -1523,32 +1521,13 @@ on_net_open (GtkButton *button, gpointer data)
     wifi_start_scan (wifi_page);
 }
 
-static void
-log_geometry (const gchar *tag)
-{
-    gint w = 0, h = 0, x = 0, y = 0;
-    gtk_window_get_size (GTK_WINDOW (window), &w, &h);
-    gtk_window_get_position (GTK_WINDOW (window), &x, &y);
-    FILE *f = fopen ("/tmp/dapeos-qs-geometry.log", "a");
-    if (f) {
-        fprintf (f, "%s: %dx%d at %d,%d\n", tag, w, h, x, y);
-        fclose (f);
-    }
-}
-
 static gboolean
 toggle_wifi_signal (gpointer data)
 {
     (void) data;
-    {
-        FILE *f = fopen ("/tmp/dapeos-qs-signal.log", "a");
-        if (f) { fprintf (f, "handler pid=%d\n", (int) getpid ()); fclose (f); }
-    }
     gtk_widget_show_all (window);
     gtk_window_present (GTK_WINDOW (window));
-    log_geometry ("before toggle");
     on_net_open (NULL, NULL);
-    log_geometry ("after toggle");
     return G_SOURCE_CONTINUE;
 }
 
@@ -2299,9 +2278,9 @@ on_bt_action (GtkButton *button, gpointer data)
     gchar *cmd = it->connected
         ? g_strdup_printf ("bluetoothctl disconnect %s 2>/dev/null", it->mac)
         : (it->paired
-            ? g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; (bluetoothctl bondable on; bluetoothctl trust %s; bluetoothctl connect %s) >>/tmp/dapeos-bt.log 2>&1",
+            ? g_strdup_printf ("(bluetoothctl bondable on; bluetoothctl trust %s; bluetoothctl connect %s) >/dev/null 2>&1",
                                it->mac, it->mac)
-            : g_strdup_printf ("(bluetoothctl bondable on; bluetoothctl pairable on; bluetoothctl pair %s; bluetoothctl trust %s; bluetoothctl connect %s) >>/tmp/dapeos-bt.log 2>&1",
+            : g_strdup_printf ("(bluetoothctl bondable on; bluetoothctl pairable on; bluetoothctl pair %s; bluetoothctl trust %s; bluetoothctl connect %s) >/dev/null 2>&1",
                                it->mac, it->mac, it->mac));
     run_async (cmd);
     g_free (cmd);
@@ -2664,13 +2643,6 @@ static void position_window (void)
     if (x < geo.x + 8) x = geo.x + 8;
     if (y < geo.y + 8) y = geo.y + 8;
     gtk_window_move (GTK_WINDOW (window), x, y);
-    {
-        gint aw = 0, ah = 0, ax = 0, ay = 0;
-        gtk_window_get_size (GTK_WINDOW (window), &aw, &ah);
-        gtk_window_get_position (GTK_WINDOW (window), &ax, &ay);
-        FILE *f = fopen ("/tmp/dapeos-qs-geometry.log", "a");
-        if (f) { fprintf (f, "positioned: %dx%d at %d,%d\n", aw, ah, ax, ay); fclose (f); }
-    }
 }
 
 static gboolean refresh_bg (gpointer data)
@@ -2695,15 +2667,10 @@ activate (GtkApplication *app, gpointer data)
         gtk_window_resize (GTK_WINDOW (window), 504, 300);
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
-        log_geometry ("initial show");
         if (!signal_installed) {
             g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
             g_unix_signal_add (SIGUSR2, show_bt_signal, NULL);
             g_unix_signal_add (SIGHUP, show_night_signal, NULL);
-            {
-                FILE *f = fopen ("/tmp/dapeos-qs-signal.log", "a");
-                if (f) { fprintf (f, "registered pid=%d\n", (int) getpid ()); fclose (f); }
-            }
             signal_installed = TRUE;
         }
         g_timeout_add (100, update_volume_cb, NULL);
@@ -2721,15 +2688,10 @@ activate (GtkApplication *app, gpointer data)
         gtk_window_resize (GTK_WINDOW (window), 504, 300);
         gtk_widget_show_all (window);
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
-        log_geometry ("initial show");
         if (!signal_installed) {
             g_unix_signal_add (SIGUSR1, toggle_wifi_signal, NULL);
             g_unix_signal_add (SIGUSR2, show_bt_signal, NULL);
             g_unix_signal_add (SIGHUP, show_night_signal, NULL);
-            {
-                FILE *f = fopen ("/tmp/dapeos-qs-signal.log", "a");
-                if (f) { fprintf (f, "registered pid=%d\n", (int) getpid ()); fclose (f); }
-            }
             signal_installed = TRUE;
         }
         gtk_window_present (GTK_WINDOW (window));
