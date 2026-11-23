@@ -2026,6 +2026,27 @@ typedef struct {
     GtkWidget *state;
 } BtItem;
 
+static GHashTable *bt_seen = NULL;
+static GSubprocess *bt_scan_proc = NULL;
+
+static void
+bt_seen_mark (const gchar *mac)
+{
+    if (!bt_seen)
+        bt_seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+    gint64 *ts = g_new (gint64, 1);
+    *ts = g_get_monotonic_time ();
+    g_hash_table_replace (bt_seen, g_strdup (mac), ts);
+}
+
+static gboolean
+bt_seen_recent (const gchar *mac)
+{
+    if (!bt_seen) return FALSE;
+    gint64 *ts = g_hash_table_lookup (bt_seen, mac);
+    return ts && (g_get_monotonic_time () - *ts) < 12 * G_USEC_PER_SEC;
+}
+
 static void
 bt_item_free (gpointer data)
 {
@@ -2416,6 +2437,43 @@ bt_clear_list (void)
 }
 
 static void
+bt_scan_done (GObject *source, GAsyncResult *res, gpointer data)
+{
+    (void) data;
+    GError *error = NULL;
+    gchar *out = NULL;
+    g_subprocess_communicate_utf8_finish (G_SUBPROCESS (source), res, &out, NULL, &error);
+    if (out) {
+        gchar **lines = g_strsplit (out, "\n", -1);
+        for (guint i = 0; lines[i]; i++) {
+            gchar mac[64] = "";
+            gchar *p = strstr (lines[i], "Device ");
+            if (p && sscanf (p + 7, "%63s", mac) == 1)
+                bt_seen_mark (mac);
+        }
+        g_strfreev (lines);
+    }
+    if (error) g_error_free (error);
+    g_free (out);
+    g_object_unref (bt_scan_proc);
+    bt_scan_proc = NULL;
+}
+
+static void
+bt_start_scan (void)
+{
+    if (bt_scan_proc) return;
+    const gchar *argv[] = { "bluetoothctl", "--timeout", "4", "scan", "on", NULL };
+    GError *error = NULL;
+    bt_scan_proc = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE |
+                                      G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
+    if (bt_scan_proc)
+        g_subprocess_communicate_utf8_async (bt_scan_proc, NULL, NULL, bt_scan_done, NULL);
+    else if (error)
+        g_error_free (error);
+}
+
+static void
 bt_update_list (void)
 {
     if (!bt_list) return;
@@ -2426,7 +2484,6 @@ bt_update_list (void)
     }
     g_list_free (old_rows);
     gchar *dev = run_cmd ("bluetoothctl devices 2>/dev/null");
-    gchar *paired_out = run_cmd ("bluetoothctl devices Paired 2>/dev/null");
     gchar *conn_out = run_cmd ("bluetoothctl devices Connected 2>/dev/null");
     GHashTable *seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
@@ -2435,8 +2492,9 @@ bt_update_list (void)
         gchar mac[64] = "", name[256] = "";
         if (sscanf (lines[i], "Device %63s %255[^\n]", mac, name) != 2) continue;
         if (!bt_valid_name (name)) continue;
-        gboolean paired = strstr (paired_out, mac) != NULL;
         gboolean connected = strstr (conn_out, mac) != NULL;
+        if (!bt_seen_recent (mac) && !connected) continue;
+        gboolean paired = bt_cache_has_name (name);
         if (paired) bt_cache_add (mac, name);
         g_hash_table_add (seen, g_strdup (mac));
         bt_upsert (mac, name, connected, paired);
@@ -2453,7 +2511,7 @@ bt_update_list (void)
     }
     g_list_free (rows);
     g_hash_table_destroy (seen);
-    g_free (dev); g_free (paired_out); g_free (conn_out);
+    g_free (dev); g_free (conn_out);
 
     if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
         GtkWidget *empty = gtk_label_new ("No Bluetooth devices found");
@@ -2470,16 +2528,17 @@ bt_poll_cb (gpointer data)
         bt_poll_id = 0;
         return G_SOURCE_REMOVE;
     }
-    if (!bt_is_on ()) {
-        bt_clear_list ();
-        gtk_list_box_insert (GTK_LIST_BOX (bt_list), gtk_label_new ("Bluetooth is off"), -1);
-        gtk_widget_show_all (bt_list);
-        return G_SOURCE_CONTINUE;
+    static guint tick = 0;
+    if ((tick++ % 5) == 0) {
+        if (!bt_is_on ()) {
+            bt_clear_list ();
+            gtk_list_box_insert (GTK_LIST_BOX (bt_list), gtk_label_new ("Bluetooth is off"), -1);
+            gtk_widget_show_all (bt_list);
+            return G_SOURCE_CONTINUE;
+        }
+        bt_start_scan ();
     }
     bt_update_list ();
-    static guint tick = 0;
-    if ((tick++ % 5) == 0)
-        run_async ("bluetoothctl --timeout 2 scan on >/dev/null 2>&1");
     return G_SOURCE_CONTINUE;
 }
 
@@ -2494,8 +2553,8 @@ bt_refresh (GtkWidget *page)
         gtk_widget_show_all (bt_list);
         return;
     }
+    bt_start_scan ();
     bt_update_list ();
-    run_async ("bluetoothctl --timeout 2 scan on >/dev/null 2>&1");
     if (!bt_poll_id)
         bt_poll_id = g_timeout_add (1000, bt_poll_cb, NULL);
 }
