@@ -86,10 +86,9 @@ bt_connected_name (void)
 static gboolean bt_is_on (void)
 {
     gchar *out = run_cmd ("rfkill list bluetooth 2>/dev/null");
-    gboolean on = strstr (out, "Soft blocked: no") != NULL;
-    gboolean blocked = strstr (out, "Soft blocked: yes") != NULL;
+    if (strstr (out, "Soft blocked: yes")) { g_free (out); return FALSE; }
+    if (strstr (out, "Soft blocked: no")) { g_free (out); return TRUE; }
     g_free (out);
-    if (on || blocked) return on;
     out = run_cmd ("timeout 1 bluetoothctl show 2>/dev/null");
     on = strstr (out, "Powered: yes") != NULL;
     g_free (out);
@@ -343,7 +342,10 @@ install_cache_monitors (void)
 static void on_bt_clicked (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
-    run_async (bt_is_on () ? "bluetoothctl power off" : "bluetoothctl power on");
+    if (bt_is_on ())
+        run_async ("bluetoothctl power off");
+    else
+        run_async ("rfkill unblock bluetooth; bluetoothctl power on");
     g_timeout_add (400, update_tiles_cb, NULL);
 }
 
@@ -1971,6 +1973,12 @@ bt_refresh (GtkWidget *page)
     if (!bt_list) return;
     GList *children = gtk_container_get_children (GTK_CONTAINER (bt_list));
     g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
+    if (!bt_is_on ()) {
+        GtkWidget *off = gtk_label_new ("Bluetooth is off");
+        gtk_list_box_insert (GTK_LIST_BOX (bt_list), off, -1);
+        gtk_widget_show_all (bt_list);
+        return;
+    }
     GtkWidget *scanning = gtk_label_new ("Scanning for Bluetooth devices…");
     gtk_list_box_insert (GTK_LIST_BOX (bt_list), scanning, -1);
     gtk_widget_show_all (bt_list);
@@ -2019,10 +2027,11 @@ static void
 on_bt_power (GtkButton *button, gpointer data)
 {
     (void) button;
-    gchar *out = run_cmd ("bluetoothctl show 2>/dev/null");
-    gboolean on = strstr (out, "Powered: yes") != NULL;
-    g_free (out);
-    run_async (on ? "bluetoothctl power off" : "bluetoothctl power on");
+    gboolean on = bt_is_on ();
+    if (on)
+        run_async ("bluetoothctl power off");
+    else
+        run_async ("rfkill unblock bluetooth; bluetoothctl power on");
     gtk_button_set_label (GTK_BUTTON (data), on ? "Off" : "On");
 }
 
@@ -2236,6 +2245,8 @@ static void build_ui (void)
     GtkWidget *net_t, *net_o, *bt_t, *bt_o, *night_t, *night_o;
     GtkWidget *net = make_tile ("Network", "", &net_label, &net_status_label, &net_t, &net_o);
     GtkWidget *bt = make_tile ("Bluetooth", "", &bt_label, &bt_status_label, &bt_t, &bt_o);
+    gtk_label_set_ellipsize (GTK_LABEL (bt_label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_max_width_chars (GTK_LABEL (bt_label), 22);
     GtkWidget *night = make_tile ("Night light", "", &night_label, &night_status_label, &night_t, &night_o);
     g_signal_connect (net_t, "clicked", G_CALLBACK (on_net_toggle), NULL);
     g_signal_connect (net_o, "clicked", G_CALLBACK (on_net_open), NULL);
