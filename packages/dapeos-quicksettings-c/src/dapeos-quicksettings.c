@@ -90,7 +90,7 @@ static gboolean bt_is_on (void)
     if (strstr (out, "Soft blocked: no")) { g_free (out); return TRUE; }
     g_free (out);
     out = run_cmd ("timeout 1 bluetoothctl show 2>/dev/null");
-    on = strstr (out, "Powered: yes") != NULL;
+    gboolean on = strstr (out, "Powered: yes") != NULL;
     g_free (out);
     return on;
 }
