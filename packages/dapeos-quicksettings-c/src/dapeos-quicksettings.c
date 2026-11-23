@@ -868,6 +868,8 @@ static void apply_css (void)
             "#dapeos-qs button { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 8px; padding: 6px 10px; }"
             "#dapeos-qs label#wifi-error { color: #ff6b6b; }"
             "#dapeos-qs label#brightness-icon { color: #eaeaea; font-size: 16pt; }"
+            "#dapeos-qs entry, #dapeos-qs spinbutton, #dapeos-qs combobox button { background: #3a3a3a; color: #eaeaea; border: 1px solid #4a4a4a; border-radius: 6px; }"
+            "#dapeos-qs spinbutton button { background: #3a3a3a; color: #eaeaea; border: none; }"
             "#dapeos-qs switch, #dapeos-qs switch.dapeos-switch { background: #555; padding: 0; min-width: 48px; min-height: 28px; border-radius: 999px; }"
             "#dapeos-qs switch:checked { background: #34c759; }"
             "#dapeos-qs switch slider { background: #fff; border-radius: 10px; min-width: 20px; min-height: 20px; margin: 4px; }";
@@ -887,6 +889,8 @@ static void apply_css (void)
             "#dapeos-qs button { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px; padding: 6px 10px; }"
             "#dapeos-qs label#wifi-error { color: #c62828; }"
             "#dapeos-qs label#brightness-icon { color: #1a1a1a; font-size: 16pt; }"
+            "#dapeos-qs entry, #dapeos-qs spinbutton, #dapeos-qs combobox button { background: #ffffff; color: #1a1a1a; border: 1px solid #dcdcdc; border-radius: 6px; }"
+            "#dapeos-qs spinbutton button { background: #ffffff; color: #1a1a1a; border: none; }"
             "#dapeos-qs switch, #dapeos-qs switch.dapeos-switch { background: #ccc; padding: 0; min-width: 48px; min-height: 28px; border-radius: 999px; }"
             "#dapeos-qs switch:checked { background: #34c759; }"
             "#dapeos-qs switch slider { background: #fff; border-radius: 10px; min-width: 20px; min-height: 20px; margin: 4px; }";
@@ -1998,7 +2002,7 @@ build_night_page (void)
     GtkWidget *header = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget *back = gtk_button_new_with_label ("‹ Back");
     gtk_style_context_add_class (gtk_widget_get_style_context (back), "flat");
-    GtkWidget *title = gtk_label_new ("Night light");
+    GtkWidget *title = gtk_label_new ("Night Light");
     gtk_widget_set_hexpand (title, TRUE);
     gtk_widget_set_halign (title, GTK_ALIGN_START);
     night_page_toggle = dapeos_switch_new ();
@@ -3331,7 +3335,7 @@ static void build_ui (void)
     gtk_label_set_ellipsize (GTK_LABEL (bt_label), PANGO_ELLIPSIZE_END);
     gtk_label_set_max_width_chars (GTK_LABEL (bt_label), 12);
     gtk_widget_set_size_request (bt_label, 110, -1);
-    GtkWidget *night = make_tile ("Night light", "", &night_label, &night_status_label, &night_t, &night_o);
+    GtkWidget *night = make_tile ("Night Light", "", &night_label, &night_status_label, &night_t, &night_o);
     g_signal_connect (net_t, "clicked", G_CALLBACK (on_net_toggle), NULL);
     g_signal_connect (net_o, "clicked", G_CALLBACK (on_net_open), NULL);
     g_signal_connect (bt_t, "clicked", G_CALLBACK (on_bt_clicked), NULL);
