@@ -2667,6 +2667,7 @@ static void
 bt_update_list (void)
 {
     if (!bt_list) return;
+    bt_clear_status ();
     GList *old_rows = gtk_container_get_children (GTK_CONTAINER (bt_list));
     for (GList *l = old_rows; l; l = l->next) {
         if (!g_object_get_data (G_OBJECT (l->data), "bt-item"))
