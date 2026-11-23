@@ -386,7 +386,7 @@ bt_connect_known_cb (gpointer data)
         if (kv[0]) {
             gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", kv[0]));
             if (strstr (info, "Paired: yes")) {
-                gchar *cmd = g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; bluetoothctl trust %s >/dev/null 2>&1; bluetoothctl connect %s >/dev/null 2>&1",
+                gchar *cmd = g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; bluetoothctl bondable on >/dev/null 2>&1; bluetoothctl trust %s >/dev/null 2>&1; bluetoothctl connect %s >/dev/null 2>&1",
                                                kv[0], kv[0]);
                 FILE *bf = fopen ("/tmp/dapeos-bt.log", "a");
                 if (bf) { fprintf (bf, "autoconnect %s\n", kv[0]); fclose (bf); }
@@ -410,7 +410,7 @@ static void on_bt_clicked (GtkButton *button, gpointer data)
     if (was_on)
         run_async ("bluetoothctl power off");
     else
-        run_async ("rfkill unblock bluetooth; bluetoothctl power on");
+        run_async ("rfkill unblock bluetooth; bluetoothctl power on; bluetoothctl bondable on; bluetoothctl pairable on");
     if (bt_page) {
         g_object_ref (bt_page);
         g_timeout_add (800, bt_refresh_cb, bt_page);
@@ -2299,9 +2299,9 @@ on_bt_action (GtkButton *button, gpointer data)
     gchar *cmd = it->connected
         ? g_strdup_printf ("bluetoothctl disconnect %s 2>/dev/null", it->mac)
         : (it->paired
-            ? g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; (bluetoothctl trust %s; bluetoothctl connect %s) >>/tmp/dapeos-bt.log 2>&1",
+            ? g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; (bluetoothctl bondable on; bluetoothctl trust %s; bluetoothctl connect %s) >>/tmp/dapeos-bt.log 2>&1",
                                it->mac, it->mac)
-            : g_strdup_printf ("(bluetoothctl pair %s; bluetoothctl trust %s; bluetoothctl connect %s) >>/tmp/dapeos-bt.log 2>&1",
+            : g_strdup_printf ("(bluetoothctl bondable on; bluetoothctl pairable on; bluetoothctl pair %s; bluetoothctl trust %s; bluetoothctl connect %s) >>/tmp/dapeos-bt.log 2>&1",
                                it->mac, it->mac, it->mac));
     run_async (cmd);
     g_free (cmd);
@@ -2331,7 +2331,7 @@ on_bt_power (GtkButton *button, gpointer data)
     if (on)
         run_async ("bluetoothctl power off");
     else
-        run_async ("rfkill unblock bluetooth; bluetoothctl power on");
+        run_async ("rfkill unblock bluetooth; bluetoothctl power on; bluetoothctl bondable on; bluetoothctl pairable on");
     gtk_button_set_label (GTK_BUTTON (data), on ? "Off" : "On");
     if (bt_page) {
         g_object_ref (bt_page);
