@@ -24,6 +24,7 @@ static GtkWidget *bt_list;
 static GtkWidget *bt_power_switch;
 static GtkWidget *bt_auto_switch;
 static gboolean bt_power_updating = FALSE;
+static gboolean bt_auto_updating = FALSE;
 static GtkWidget *night_page;
 static GtkWidget *night_page_scale;
 static GtkWidget *night_page_toggle;
@@ -93,6 +94,55 @@ qs_trace_mark (const gchar *name)
 static gchar *night_state_path (const gchar *name)
 {
     return g_build_filename (g_get_user_cache_dir (), "dapeos", name, NULL);
+}
+
+static gboolean
+dapeos_switch_draw (GtkWidget *area, cairo_t *cr, gpointer data)
+{
+    GtkWidget *button = data;
+    (void) area;
+    gboolean active = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button));
+    if (active)
+        cairo_set_source_rgb (cr, 52.0/255.0, 199.0/255.0, 89.0/255.0);
+    else
+        cairo_set_source_rgb (cr, 90.0/255.0, 90.0/255.0, 90.0/255.0);
+    cairo_new_sub_path (cr);
+    cairo_arc (cr, 14, 14, 13, G_PI/2, 3*G_PI/2);
+    cairo_arc (cr, 34, 14, 13, -G_PI/2, G_PI/2);
+    cairo_close_path (cr);
+    cairo_fill (cr);
+    cairo_set_source_rgb (cr, 1, 1, 1);
+    cairo_arc (cr, active ? 34 : 14, 14, 10, 0, 2*G_PI);
+    cairo_fill (cr);
+    return FALSE;
+}
+
+static void
+dapeos_switch_redraw (GtkToggleButton *button, gpointer data)
+{
+    (void) data;
+    gtk_widget_queue_draw (GTK_WIDGET (button));
+}
+
+static GtkWidget *
+dapeos_switch_new (void)
+{
+    GtkWidget *button = gtk_toggle_button_new ();
+    gtk_widget_set_size_request (button, 48, 28);
+    gtk_style_context_add_class (gtk_widget_get_style_context (button), "dapeos-switch");
+    GtkWidget *area = gtk_drawing_area_new ();
+    gtk_widget_set_size_request (area, 48, 28);
+    gtk_container_add (GTK_CONTAINER (button), area);
+    g_signal_connect (area, "draw", G_CALLBACK (dapeos_switch_draw), button);
+    g_signal_connect (button, "toggled", G_CALLBACK (dapeos_switch_redraw), NULL);
+    return button;
+}
+
+static void
+dapeos_switch_set_active (GtkWidget *button, gboolean active)
+{
+    if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)) != active)
+        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), active);
 }
 
 static gchar *
@@ -362,7 +412,9 @@ static void update_tiles (void)
         gtk_label_set_text (GTK_LABEL (bt_status_label), bt ? "On" : "Off");
         if (bt_power_switch) {
             bt_power_updating = TRUE;
-            gtk_switch_set_active (GTK_SWITCH (bt_power_switch), bt);
+            bt_power_updating = TRUE;
+            dapeos_switch_set_active (bt_power_switch, bt);
+            bt_power_updating = FALSE;
             bt_power_updating = FALSE;
         }
         gchar *btdev = bt_connected_name ();
@@ -759,7 +811,7 @@ static void apply_css (void)
             "#dapeos-qs scale trough { background: #151515; border-radius: 3px; min-height: 6px; }"
             "#dapeos-qs scale highlight { background: #2a7fca; }"
             "#dapeos-qs scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
-            "#dapeos-qs button.flat { background: transparent; border: none; }"
+            "#dapeos-qs button.flat, #dapeos-qs button.dapeos-switch { background: transparent; border: none; padding: 0; }"
             "#dapeos-qs scrolledwindow, #dapeos-qs viewport, #dapeos-qs list, #dapeos-qs listbox, #dapeos-qs row { background: transparent; color: #eaeaea; }"
             "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
             "#dapeos-qs button { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 8px; padding: 6px 10px; }"
@@ -778,7 +830,7 @@ static void apply_css (void)
             "#dapeos-qs scale trough { background: #d0d0d0; border-radius: 3px; min-height: 6px; }"
             "#dapeos-qs scale highlight { background: #2a7fca; }"
             "#dapeos-qs scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
-            "#dapeos-qs button.flat { background: transparent; border: none; }"
+            "#dapeos-qs button.flat, #dapeos-qs button.dapeos-switch { background: transparent; border: none; padding: 0; }"
             "#dapeos-qs scrolledwindow, #dapeos-qs viewport, #dapeos-qs list, #dapeos-qs listbox, #dapeos-qs row { background: transparent; color: #1a1a1a; }"
             "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
             "#dapeos-qs button { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px; padding: 6px 10px; }"
@@ -2118,7 +2170,10 @@ bt_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
         gtk_widget_set_sensitive (forget, it->paired);
         if (bt_auto_switch) {
             gtk_widget_set_sensitive (bt_auto_switch, it->paired);
-            gtk_switch_set_active (GTK_SWITCH (bt_auto_switch), it->paired && bt_auto_enabled (it->mac));
+            gboolean auto_updating_prev = bt_auto_updating;
+            bt_auto_updating = TRUE;
+            dapeos_switch_set_active (bt_auto_switch, it->paired && bt_auto_enabled (it->mac));
+            bt_auto_updating = auto_updating_prev;
         }
     } else {
         gtk_widget_set_sensitive (act, FALSE);
@@ -2764,11 +2819,11 @@ on_bt_forget (GtkButton *button, gpointer data)
 static gboolean bt_auto_connect_cb (gpointer data);
 
 static void
-on_bt_power_switch (GObject *obj, GParamSpec *pspec, gpointer data)
+on_bt_power_switch (GtkToggleButton *button, gpointer data)
 {
-    (void) pspec; (void) data;
+    (void) data;
     if (bt_power_updating) return;
-    gboolean active = gtk_switch_get_active (GTK_SWITCH (obj));
+    gboolean active = gtk_toggle_button_get_active (button);
     if (active)
         run_async ("rfkill unblock bluetooth; bluetoothctl power on; bluetoothctl bondable on; bluetoothctl pairable on");
     else
@@ -2782,11 +2837,12 @@ on_bt_power_switch (GObject *obj, GParamSpec *pspec, gpointer data)
 }
 
 static void
-bt_auto_toggle (GObject *obj, GParamSpec *pspec, gpointer data)
+bt_auto_toggle (GtkToggleButton *button, gpointer data)
 {
     (void) data;
+    if (bt_auto_updating) return;
     BtItem *it = g_object_get_data (G_OBJECT (bt_page), "bt-selected");
-    if (it) bt_auto_set (it->mac, gtk_switch_get_active (GTK_SWITCH (obj)));
+    if (it) bt_auto_set (it->mac, gtk_toggle_button_get_active (button));
 }
 
 static void
@@ -2816,11 +2872,9 @@ build_bt_page (void)
     GtkWidget *title = gtk_label_new ("Bluetooth devices");
     gtk_widget_set_hexpand (title, TRUE);
     gtk_widget_set_halign (title, GTK_ALIGN_START);
-    GtkWidget *power = gtk_switch_new ();
-    gtk_widget_set_size_request (power, 48, 28);
-    gtk_style_context_add_class (gtk_widget_get_style_context (power), "dapeos-switch");
+    GtkWidget *power = dapeos_switch_new ();
     bt_power_switch = power;
-    g_signal_connect (power, "notify::active", G_CALLBACK (on_bt_power_switch), NULL);
+    g_signal_connect (power, "toggled", G_CALLBACK (on_bt_power_switch), NULL);
     g_signal_connect (back, "clicked", G_CALLBACK (show_main_page), NULL);
     gtk_box_pack_start (GTK_BOX (header), back, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (header), title, TRUE, TRUE, 0);
@@ -2841,11 +2895,9 @@ build_bt_page (void)
     GtkWidget *forget = gtk_button_new_with_label ("Forget");
     GtkWidget *refresh = gtk_button_new_with_label ("Refresh");
     GtkWidget *auto_label = gtk_label_new ("Auto-connect");
-    bt_auto_switch = gtk_switch_new ();
-    gtk_widget_set_size_request (bt_auto_switch, 48, 28);
-    gtk_style_context_add_class (gtk_widget_get_style_context (bt_auto_switch), "dapeos-switch");
+    bt_auto_switch = dapeos_switch_new ();
     gtk_widget_set_sensitive (bt_auto_switch, FALSE);
-    g_signal_connect (bt_auto_switch, "notify::active", G_CALLBACK (bt_auto_toggle), NULL);
+    g_signal_connect (bt_auto_switch, "toggled", G_CALLBACK (bt_auto_toggle), NULL);
     g_signal_connect (action, "clicked", G_CALLBACK (on_bt_action), page);
     g_signal_connect (forget, "clicked", G_CALLBACK (on_bt_forget), page);
     g_signal_connect (refresh, "clicked", G_CALLBACK (on_bt_refresh), page);
