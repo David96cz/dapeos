@@ -65,6 +65,24 @@ static gchar *night_state_path (const gchar *name)
     return g_build_filename (g_get_user_cache_dir (), "dapeos", name, NULL);
 }
 
+static gchar *
+bt_connected_name (void)
+{
+    gchar *out = run_cmd ("bluetoothctl devices Connected 2>/dev/null");
+    gchar *name = NULL;
+    gchar **lines = g_strsplit (out, "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        gchar mac[64] = "", n[256] = "";
+        if (sscanf (lines[i], "Device %63s %255[^\n]", mac, n) == 2 && *n) {
+            name = g_strdup (n);
+            break;
+        }
+    }
+    g_strfreev (lines);
+    g_free (out);
+    return name;
+}
+
 static gboolean bt_is_on (void)
 {
     gchar *out = run_cmd ("rfkill list bluetooth 2>/dev/null");
@@ -211,7 +229,9 @@ static void update_tiles (void)
 {
     gboolean bt = bt_is_on ();
     gtk_label_set_text (GTK_LABEL (bt_status_label), bt ? "On" : "Off");
-    gtk_label_set_text (GTK_LABEL (bt_label), "");
+    gchar *btdev = bt_connected_name ();
+    gtk_label_set_text (GTK_LABEL (bt_label), btdev ? btdev : "");
+    g_free (btdev);
 
     gchar *nightfile = night_state_path ("nightlight_on");
     night_on = g_file_test (nightfile, G_FILE_TEST_EXISTS);
