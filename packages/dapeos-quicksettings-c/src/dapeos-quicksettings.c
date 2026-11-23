@@ -192,6 +192,24 @@ network_cache_text (void)
     return text;
 }
 
+static gchar *
+network_cached_ssid (void)
+{
+    gchar *text = network_cache_text ();
+    if (!text) return NULL;
+    gchar *ssid = NULL;
+    gchar **lines = g_strsplit (text, "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        if (g_str_has_prefix (lines[i], "wifi:connected:")) {
+            ssid = g_strdup (lines[i] + strlen ("wifi:connected:"));
+            break;
+        }
+    }
+    g_strfreev (lines);
+    g_free (text);
+    return (ssid && *ssid) ? ssid : (g_free (ssid), NULL);
+}
+
 static gboolean
 wifi_radio_cached (gboolean *known)
 {
@@ -1523,20 +1541,22 @@ on_net_toggle (GtkButton *button, gpointer data)
 static void
 wifi_add_connected_stub (GtkWidget *list)
 {
-    gchar *active = run_cmd ("nmcli -t -f ACTIVE,SSID device wifi list 2>/dev/null");
-    gchar **lines = g_strsplit (active, "\n", -1);
-    gchar *ssid = NULL;
-    for (guint i = 0; lines[i]; i++) {
-        gchar **p = g_strsplit (lines[i], ":", 2);
-        if (p[0] && g_strcmp0 (p[0], "yes") == 0 && p[1] && *p[1]) {
-            ssid = g_strdup (p[1]);
+    gchar *ssid = network_cached_ssid ();
+    if (!ssid) {
+        gchar *active = run_cmd ("nmcli -t -f ACTIVE,SSID device wifi list 2>/dev/null");
+        gchar **lines = g_strsplit (active, "\n", -1);
+        for (guint i = 0; lines[i]; i++) {
+            gchar **p = g_strsplit (lines[i], ":", 2);
+            if (p[0] && g_strcmp0 (p[0], "yes") == 0 && p[1] && *p[1]) {
+                ssid = g_strdup (p[1]);
+                g_strfreev (p);
+                break;
+            }
             g_strfreev (p);
-            break;
         }
-        g_strfreev (p);
+        g_strfreev (lines);
+        g_free (active);
     }
-    g_strfreev (lines);
-    g_free (active);
     if (!ssid) return;
 
     WifiItem *item = g_new0 (WifiItem, 1);
@@ -2404,6 +2424,13 @@ static void
 bt_update_list (void)
 {
     if (!bt_list) return;
+    GList *old_rows = gtk_container_get_children (GTK_CONTAINER (bt_list));
+    for (GList *l = old_rows; l; l = l->next) {
+        if (!GTK_IS_LIST_BOX_ROW (l->data) &&
+            !g_object_get_data (G_OBJECT (l->data), "bt-item"))
+            gtk_widget_destroy (GTK_WIDGET (l->data));
+    }
+    g_list_free (old_rows);
     gchar *dev = run_cmd ("bluetoothctl devices 2>/dev/null");
     gchar *paired_out = run_cmd ("bluetoothctl devices Paired 2>/dev/null");
     gchar *conn_out = run_cmd ("bluetoothctl devices Connected 2>/dev/null");
