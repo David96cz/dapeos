@@ -2018,23 +2018,70 @@ build_night_page (void)
     gtk_box_pack_start (GTK_BOX (page), label, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), night_page_scale, FALSE, FALSE, 0);
 
-    GtkWidget *sched = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
+    night_12h = night_clock_is_12h ();
+
+    GtkWidget *sched = gtk_grid_new ();
+    gtk_grid_set_row_spacing (GTK_GRID (sched), 6);
+    gtk_grid_set_column_spacing (GTK_GRID (sched), 4);
+
     GtkWidget *fl = gtk_label_new ("From");
     GtkWidget *tl = gtk_label_new ("To");
-    night_from_entry = gtk_entry_new ();
-    night_to_entry = gtk_entry_new ();
-    gtk_entry_set_width_chars (GTK_ENTRY (night_from_entry), 6);
-    gtk_entry_set_width_chars (GTK_ENTRY (night_to_entry), 6);
-    gtk_entry_set_placeholder_text (GTK_ENTRY (night_from_entry), "22:00");
-    gtk_entry_set_placeholder_text (GTK_ENTRY (night_to_entry), "07:00");
-    gtk_box_pack_start (GTK_BOX (sched), fl, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (sched), night_from_entry, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (sched), tl, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (sched), night_to_entry, FALSE, FALSE, 0);
-    GtkWidget *save = gtk_button_new_with_label ("Save schedule");
-    g_signal_connect (save, "clicked", G_CALLBACK (night_schedule_save), NULL);
-    gtk_box_pack_start (GTK_BOX (sched), save, FALSE, FALSE, 0);
+    night_from_hour = gtk_spin_button_new_with_range (night_12h ? 1 : 0, night_12h ? 12 : 23, 1);
+    night_to_hour = gtk_spin_button_new_with_range (night_12h ? 1 : 0, night_12h ? 12 : 23, 1);
+    night_from_min = gtk_spin_button_new_with_range (0, 59, 1);
+    night_to_min = gtk_spin_button_new_with_range (0, 59, 1);
+    GtkWidget *fc = gtk_label_new (":");
+    GtkWidget *tc = gtk_label_new (":");
+    gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (night_from_hour), TRUE);
+    gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (night_to_hour), TRUE);
+    gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (night_from_min), TRUE);
+    gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (night_to_min), TRUE);
+    gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (night_from_hour), TRUE);
+    gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (night_to_hour), TRUE);
+    gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (night_from_min), TRUE);
+    gtk_spin_button_set_numeric (GTK_SPIN_BUTTON (night_to_min), TRUE);
+
+    gtk_grid_attach (GTK_GRID (sched), fl, 0, 0, 1, 1);
+    gtk_grid_attach (GTK_GRID (sched), night_from_hour, 1, 0, 1, 1);
+    gtk_grid_attach (GTK_GRID (sched), fc, 2, 0, 1, 1);
+    gtk_grid_attach (GTK_GRID (sched), night_from_min, 3, 0, 1, 1);
+    if (night_12h) {
+        night_from_ampm = gtk_combo_box_text_new ();
+        gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (night_from_ampm), "AM");
+        gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (night_from_ampm), "PM");
+        gtk_combo_box_set_active (GTK_COMBO_BOX (night_from_ampm), 0);
+        gtk_grid_attach (GTK_GRID (sched), night_from_ampm, 4, 0, 1, 1);
+    }
+    gtk_grid_attach (GTK_GRID (sched), tl, 0, 1, 1, 1);
+    gtk_grid_attach (GTK_GRID (sched), night_to_hour, 1, 1, 1, 1);
+    gtk_grid_attach (GTK_GRID (sched), tc, 2, 1, 1, 1);
+    gtk_grid_attach (GTK_GRID (sched), night_to_min, 3, 1, 1, 1);
+    if (night_12h) {
+        night_to_ampm = gtk_combo_box_text_new ();
+        gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (night_to_ampm), "AM");
+        gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (night_to_ampm), "PM");
+        gtk_combo_box_set_active (GTK_COMBO_BOX (night_to_ampm), 0);
+        gtk_grid_attach (GTK_GRID (sched), night_to_ampm, 4, 1, 1, 1);
+    }
     gtk_box_pack_start (GTK_BOX (page), sched, FALSE, FALSE, 0);
+
+    GtkWidget *schedrow = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget *schedlabel = gtk_label_new ("Schedule");
+    gtk_widget_set_hexpand (schedlabel, TRUE);
+    gtk_widget_set_halign (schedlabel, GTK_ALIGN_START);
+    night_sched_switch = dapeos_switch_new ();
+    gtk_box_pack_start (GTK_BOX (schedrow), schedlabel, TRUE, TRUE, 0);
+    gtk_box_pack_end (GTK_BOX (schedrow), night_sched_switch, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), schedrow, FALSE, FALSE, 0);
+
+    g_signal_connect (night_from_hour, "value-changed", G_CALLBACK (night_schedule_changed), NULL);
+    g_signal_connect (night_from_min, "value-changed", G_CALLBACK (night_schedule_changed), NULL);
+    g_signal_connect (night_to_hour, "value-changed", G_CALLBACK (night_schedule_changed), NULL);
+    g_signal_connect (night_to_min, "value-changed", G_CALLBACK (night_schedule_changed), NULL);
+    if (night_from_ampm) g_signal_connect (night_from_ampm, "changed", G_CALLBACK (night_schedule_changed), NULL);
+    if (night_to_ampm) g_signal_connect (night_to_ampm, "changed", G_CALLBACK (night_schedule_changed), NULL);
+    g_signal_connect (night_sched_switch, "toggled", G_CALLBACK (night_schedule_changed), NULL);
+
     gtk_widget_show_all (page);
     return page;
 }
@@ -2044,6 +2091,7 @@ on_night_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
     gtk_stack_set_visible_child_name (GTK_STACK (qstack), "night");
+    night_load_schedule ();
     gchar *path = night_state_path ("nightlight");
     gchar *text = NULL;
     if (g_file_get_contents (path, &text, NULL, NULL)) {
