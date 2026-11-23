@@ -92,19 +92,14 @@ static gchar *night_state_path (const gchar *name)
 static gchar *
 bt_connected_name (void)
 {
-    gchar *out = run_cmd ("bluetoothctl devices 2>/dev/null");
+    gchar *out = run_cmd ("bluetoothctl devices Connected 2>/dev/null");
     gchar *name = NULL;
     gchar **lines = g_strsplit (out, "\n", -1);
     for (guint i = 0; lines[i]; i++) {
         gchar mac[64] = "", n[256] = "";
         if (sscanf (lines[i], "Device %63s %255[^\n]", mac, n) == 2 && *n) {
-            gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", mac));
-            if (strstr (info, "Connected: yes")) {
-                name = g_strdup (n);
-                g_free (info);
-                break;
-            }
-            g_free (info);
+            name = g_strdup (n);
+            break;
         }
     }
     g_strfreev (lines);
@@ -2427,8 +2422,7 @@ bt_update_list (void)
     if (!bt_list) return;
     GList *old_rows = gtk_container_get_children (GTK_CONTAINER (bt_list));
     for (GList *l = old_rows; l; l = l->next) {
-        if (!GTK_IS_LIST_BOX_ROW (l->data) &&
-            !g_object_get_data (G_OBJECT (l->data), "bt-item"))
+        if (!g_object_get_data (G_OBJECT (l->data), "bt-item"))
             gtk_widget_destroy (GTK_WIDGET (l->data));
     }
     g_list_free (old_rows);
