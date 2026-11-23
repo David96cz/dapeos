@@ -25,6 +25,7 @@ static GtkWidget *bt_power_switch;
 static GtkWidget *bt_auto_switch;
 static gboolean bt_power_updating = FALSE;
 static gboolean bt_auto_updating = FALSE;
+static gboolean bt_off_shown = FALSE;
 static GtkWidget *night_page;
 static GtkWidget *night_page_scale;
 static GtkWidget *night_page_toggle;
@@ -129,6 +130,7 @@ dapeos_switch_new (void)
 {
     GtkWidget *button = gtk_toggle_button_new ();
     gtk_widget_set_size_request (button, 48, 28);
+    gtk_button_set_relief (GTK_BUTTON (button), GTK_RELIEF_NONE);
     gtk_style_context_add_class (gtk_widget_get_style_context (button), "dapeos-switch");
     GtkWidget *area = gtk_drawing_area_new ();
     gtk_widget_set_size_request (area, 48, 28);
@@ -809,7 +811,7 @@ static void apply_css (void)
             "#dapeos-qs scale trough { background: #151515; border-radius: 3px; min-height: 6px; }"
             "#dapeos-qs scale highlight { background: #2a7fca; }"
             "#dapeos-qs scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
-            "#dapeos-qs button.flat, #dapeos-qs button.dapeos-switch { background: transparent; border: none; padding: 0; }"
+            "#dapeos-qs button.flat, #dapeos-qs button.dapeos-switch, #dapeos-qs button.dapeos-switch:hover, #dapeos-qs button.dapeos-switch:active, #dapeos-qs button.dapeos-switch:checked { background: transparent; border: none; box-shadow: none; outline: none; padding: 0; }"
             "#dapeos-qs scrolledwindow, #dapeos-qs viewport, #dapeos-qs list, #dapeos-qs listbox, #dapeos-qs row { background: transparent; color: #eaeaea; }"
             "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
             "#dapeos-qs button { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 8px; padding: 6px 10px; }"
@@ -828,7 +830,7 @@ static void apply_css (void)
             "#dapeos-qs scale trough { background: #d0d0d0; border-radius: 3px; min-height: 6px; }"
             "#dapeos-qs scale highlight { background: #2a7fca; }"
             "#dapeos-qs scale slider { background: #2a7fca; border-radius: 8px; min-width: 16px; min-height: 16px; }"
-            "#dapeos-qs button.flat, #dapeos-qs button.dapeos-switch { background: transparent; border: none; padding: 0; }"
+            "#dapeos-qs button.flat, #dapeos-qs button.dapeos-switch, #dapeos-qs button.dapeos-switch:hover, #dapeos-qs button.dapeos-switch:active, #dapeos-qs button.dapeos-switch:checked { background: transparent; border: none; box-shadow: none; outline: none; padding: 0; }"
             "#dapeos-qs scrolledwindow, #dapeos-qs viewport, #dapeos-qs list, #dapeos-qs listbox, #dapeos-qs row { background: transparent; color: #1a1a1a; }"
             "#dapeos-qs list row:selected { background: #2a7fca; color: #ffffff; }"
             "#dapeos-qs button { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px; padding: 6px 10px; }"
@@ -2714,11 +2716,15 @@ bt_poll_cb (gpointer data)
     static guint tick = 0;
     if ((tick++ % 5) == 0) {
         if (!bt_is_on ()) {
-            bt_clear_list ();
-            gtk_list_box_insert (GTK_LIST_BOX (bt_list), gtk_label_new ("Bluetooth is off"), -1);
-            gtk_widget_show_all (bt_list);
+            if (!bt_off_shown) {
+                bt_clear_list ();
+                gtk_list_box_insert (GTK_LIST_BOX (bt_list), gtk_label_new ("Bluetooth is off"), -1);
+                gtk_widget_show_all (bt_list);
+                bt_off_shown = TRUE;
+            }
             return G_SOURCE_CONTINUE;
         }
+        bt_off_shown = FALSE;
         bt_start_scan ();
     }
     bt_update_list ();
@@ -2756,8 +2762,10 @@ bt_refresh (GtkWidget *page)
     if (!bt_is_on ()) {
         gtk_list_box_insert (GTK_LIST_BOX (bt_list), gtk_label_new ("Bluetooth is off"), -1);
         gtk_widget_show_all (bt_list);
+        bt_off_shown = TRUE;
         return;
     }
+    bt_off_shown = FALSE;
     bt_start_scan ();
     bt_update_list ();
     if (!bt_poll_id)
@@ -2905,6 +2913,8 @@ build_bt_page (void)
     GtkWidget *auto_spacer = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand (auto_spacer, TRUE);
     gtk_box_pack_start (GTK_BOX (actions), auto_spacer, TRUE, TRUE, 0);
+    gtk_widget_set_valign (bt_auto_switch, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign (auto_label, GTK_ALIGN_CENTER);
     gtk_box_pack_end (GTK_BOX (actions), bt_auto_switch, FALSE, FALSE, 0);
     gtk_box_pack_end (GTK_BOX (actions), auto_label, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), actions, FALSE, FALSE, 0);
