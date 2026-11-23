@@ -386,8 +386,8 @@ bt_connect_known_cb (gpointer data)
         if (kv[0]) {
             gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", kv[0]));
             if (strstr (info, "Paired: yes")) {
-                gchar *cmd = g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; bluetoothctl trust %s >/dev/null 2>&1; bluetoothctl connect %s >/dev/null 2>&1; sleep 2",
-                                               kv[0], kv[0], kv[0]);
+                gchar *cmd = g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; bluetoothctl trust %s >/dev/null 2>&1; bluetoothctl connect %s >/dev/null 2>&1",
+                                               kv[0], kv[0]);
                 FILE *bf = fopen ("/tmp/dapeos-bt.log", "a");
                 if (bf) { fprintf (bf, "autoconnect %s\n", kv[0]); fclose (bf); }
                 run_async (cmd);
@@ -2299,10 +2299,10 @@ on_bt_action (GtkButton *button, gpointer data)
     gchar *cmd = it->connected
         ? g_strdup_printf ("bluetoothctl disconnect %s 2>/dev/null", it->mac)
         : (it->paired
-            ? g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; (bluetoothctl trust %s; bluetoothctl connect %s ) >>/tmp/dapeos-bt.log 2>&1",
-                               it->mac, it->mac, it->mac)
-            : g_strdup_printf ("(bluetoothctl pair %s; bluetoothctl trust %s; bluetoothctl connect %s ) >>/tmp/dapeos-bt.log 2>&1",
-                               it->mac, it->mac, it->mac, it->mac));
+            ? g_strdup_printf ("systemctl --user restart wireplumber >/dev/null 2>&1; (bluetoothctl trust %s; bluetoothctl connect %s) >>/tmp/dapeos-bt.log 2>&1",
+                               it->mac, it->mac)
+            : g_strdup_printf ("(bluetoothctl pair %s; bluetoothctl trust %s; bluetoothctl connect %s) >>/tmp/dapeos-bt.log 2>&1",
+                               it->mac, it->mac, it->mac));
     run_async (cmd);
     g_free (cmd);
     g_object_ref (GTK_WIDGET (data));
