@@ -2092,16 +2092,18 @@ build_night_page (void)
     gtk_box_pack_end (GTK_BOX (header), night_page_toggle, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), header, FALSE, FALSE, 0);
 
-    GtkWidget *label = gtk_label_new ("Color temperature");
+    GtkWidget *label = gtk_label_new ("Color temperature:");
     gtk_widget_set_halign (label, GTK_ALIGN_START);
-    gtk_widget_set_hexpand (label, TRUE);
     night_page_value_label = gtk_label_new ("4000 K");
-    gtk_widget_set_halign (night_page_value_label, GTK_ALIGN_END);
+    gtk_widget_set_halign (night_page_value_label, GTK_ALIGN_START);
     gtk_widget_set_valign (night_page_value_label, GTK_ALIGN_CENTER);
     GtkWidget *tempheader = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
-    gtk_box_pack_start (GTK_BOX (tempheader), label, TRUE, TRUE, 0);
-    gtk_box_pack_end (GTK_BOX (tempheader), night_page_value_label, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tempheader), label, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tempheader), night_page_value_label, FALSE, FALSE, 0);
     night_page_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1000, 6500, 100);
+    gtk_widget_set_valign (night_page_scale, GTK_ALIGN_START);
+    gtk_widget_set_vexpand (night_page_scale, FALSE);
+    gtk_widget_set_size_request (night_page_scale, -1, 28);
     gtk_range_set_value (GTK_RANGE (night_page_scale), 4000);
     g_signal_connect (night_page_scale, "value-changed", G_CALLBACK (night_scale_changed), NULL);
     gtk_box_pack_start (GTK_BOX (page), tempheader, FALSE, FALSE, 0);
