@@ -767,7 +767,8 @@ static void apply_css (void)
             "#dapeos-qs label#brightness-icon { color: #eaeaea; font-size: 16pt; }"
             "#dapeos-qs switch { background: #555; border-radius: 999px; min-width: 44px; min-height: 24px; }"
             "#dapeos-qs switch:checked { background: #34c759; }"
-            "#dapeos-qs switch slider { background: #fff; border-radius: 999px; min-width: 20px; min-height: 20px; margin: 2px; }";
+            "#dapeos-qs switch { padding: 0; min-width: 46px; min-height: 26px; border-radius: 999px; }"
+            "#dapeos-qs switch slider { background: #fff; border-radius: 999px; min-width: 18px; min-height: 18px; margin: 2px; }";
     } else {
         data =
             "#dapeos-qs { background: transparent; }"
@@ -786,7 +787,8 @@ static void apply_css (void)
             "#dapeos-qs label#brightness-icon { color: #1a1a1a; font-size: 16pt; }"
             "#dapeos-qs switch { background: #ccc; border-radius: 999px; min-width: 44px; min-height: 24px; }"
             "#dapeos-qs switch:checked { background: #34c759; }"
-            "#dapeos-qs switch slider { background: #fff; border-radius: 999px; min-width: 20px; min-height: 20px; margin: 2px; }";
+            "#dapeos-qs switch { padding: 0; min-width: 46px; min-height: 26px; border-radius: 999px; }"
+            "#dapeos-qs switch slider { background: #fff; border-radius: 999px; min-width: 18px; min-height: 18px; margin: 2px; }";
     }
     gtk_css_provider_load_from_data (css, data, -1, NULL);
     gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
@@ -2817,6 +2819,7 @@ build_bt_page (void)
     gtk_widget_set_hexpand (title, TRUE);
     gtk_widget_set_halign (title, GTK_ALIGN_START);
     GtkWidget *power = gtk_switch_new ();
+    gtk_widget_set_size_request (power, 46, 26);
     bt_power_switch = power;
     g_signal_connect (power, "notify::active", G_CALLBACK (on_bt_power_switch), NULL);
     g_signal_connect (back, "clicked", G_CALLBACK (show_main_page), NULL);
@@ -2840,6 +2843,7 @@ build_bt_page (void)
     GtkWidget *refresh = gtk_button_new_with_label ("Refresh");
     GtkWidget *auto_label = gtk_label_new ("Auto-connect");
     bt_auto_switch = gtk_switch_new ();
+    gtk_widget_set_size_request (bt_auto_switch, 46, 26);
     gtk_widget_set_sensitive (bt_auto_switch, FALSE);
     g_signal_connect (bt_auto_switch, "notify::active", G_CALLBACK (bt_auto_toggle), NULL);
     g_signal_connect (action, "clicked", G_CALLBACK (on_bt_action), page);
@@ -2848,9 +2852,13 @@ build_bt_page (void)
     gtk_box_pack_start (GTK_BOX (actions), action, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), forget, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), refresh, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (actions), auto_label, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (actions), bt_auto_switch, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), actions, FALSE, FALSE, 0);
+
+    GtkWidget *auto_row = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_widget_set_halign (auto_row, GTK_ALIGN_END);
+    gtk_box_pack_start (GTK_BOX (auto_row), auto_label, FALSE, FALSE, 0);
+    gtk_box_pack_end (GTK_BOX (auto_row), bt_auto_switch, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), auto_row, FALSE, FALSE, 0);
     g_object_set_data (G_OBJECT (page), "bt-action", action);
     g_object_set_data (G_OBJECT (page), "bt-forget", forget);
     g_signal_connect (bt_list, "row-selected", G_CALLBACK (bt_row_selected), page);
