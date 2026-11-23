@@ -1051,10 +1051,23 @@ static gboolean on_key_press (GtkWidget *widget, GdkEventKey *event, gpointer da
     return FALSE;
 }
 
+static guint focus_hide_timeout = 0;
+
+static gboolean
+hide_after_focus_out (gpointer data)
+{
+    (void) data;
+    focus_hide_timeout = 0;
+    if (gtk_grab_get_current ()) return G_SOURCE_REMOVE;
+    gtk_widget_hide (window);
+    return G_SOURCE_REMOVE;
+}
+
 static gboolean on_focus_out (GtkWidget *widget, GdkEventFocus *event, gpointer data)
 {
     (void) widget; (void) event; (void) data;
-    gtk_widget_hide (window);
+    if (focus_hide_timeout) g_source_remove (focus_hide_timeout);
+    focus_hide_timeout = g_timeout_add (180, hide_after_focus_out, NULL);
     return FALSE;
 }
 
