@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # DapeOS Nastavení - jeden hub pro všechny XFCE nastavovací dialogy.
 import glob
+import fcntl
 import os
 import shlex
 import subprocess
@@ -282,10 +283,21 @@ class SettingsHub(QWidget):
 
     def launch(self, command, item=None):
         args = [a for a in shlex.split(command) if not a.startswith("%")]
-        if args:
-            if self.focus_existing(args, item):
-                return
-            subprocess.Popen(args, start_new_session=True)
+        if not args:
+            return
+        key = (item or {}).get("file", "settings")
+        lockdir = os.path.expanduser("~/.cache/dapeos/settings-locks")
+        os.makedirs(lockdir, exist_ok=True)
+        lockpath = os.path.join(lockdir, key + ".lock")
+        fd = os.open(lockpath, os.O_CREAT | os.O_RDWR, 0o600)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            os.close(fd)
+            self.focus_existing(args, item)
+            return
+        subprocess.Popen(args, start_new_session=True, pass_fds=(fd,))
+        os.close(fd)
 
     def center(self):
         scr = QApplication.primaryScreen().availableGeometry()
