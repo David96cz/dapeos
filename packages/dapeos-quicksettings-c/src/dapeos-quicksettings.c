@@ -207,7 +207,8 @@ network_cached_ssid (void)
     }
     g_strfreev (lines);
     g_free (text);
-    return (ssid && *ssid) ? ssid : (g_free (ssid), NULL);
+    if (ssid && !*ssid) { g_free (ssid); ssid = NULL; }
+    return ssid;
 }
 
 static gboolean
