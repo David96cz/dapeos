@@ -3323,6 +3323,13 @@ static void position_window (void)
     gtk_window_move (GTK_WINDOW (window), x, y);
 }
 
+static void
+on_window_size_allocate (GtkWidget *widget, GdkRectangle *alloc, gpointer data)
+{
+    (void) widget; (void) alloc; (void) data;
+    position_window ();
+}
+
 static gboolean refresh_bg (gpointer data)
 {
     (void) data;
