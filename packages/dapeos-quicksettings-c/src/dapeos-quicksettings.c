@@ -2484,6 +2484,7 @@ bt_update_list (void)
     }
     g_list_free (old_rows);
     gchar *dev = run_cmd ("bluetoothctl devices 2>/dev/null");
+    gchar *paired_out = run_cmd ("bluetoothctl devices Paired 2>/dev/null");
     gchar *conn_out = run_cmd ("bluetoothctl devices Connected 2>/dev/null");
     GHashTable *seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
@@ -2494,7 +2495,7 @@ bt_update_list (void)
         if (!bt_valid_name (name)) continue;
         gboolean connected = strstr (conn_out, mac) != NULL;
         if (!bt_seen_recent (mac) && !connected) continue;
-        gboolean paired = bt_cache_has_name (name);
+        gboolean paired = strstr (paired_out, mac) != NULL;
         if (paired) bt_cache_add (mac, name);
         g_hash_table_add (seen, g_strdup (mac));
         bt_upsert (mac, name, connected, paired);
@@ -2511,7 +2512,7 @@ bt_update_list (void)
     }
     g_list_free (rows);
     g_hash_table_destroy (seen);
-    g_free (dev); g_free (conn_out);
+    g_free (dev); g_free (paired_out); g_free (conn_out);
 
     if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
         GtkWidget *empty = gtk_label_new ("No Bluetooth devices found");
