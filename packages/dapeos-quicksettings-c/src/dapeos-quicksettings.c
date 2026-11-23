@@ -359,6 +359,7 @@ static gboolean
 bt_connect_known_cb (gpointer data)
 {
     (void) data;
+    if (!bt_is_on ()) return FALSE;
     gchar *out = run_cmd ("bluetoothctl devices Paired 2>/dev/null");
     gchar **lines = g_strsplit (out, "\n", -1);
     for (guint i = 0; lines[i]; i++) {
@@ -380,7 +381,10 @@ bt_connect_known_cb (gpointer data)
         if (kv[0]) {
             gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", kv[0]));
             if (strstr (info, "Paired: yes")) {
-                gchar *cmd = g_strdup_printf ("bluetoothctl connect %s >/dev/null 2>&1", kv[0]);
+                gchar *cmd = g_strdup_printf ("bluetoothctl trust %s >/dev/null 2>&1; bluetoothctl bond %s >/dev/null 2>&1; bluetoothctl connect %s >/dev/null 2>&1",
+                                               kv[0], kv[0], kv[0]);
+                FILE *bf = fopen ("/tmp/dapeos-bt.log", "a");
+                if (bf) { fprintf (bf, "autoconnect %s\n", kv[0]); fclose (bf); }
                 run_async (cmd);
                 g_free (cmd);
             }
@@ -2289,8 +2293,8 @@ on_bt_action (GtkButton *button, gpointer data)
     if (!it) return;
     gchar *cmd = it->connected
         ? g_strdup_printf ("bluetoothctl disconnect %s 2>/dev/null", it->mac)
-        : g_strdup_printf ("bluetoothctl pair %s 2>/dev/null; bluetoothctl trust %s 2>/dev/null; bluetoothctl connect %s 2>/dev/null",
-                           it->mac, it->mac, it->mac);
+        : g_strdup_printf ("bluetoothctl pair %s 2>/dev/null; bluetoothctl trust %s 2>/dev/null; bluetoothctl bond %s 2>/dev/null; bluetoothctl connect %s 2>/dev/null",
+                           it->mac, it->mac, it->mac, it->mac);
     run_async (cmd);
     g_free (cmd);
     g_object_ref (GTK_WIDGET (data));
