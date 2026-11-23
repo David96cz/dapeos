@@ -21,6 +21,7 @@ static GtkWidget *qstack;
 static GtkWidget *main_page;
 static GtkWidget *wifi_page;
 static GtkWidget *wifi_page_toggle;
+static gboolean wifi_page_updating = FALSE;
 static GtkWidget *bt_page;
 static GtkWidget *bt_list;
 static GtkWidget *bt_power_switch;
@@ -451,7 +452,11 @@ static void update_tiles (void)
     if (page_main || page_wifi) {
         gboolean on = wifi_radio_on ();
         gtk_label_set_text (GTK_LABEL (net_status_label), on ? "On" : "Off");
-        if (wifi_page_toggle) gtk_button_set_label (GTK_BUTTON (wifi_page_toggle), on ? "On" : "Off");
+        if (wifi_page_toggle) {
+            wifi_page_updating = TRUE;
+            dapeos_switch_set_active (wifi_page_toggle, on);
+            wifi_page_updating = FALSE;
+        }
         if (!on) {
             gtk_label_set_text (GTK_LABEL (net_label), "");
         } else {
@@ -1630,16 +1635,14 @@ connect_known_cb (gpointer data)
 }
 
 static void
-on_net_toggle (GtkButton *button, gpointer data)
+wifi_set_power (gboolean on)
 {
-    qs_trace_mark ("wifi-toggle");
-    (void) button; (void) data;
-    if (wifi_radio_on ()) {
-        stop_net_animation ();
-        run_async ("nmcli radio wifi off");
-        gtk_label_set_text (GTK_LABEL (net_status_label), "Off");
-        gtk_label_set_text (GTK_LABEL (net_label), "");
-    } else {
+    if (wifi_page_toggle) {
+        wifi_page_updating = TRUE;
+        dapeos_switch_set_active (wifi_page_toggle, on);
+        wifi_page_updating = FALSE;
+    }
+    if (on) {
         gtk_label_set_text (GTK_LABEL (net_status_label), "On");
         run_async ("nmcli radio wifi on");
         if (has_known_wifi ()) {
@@ -1649,8 +1652,29 @@ on_net_toggle (GtkButton *button, gpointer data)
             stop_net_animation ();
             gtk_label_set_text (GTK_LABEL (net_label), "No known Wi-Fi");
         }
+    } else {
+        stop_net_animation ();
+        run_async ("nmcli radio wifi off");
+        gtk_label_set_text (GTK_LABEL (net_status_label), "Off");
+        gtk_label_set_text (GTK_LABEL (net_label), "");
     }
     g_timeout_add (1000, update_tiles_cb, NULL);
+}
+
+static void
+on_net_toggle (GtkButton *button, gpointer data)
+{
+    qs_trace_mark ("wifi-toggle");
+    (void) button; (void) data;
+    wifi_set_power (!wifi_radio_on ());
+}
+
+static void
+on_wifi_page_switch (GtkToggleButton *button, gpointer data)
+{
+    (void) data;
+    if (wifi_page_updating) return;
+    wifi_set_power (gtk_toggle_button_get_active (button));
 }
 
 static void
@@ -3008,8 +3032,9 @@ build_wifi_page (void)
     gtk_widget_set_hexpand (title, TRUE);
     gtk_widget_set_halign (title, GTK_ALIGN_START);
     g_signal_connect (back, "clicked", G_CALLBACK (show_main_page), NULL);
-    wifi_page_toggle = gtk_button_new_with_label (wifi_radio_on () ? "On" : "Off");
-    g_signal_connect (wifi_page_toggle, "clicked", G_CALLBACK (on_net_toggle), NULL);
+    wifi_page_toggle = dapeos_switch_new ();
+    dapeos_switch_set_active (wifi_page_toggle, wifi_radio_on ());
+    g_signal_connect (wifi_page_toggle, "toggled", G_CALLBACK (on_wifi_page_switch), NULL);
     gtk_box_pack_start (GTK_BOX (header), back, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (header), title, TRUE, TRUE, 0);
     gtk_box_pack_end (GTK_BOX (header), wifi_page_toggle, FALSE, FALSE, 0);
