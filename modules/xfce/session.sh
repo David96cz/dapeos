@@ -88,6 +88,12 @@ dapeos_session_setup() {
         install -m 644 "$CONTENTS_DIR/xfce/config/apt/99dapeos-app-names" /etc/apt/apt.conf.d/99dapeos-app-names
     fi
 
+    if [ -f "$CONTENTS_DIR/xfce/config/wireplumber/51-bluez-a2dp.conf" ]; then
+        install -d -m 755 /etc/wireplumber/wireplumber.conf.d
+        install -m 644 "$CONTENTS_DIR/xfce/config/wireplumber/51-bluez-a2dp.conf" \
+            /etc/wireplumber/wireplumber.conf.d/51-bluez-a2dp.conf
+    fi
+
     if [ -f "$CONTENTS_DIR/xfce/config/dapeos-settings.desktop" ]; then
         install -m 644 "$CONTENTS_DIR/xfce/config/dapeos-settings.desktop" /usr/share/applications/dapeos-settings.desktop
     fi
