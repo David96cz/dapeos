@@ -2610,9 +2610,9 @@ on_bt_action (GtkButton *button, gpointer data)
     gchar *cmd = it->connected
         ? g_strdup_printf ("bluetoothctl disconnect %s 2>/dev/null", it->mac)
         : (it->paired
-            ? g_strdup_printf ("(bluetoothctl bondable on; bluetoothctl trust %s; bluetoothctl connect %s) >/dev/null 2>&1",
+            ? g_strdup_printf ("(bluetoothctl bondable on; bluetoothctl untrust %s; bluetoothctl connect %s) >/dev/null 2>&1",
                                it->mac, it->mac)
-            : g_strdup_printf ("(bluetoothctl bondable on; bluetoothctl pairable on; bluetoothctl pair %s; bluetoothctl trust %s; bluetoothctl connect %s) >/dev/null 2>&1",
+            : g_strdup_printf ("(bluetoothctl bondable on; bluetoothctl pairable on; bluetoothctl pair %s; bluetoothctl untrust %s; bluetoothctl connect %s) >/dev/null 2>&1",
                                it->mac, it->mac, it->mac));
     run_async (cmd);
     g_free (cmd);
