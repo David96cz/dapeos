@@ -1902,6 +1902,31 @@ night_clock_is_12h (void)
     }
     g_strfreev (lines);
     g_free (list);
+    if (!twelve) {
+        gchar *xml = g_build_filename (g_get_user_config_dir (), "xfce4",
+                                       "xfconf", "xfce-perchannel-xml",
+                                       "xfce4-panel.xml", NULL);
+        gchar *text = NULL;
+        if (g_file_get_contents (xml, &text, NULL, NULL)) {
+            gchar *p = strstr (text, "digital-format");
+            if (p) {
+                gchar *v = strstr (p, "value=\"");
+                if (v) {
+                    v += 7;
+                    gchar *end = strchr (v, '"');
+                    if (end) {
+                        gchar *fmt = g_strndup (v, end - v);
+                        if (strstr (fmt, "%I") || strstr (fmt, "%l") ||
+                            strstr (fmt, "%r") || strstr (fmt, "%p"))
+                            twelve = TRUE;
+                        g_free (fmt);
+                    }
+                }
+            }
+            g_free (text);
+        }
+        g_free (xml);
+    }
     return twelve;
 }
 
