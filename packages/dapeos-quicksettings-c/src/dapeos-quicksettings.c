@@ -12,6 +12,8 @@ static gchar *run_cmd (const gchar *cmd);
 static void run_async (const gchar *cmd);
 static gchar *bt_cache_path (void);
 static gboolean bt_auto_enabled (const gchar *mac);
+static void bt_clear_status (void);
+static void bt_show_status (const gchar *text, gboolean animate);
 
 
 static GtkWidget *window;
