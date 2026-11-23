@@ -767,7 +767,7 @@ static void apply_css (void)
             "#dapeos-qs label#brightness-icon { color: #eaeaea; font-size: 16pt; }"
             "#dapeos-qs switch, #dapeos-qs switch.dapeos-switch { background: #555; padding: 0; min-width: 48px; min-height: 28px; border-radius: 999px; }"
             "#dapeos-qs switch:checked { background: #34c759; }"
-            "#dapeos-qs switch slider { background: #fff; border-radius: 999px; min-width: 18px; min-height: 18px; margin: 2px; }";
+            "#dapeos-qs switch slider { background: #fff; border-radius: 10px; min-width: 20px; min-height: 20px; margin: 4px; }";
     } else {
         data =
             "#dapeos-qs { background: transparent; }"
@@ -786,7 +786,7 @@ static void apply_css (void)
             "#dapeos-qs label#brightness-icon { color: #1a1a1a; font-size: 16pt; }"
             "#dapeos-qs switch, #dapeos-qs switch.dapeos-switch { background: #ccc; padding: 0; min-width: 48px; min-height: 28px; border-radius: 999px; }"
             "#dapeos-qs switch:checked { background: #34c759; }"
-            "#dapeos-qs switch slider { background: #fff; border-radius: 999px; min-width: 18px; min-height: 18px; margin: 2px; }";
+            "#dapeos-qs switch slider { background: #fff; border-radius: 10px; min-width: 20px; min-height: 20px; margin: 4px; }";
     }
     gtk_css_provider_load_from_data (css, data, -1, NULL);
     gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
