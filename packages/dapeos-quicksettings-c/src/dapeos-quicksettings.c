@@ -144,7 +144,16 @@ static void on_night_open (GtkButton *button, gpointer data);
 
 static gboolean update_volume_cb (gpointer data) { (void) data; update_volume_ui (); return FALSE; }
 static gboolean update_tiles_cb (gpointer data) { (void) data; update_tiles (); return FALSE; }
-static gboolean tiles_tick (gpointer data) { (void) data; update_tiles (); return G_SOURCE_CONTINUE; }
+static gboolean tiles_tick (gpointer data)
+{
+    (void) data;
+    if (!window || !gtk_widget_get_visible (window)) {
+        qs_trace_mark ("update-tiles-skipped");
+        return G_SOURCE_CONTINUE;
+    }
+    update_tiles ();
+    return G_SOURCE_CONTINUE;
+}
 
 static gchar *
 active_wifi_ssid (void)
@@ -175,9 +184,56 @@ has_known_wifi (void)
     return known;
 }
 
+static gchar *
+network_cache_text (void)
+{
+    gchar *path = g_build_filename (g_get_user_cache_dir (), "dapeos", "network", NULL);
+    gchar *text = NULL;
+    g_file_get_contents (path, &text, NULL, NULL);
+    g_free (path);
+    return text;
+}
+
+static gboolean
+wifi_radio_cached (gboolean *known)
+{
+    gchar *text = network_cache_text ();
+    if (!text) return FALSE;
+    gboolean on = FALSE;
+    *known = FALSE;
+    gchar **lines = g_strsplit (text, "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        if (g_strcmp0 (lines[i], "wifi:enabled") == 0) { on = TRUE; *known = TRUE; break; }
+        if (g_strcmp0 (lines[i], "wifi:disabled") == 0) { on = FALSE; *known = TRUE; break; }
+    }
+    g_strfreev (lines);
+    g_free (text);
+    return on;
+}
+
 static gboolean update_network_label (void)
 {
     if (!net_label) return FALSE;
+    gchar *cached = network_cache_text ();
+    if (cached) {
+        gchar *wifi = NULL, *eth = NULL;
+        gchar **cl = g_strsplit (cached, "\n", -1);
+        for (guint i = 0; cl[i]; i++) {
+            if (g_str_has_prefix (cl[i], "wifi:connected:"))
+                wifi = g_strdup (cl[i] + strlen ("wifi:connected:"));
+            else if (g_str_has_prefix (cl[i], "ethernet:connected:"))
+                eth = g_strdup (cl[i] + strlen ("ethernet:connected:"));
+        }
+        g_strfreev (cl);
+        g_free (cached);
+        gchar *label = wifi ? g_strdup (wifi)
+                            : (eth ? g_strdup_printf ("Ethernet: %s", eth) : g_strdup ("Disconnected"));
+        if (net_connecting && !wifi && !eth) { g_free (label); g_free (wifi); g_free (eth); return FALSE; }
+        gtk_label_set_text (GTK_LABEL (net_label), label);
+        gboolean connected = (wifi != NULL);
+        g_free (label); g_free (wifi); g_free (eth);
+        return connected;
+    }
     gchar *out = run_cmd ("nmcli -t -f TYPE,STATE,CONNECTION device status 2>/dev/null");
     gchar **lines = g_strsplit (out, "\n", -1);
     gchar *wifi = NULL, *eth = NULL;
@@ -1385,6 +1441,9 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
 static gboolean
 wifi_radio_on (void)
 {
+    gboolean known = FALSE;
+    gboolean cached = wifi_radio_cached (&known);
+    if (known) return cached;
     gchar *out = run_cmd ("nmcli -t -f WIFI radio 2>/dev/null");
     g_strstrip (out);
     gboolean on = g_strcmp0 (out, "enabled") == 0;
