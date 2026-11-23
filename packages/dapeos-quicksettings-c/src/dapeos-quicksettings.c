@@ -38,8 +38,15 @@ static GtkWidget *night_page;
 static GtkWidget *night_page_scale;
 static GtkWidget *night_page_toggle;
 static gboolean night_page_updating = FALSE;
-static GtkWidget *night_from_entry;
-static GtkWidget *night_to_entry;
+static GtkWidget *night_from_hour;
+static GtkWidget *night_from_min;
+static GtkWidget *night_to_hour;
+static GtkWidget *night_to_min;
+static GtkWidget *night_from_ampm;
+static GtkWidget *night_to_ampm;
+static GtkWidget *night_sched_switch;
+static gboolean night_sched_loading = FALSE;
+static gboolean night_12h = FALSE;
 static GtkWidget *wifi_password_page;
 static GtkWidget *wifi_password_label;
 static GtkWidget *wifi_password_entry;
@@ -1870,23 +1877,95 @@ on_night_page_switch (GtkToggleButton *button, gpointer data)
     night_set_on (gtk_toggle_button_get_active (button));
 }
 
-static void
-night_schedule_save (GtkButton *button, gpointer data)
+static gboolean
+night_clock_is_12h (void)
 {
-    (void) button; (void) data;
-    const gchar *from = gtk_entry_get_text (GTK_ENTRY (night_from_entry));
-    const gchar *to = gtk_entry_get_text (GTK_ENTRY (night_to_entry));
+    gchar *list = run_cmd ("xfconf-query -c xfce4-panel -l 2>/dev/null");
+    gchar **lines = g_strsplit (list, "\n", -1);
+    gboolean twelve = FALSE;
+    for (guint i = 0; lines[i]; i++) {
+        if (!g_str_has_suffix (lines[i], "/digital-format")) continue;
+        gchar *val = run_cmd (g_strdup_printf ("xfconf-query -c xfce4-panel -p %s 2>/dev/null", g_shell_quote (lines[i])));
+        if (strstr (val, "%I") || strstr (val, "%l") || strstr (val, "%r")) twelve = TRUE;
+        g_free (val);
+    }
+    g_strfreev (lines);
+    g_free (list);
+    return twelve;
+}
+
+static void
+night_save_schedule (void)
+{
+    if (night_sched_loading) return;
+    gint fh = gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON (night_from_hour));
+    gint fm = gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON (night_from_min));
+    gint th = gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON (night_to_hour));
+    gint tm = gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON (night_to_min));
+    if (night_12h) {
+        if (gtk_combo_box_get_active (GTK_COMBO_BOX (night_from_ampm)) == 1 && fh != 12) fh += 12;
+        if (gtk_combo_box_get_active (GTK_COMBO_BOX (night_from_ampm)) == 0 && fh == 12) fh = 0;
+        if (gtk_combo_box_get_active (GTK_COMBO_BOX (night_to_ampm)) == 1 && th != 12) th += 12;
+        if (gtk_combo_box_get_active (GTK_COMBO_BOX (night_to_ampm)) == 0 && th == 12) th = 0;
+    }
     gchar *fp = night_state_path ("nightlight_from");
     gchar *tp = night_state_path ("nightlight_to");
-    g_file_set_contents (fp, from, -1, NULL);
-    g_file_set_contents (tp, to, -1, NULL);
-    g_free (fp); g_free (tp);
+    gchar *sp = night_state_path ("nightlight_schedule_on");
+    gchar *fv = g_strdup_printf ("%02d:%02d", fh, fm);
+    gchar *tv = g_strdup_printf ("%02d:%02d", th, tm);
+    g_file_set_contents (fp, fv, -1, NULL);
+    g_file_set_contents (tp, tv, -1, NULL);
+    if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (night_sched_switch)))
+        g_file_set_contents (sp, "", 0, NULL);
+    else
+        g_unlink (sp);
+    g_free (fp); g_free (tp); g_free (sp); g_free (fv); g_free (tv);
 }
+
+static void
+night_schedule_changed (GtkWidget *widget, gpointer data)
+{
+    (void) widget; (void) data;
+    night_save_schedule ();
+}
+
+static void
+night_load_schedule (void)
+{
+    night_sched_loading = TRUE;
+    gchar *fp = night_state_path ("nightlight_from");
+    gchar *tp = night_state_path ("nightlight_to");
+    gchar *sp = night_state_path ("nightlight_schedule_on");
+    gchar *from = NULL, *to = NULL;
+    g_file_get_contents (fp, &from, NULL, NULL);
+    g_file_get_contents (tp, &to, NULL, NULL);
+    gint fh = 22, fm = 0, th = 7, tm = 0;
+    if (from) sscanf (from, "%d:%d", &fh, &fm);
+    if (to) sscanf (to, "%d:%d", &th, &tm);
+    if (night_12h) {
+        gtk_spin_button_set_value (GTK_SPIN_BUTTON (night_from_hour), fh % 12 == 0 ? 12 : fh % 12);
+        gtk_spin_button_set_value (GTK_SPIN_BUTTON (night_to_hour), th % 12 == 0 ? 12 : th % 12);
+        gtk_combo_box_set_active (GTK_COMBO_BOX (night_from_ampm), fh >= 12 ? 1 : 0);
+        gtk_combo_box_set_active (GTK_COMBO_BOX (night_to_ampm), th >= 12 ? 1 : 0);
+    } else {
+        gtk_spin_button_set_value (GTK_SPIN_BUTTON (night_from_hour), fh);
+        gtk_spin_button_set_value (GTK_SPIN_BUTTON (night_to_hour), th);
+    }
+    gtk_spin_button_set_value (GTK_SPIN_BUTTON (night_from_min), fm);
+    gtk_spin_button_set_value (GTK_SPIN_BUTTON (night_to_min), tm);
+    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (night_sched_switch), g_file_test (sp, G_FILE_TEST_EXISTS));
+    night_sched_loading = FALSE;
+    g_free (fp); g_free (tp); g_free (sp); g_free (from); g_free (to);
+}
+
 
 static gboolean
 night_schedule_tick (gpointer data)
 {
     (void) data;
+    gchar *enabled = night_state_path ("nightlight_schedule_on");
+    if (!g_file_test (enabled, G_FILE_TEST_EXISTS)) { g_free (enabled); return G_SOURCE_CONTINUE; }
+    g_free (enabled);
     gchar *fp = night_state_path ("nightlight_from");
     gchar *tp = night_state_path ("nightlight_to");
     gchar *from = NULL, *to = NULL;
