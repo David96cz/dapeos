@@ -378,9 +378,13 @@ bt_connect_known_cb (gpointer data)
     for (guint i = 0; cl[i]; i++) {
         gchar **kv = g_strsplit (cl[i], "\t", 2);
         if (kv[0]) {
-            gchar *cmd = g_strdup_printf ("bluetoothctl connect %s >/dev/null 2>&1", kv[0]);
-            run_async (cmd);
-            g_free (cmd);
+            gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", kv[0]));
+            if (strstr (info, "Paired: yes")) {
+                gchar *cmd = g_strdup_printf ("bluetoothctl connect %s >/dev/null 2>&1", kv[0]);
+                run_async (cmd);
+                g_free (cmd);
+            }
+            g_free (info);
         }
         g_strfreev (kv);
     }
@@ -1976,7 +1980,7 @@ bt_cache_add (const gchar *mac, const gchar *name)
 }
 
 static void
-bt_cache_remove (const gchar *mac)
+bt_cache_remove (const gchar *mac, const gchar *name)
 {
     gchar *path = bt_cache_path ();
     gchar *data = NULL;
@@ -1985,8 +1989,10 @@ bt_cache_remove (const gchar *mac)
     FILE *f = fopen (path, "w");
     if (f) {
         for (guint i = 0; lines[i]; i++) {
-            if (!g_str_has_prefix (lines[i], mac))
+            gchar **kv = g_strsplit (lines[i], "\t", 2);
+            if (!g_str_has_prefix (lines[i], mac) && !(kv[1] && g_strcmp0 (kv[1], name) == 0))
                 fprintf (f, "%s\n", lines[i]);
+            g_strfreev (kv);
         }
         fclose (f);
     }
@@ -2090,11 +2096,11 @@ bt_list_cb (gpointer data)
         if (sscanf (lines[i], "Device %63s %255[^\n]", mac, name) != 2) continue;
         if (!bt_valid_name (name)) continue;
         gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", mac));
-        gboolean paired = strstr (info, "Paired: yes") != NULL ||
-                          bt_cache_has_name (name);
+        gboolean actually_paired = strstr (info, "Paired: yes") != NULL;
+        gboolean paired = actually_paired || bt_cache_has_name (name);
         gboolean conn = strstr (connected, mac) != NULL;
         g_free (info);
-        if (paired) bt_cache_add (mac, name);
+        if (actually_paired) bt_cache_add (mac, name);
 
         BtItem *it = g_new0 (BtItem, 1);
         it->mac = g_strdup (mac);
@@ -2300,7 +2306,7 @@ on_bt_forget (GtkButton *button, gpointer data)
     gchar *cmd = g_strdup_printf ("bluetoothctl remove %s 2>/dev/null", it->mac);
     run_async (cmd);
     g_free (cmd);
-    bt_cache_remove (it->mac);
+    bt_cache_remove (it->mac, it->name);
     g_object_ref (GTK_WIDGET (data));
     g_timeout_add (1000, bt_scan_cb, data);
 }
