@@ -1933,9 +1933,23 @@ night_save_schedule (void)
 }
 
 static void
+night_pad_spin (GtkSpinButton *spin)
+{
+    gchar buf[8];
+    g_snprintf (buf, sizeof buf, "%02d", gtk_spin_button_get_value_as_int (spin));
+    GtkEntry *entry = gtk_spin_button_get_entry (spin);
+    if (entry && g_strcmp0 (gtk_entry_get_text (entry), buf) != 0)
+        gtk_entry_set_text (entry, buf);
+}
+
+static void
 night_schedule_changed (GtkWidget *widget, gpointer data)
 {
     (void) widget; (void) data;
+    night_pad_spin (GTK_SPIN_BUTTON (night_from_hour));
+    night_pad_spin (GTK_SPIN_BUTTON (night_from_min));
+    night_pad_spin (GTK_SPIN_BUTTON (night_to_hour));
+    night_pad_spin (GTK_SPIN_BUTTON (night_to_min));
     night_save_schedule ();
 }
 
@@ -1963,6 +1977,10 @@ night_load_schedule (void)
     }
     gtk_spin_button_set_value (GTK_SPIN_BUTTON (night_from_min), fm);
     gtk_spin_button_set_value (GTK_SPIN_BUTTON (night_to_min), tm);
+    night_pad_spin (GTK_SPIN_BUTTON (night_from_hour));
+    night_pad_spin (GTK_SPIN_BUTTON (night_from_min));
+    night_pad_spin (GTK_SPIN_BUTTON (night_to_hour));
+    night_pad_spin (GTK_SPIN_BUTTON (night_to_min));
     gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (night_sched_switch), g_file_test (sp, G_FILE_TEST_EXISTS));
     if (night_page_value_label) {
         gchar *v = g_strdup_printf ("%d K", (gint) gtk_range_get_value (GTK_RANGE (night_page_scale)));
