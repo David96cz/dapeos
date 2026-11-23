@@ -224,12 +224,23 @@ stop_net_animation (void)
     if (net_anim_id) { g_source_remove (net_anim_id); net_anim_id = 0; }
 }
 
+static gchar *
+short_name (const gchar *s)
+{
+    if (!s) return g_strdup ("");
+    if (g_utf8_strlen (s, -1) <= 20) return g_strdup (s);
+    const gchar *end = g_utf8_offset_to_pointer (s, 20);
+    return g_strdup_printf ("%.*s…", (int) (end - s), s);
+}
+
 static void update_tiles (void)
 {
     gboolean bt = bt_is_on ();
     gtk_label_set_text (GTK_LABEL (bt_status_label), bt ? "On" : "Off");
     gchar *btdev = bt_connected_name ();
-    gtk_label_set_text (GTK_LABEL (bt_label), btdev ? btdev : "");
+    gchar *shortdev = short_name (btdev);
+    gtk_label_set_text (GTK_LABEL (bt_label), shortdev);
+    g_free (shortdev);
     g_free (btdev);
 
     gchar *nightfile = night_state_path ("nightlight_on");

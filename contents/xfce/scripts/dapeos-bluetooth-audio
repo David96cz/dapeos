@@ -1,0 +1,3 @@
+#!/bin/sh
+# Zpřístupní Bluetooth audio zařízení v PulseAudio.
+pactl load-module module-bluetooth-discover 2>/dev/null || true
