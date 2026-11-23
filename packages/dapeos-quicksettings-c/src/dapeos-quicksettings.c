@@ -72,6 +72,7 @@ static guint bg_timeout = 0;
 static gboolean night_on = FALSE;
 static gboolean window_dark = TRUE;
 static void position_window (void);
+static void on_window_size_allocate (GtkWidget *widget, GdkRectangle *alloc, gpointer data);
 static gboolean net_connecting = FALSE;
 static guint net_anim_id = 0;
 static gint net_anim_phase = 0;
