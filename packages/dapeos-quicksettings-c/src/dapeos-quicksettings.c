@@ -60,6 +60,30 @@ static guint net_anim_id = 0;
 static gint net_anim_phase = 0;
 static gint net_anim_ticks = 0;
 
+static gboolean qs_trace_on = FALSE;
+static FILE *qs_trace_fp = NULL;
+
+static void
+qs_trace_init (void)
+{
+    const gchar *env = g_getenv ("DAPEOS_QS_TRACE");
+    if (!env || !*env || g_strcmp0 (env, "0") == 0) return;
+    const gchar *path = g_getenv ("DAPEOS_QS_TRACE_FILE");
+    if (!path || !*path) path = "/tmp/dapeos-qs-trace.log";
+    qs_trace_fp = fopen (path, "a");
+    if (!qs_trace_fp) return;
+    qs_trace_on = TRUE;
+}
+
+static void
+qs_trace_mark (const gchar *name)
+{
+    if (!qs_trace_on || !qs_trace_fp) return;
+    fprintf (qs_trace_fp, "%" G_GINT64_FORMAT " %s\n",
+             (gint64) g_get_monotonic_time (), name);
+    fflush (qs_trace_fp);
+}
+
 static gchar *night_state_path (const gchar *name)
 {
     return g_build_filename (g_get_user_cache_dir (), "dapeos", name, NULL);
@@ -245,6 +269,7 @@ short_name (const gchar *s)
 
 static void update_tiles (void)
 {
+    qs_trace_mark ("update-tiles-start");
     gboolean bt = bt_is_on ();
     gtk_label_set_text (GTK_LABEL (bt_status_label), bt ? "On" : "Off");
     gchar *btdev = bt_connected_name ();
@@ -278,6 +303,7 @@ static void update_tiles (void)
     } else {
         update_network_label ();
     }
+    qs_trace_mark ("update-tiles-end");
 }
 
 static void
@@ -403,6 +429,7 @@ bt_connect_known_cb (gpointer data)
 
 static void on_bt_clicked (GtkButton *button, gpointer data)
 {
+    qs_trace_mark ("bt-toggle");
     (void) button; (void) data;
     gboolean was_on = bt_is_on ();
     if (was_on)
@@ -491,6 +518,10 @@ static gchar *run_cmd (const gchar *cmd)
     g_free (quoted);
     if (!ok || out == NULL) return g_strdup ("");
     g_strstrip (out);
+    if (qs_trace_on && qs_trace_fp)
+        fprintf (qs_trace_fp, "%" G_GINT64_FORMAT " cmd %s (%" G_GINT64_FORMAT " us)\n",
+                 (gint64) g_get_monotonic_time (), cmd,
+                 (gint64) (g_get_monotonic_time () - _t0));
     return out;
 }
 
@@ -1189,6 +1220,7 @@ connect_wifi (const gchar *ssid, const gchar *password, gboolean was_known)
 static void
 wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
 {
+    qs_trace_mark ("wifi-scan-done");
     GtkWidget *dialog = data;
     GtkWidget *list = g_object_get_data (G_OBJECT (dialog), "wifi-list");
     if (!list || !GTK_IS_LIST_BOX (list)) {
@@ -1399,6 +1431,7 @@ connect_known_cb (gpointer data)
 static void
 on_net_toggle (GtkButton *button, gpointer data)
 {
+    qs_trace_mark ("wifi-toggle");
     (void) button; (void) data;
     if (wifi_radio_on ()) {
         stop_net_animation ();
@@ -1492,6 +1525,7 @@ wifi_list_cb (gpointer data)
 static void
 wifi_start_scan (GtkWidget *dialog)
 {
+    qs_trace_mark ("wifi-scan-start");
     GtkWidget *list = g_object_get_data (G_OBJECT (dialog), "wifi-list");
     if (!list) return;
     stop_connect_anim ();
@@ -2071,6 +2105,7 @@ bt_add_cache_rows (GtkWidget *list)
 static gboolean
 bt_list_cb (gpointer data)
 {
+    qs_trace_mark ("bt-list-done");
     GtkWidget *page = data;
     gchar *out = run_cmd ("bluetoothctl devices 2>/dev/null");
     if (!bt_list) { g_free (out); g_object_unref (page); return FALSE; }
@@ -2237,6 +2272,7 @@ bt_add_known_stub (GtkWidget *list)
 static void
 bt_refresh (GtkWidget *page)
 {
+    qs_trace_mark ("bt-refresh-start");
     if (!bt_list) return;
     GList *children = gtk_container_get_children (GTK_CONTAINER (bt_list));
     g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
@@ -2459,6 +2495,7 @@ on_window_map (GtkWidget *widget, GdkEvent *event, gpointer data)
 
 static void build_ui (void)
 {
+    qs_trace_mark ("build-ui-start");
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
     gtk_widget_set_name (window, "dapeos-qs");
@@ -2660,6 +2697,7 @@ static gboolean signal_installed = FALSE;
 static void
 activate (GtkApplication *app, gpointer data)
 {
+    qs_trace_mark ("activate");
     (void) data;
     if (window == NULL) {
         build_ui ();
@@ -2701,10 +2739,13 @@ activate (GtkApplication *app, gpointer data)
 
 int main (int argc, char **argv)
 {
+    qs_trace_init ();
+    qs_trace_mark ("main-start");
     unsetenv ("GTK_THEME");
     application = gtk_application_new ("cz.dapeos.quicksettings", G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect (application, "activate", G_CALLBACK (activate), NULL);
     int status = g_application_run (G_APPLICATION (application), argc, argv);
+    qs_trace_mark ("main-exit");
     g_object_unref (application);
     return status;
 }
