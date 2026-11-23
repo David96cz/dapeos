@@ -2102,8 +2102,7 @@ build_night_page (void)
     gtk_widget_set_size_request (night_page_value_label, 58, -1);
     gtk_widget_set_halign (night_page_value_label, GTK_ALIGN_END);
     gtk_widget_set_valign (night_page_value_label, GTK_ALIGN_CENTER);
-    gtk_label_set_yalign (GTK_LABEL (night_page_value_label), 0.5);
-    gtk_widget_set_margin_bottom (night_page_value_label, 4);
+    gtk_widget_set_margin_top (night_page_value_label, 4);
     gtk_widget_set_valign (night_page_scale, GTK_ALIGN_CENTER);
     gtk_widget_set_valign (temprow, GTK_ALIGN_CENTER);
     gtk_box_pack_start (GTK_BOX (temprow), night_page_scale, TRUE, TRUE, 0);
