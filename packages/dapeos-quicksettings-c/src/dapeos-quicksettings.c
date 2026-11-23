@@ -14,6 +14,8 @@ static GtkWidget *window;
 static GtkWidget *qstack;
 static GtkWidget *main_page;
 static GtkWidget *wifi_page;
+static GtkWidget *bt_page;
+static GtkWidget *bt_list;
 static GtkWidget *wifi_password_page;
 static GtkWidget *wifi_password_label;
 static GtkWidget *wifi_password_entry;
@@ -1447,11 +1449,8 @@ static void
 on_bt_open (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
-    if (g_find_program_in_path ("blueman-manager"))
-        run_async ("blueman-manager");
-    else
-        run_async ("xfce4-settings-manager");
-    gtk_widget_hide (window);
+    gtk_stack_set_visible_child_name (GTK_STACK (qstack), "bluetooth");
+    bt_refresh (bt_page);
 }
 
 static void
@@ -1704,6 +1703,219 @@ show_wifi_password (const gchar *ssid, gboolean known)
     gtk_widget_grab_focus (wifi_password_entry);
 }
 
+typedef struct {
+    gchar *mac;
+    gchar *name;
+    gboolean connected;
+    gboolean paired;
+} BtItem;
+
+static void
+bt_item_free (gpointer data)
+{
+    BtItem *it = data;
+    g_free (it->mac);
+    g_free (it->name);
+    g_free (it);
+}
+
+static void
+bt_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
+{
+    (void) list; (void) data;
+    GtkWidget *action = g_object_get_data (G_OBJECT (gtk_widget_get_parent (GTK_WIDGET (list))), "noop");
+    (void) action;
+    BtItem *it = row ? g_object_get_data (G_OBJECT (row), "bt-item") : NULL;
+    g_object_set_data (G_OBJECT (bt_page), "bt-selected", it);
+    GtkWidget *act = g_object_get_data (G_OBJECT (bt_page), "bt-action");
+    GtkWidget *forget = g_object_get_data (G_OBJECT (bt_page), "bt-forget");
+    if (it) {
+        gtk_button_set_label (GTK_BUTTON (act), it->connected ? "Disconnect" : "Connect");
+        gtk_widget_set_sensitive (act, TRUE);
+        gtk_widget_set_sensitive (forget, it->paired);
+    } else {
+        gtk_widget_set_sensitive (act, FALSE);
+        gtk_widget_set_sensitive (forget, FALSE);
+    }
+}
+
+static void bt_refresh (GtkWidget *page);
+
+static gboolean
+bt_list_cb (gpointer data)
+{
+    GtkWidget *page = data;
+    gchar *out = run_cmd ("bluetoothctl devices 2>/dev/null");
+    if (!bt_list) { g_free (out); g_object_unref (page); return FALSE; }
+    GList *children = gtk_container_get_children (GTK_CONTAINER (bt_list));
+    g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
+
+    gchar *connected = run_cmd ("bluetoothctl devices Connected 2>/dev/null");
+    gchar **lines = g_strsplit (out, "\n", -1);
+    gint known_pos = 0;
+    for (guint i = 0; lines[i]; i++) {
+        gchar mac[64] = "", name[256] = "";
+        if (sscanf (lines[i], "Device %63s %255[^\n]", mac, name) != 2) continue;
+        gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", mac));
+        gboolean paired = strstr (info, "Paired: yes") != NULL;
+        gboolean conn = strstr (connected, mac) != NULL;
+        g_free (info);
+
+        BtItem *it = g_new0 (BtItem, 1);
+        it->mac = g_strdup (mac);
+        it->name = g_strdup (name);
+        it->connected = conn;
+        it->paired = paired;
+
+        GtkWidget *row = gtk_list_box_row_new ();
+        GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+        GtkWidget *label = gtk_label_new (name);
+        gtk_label_set_ellipsize (GTK_LABEL (label), PANGO_ELLIPSIZE_END);
+        gtk_widget_set_hexpand (label, TRUE);
+        gtk_widget_set_halign (label, GTK_ALIGN_START);
+        GtkWidget *state = gtk_label_new (conn ? "✓ Connected" : (paired ? "Paired" : ""));
+        gtk_widget_set_halign (state, GTK_ALIGN_END);
+        gtk_style_context_add_class (gtk_widget_get_style_context (state), "dim-label");
+        gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+        gtk_box_pack_end (GTK_BOX (hbox), state, FALSE, FALSE, 0);
+        gtk_container_add (GTK_CONTAINER (row), hbox);
+        g_object_set_data_full (G_OBJECT (row), "bt-item", it, bt_item_free);
+        if (conn) {
+            gtk_list_box_insert (GTK_LIST_BOX (bt_list), row, 0);
+        } else if (paired) {
+            gtk_list_box_insert (GTK_LIST_BOX (bt_list), row, known_pos + 1);
+            known_pos++;
+        } else {
+            gtk_list_box_insert (GTK_LIST_BOX (bt_list), row, -1);
+        }
+    }
+    g_strfreev (lines);
+    g_free (connected);
+    g_free (out);
+    if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
+        GtkWidget *empty = gtk_label_new ("No Bluetooth devices found");
+        gtk_list_box_insert (GTK_LIST_BOX (bt_list), empty, -1);
+    }
+    gtk_widget_show_all (bt_list);
+    g_object_unref (page);
+    return FALSE;
+}
+
+static gboolean
+bt_scan_cb (gpointer data)
+{
+    GtkWidget *page = data;
+    bt_list_cb (page);
+    return FALSE;
+}
+
+static void
+bt_refresh (GtkWidget *page)
+{
+    if (!bt_list) return;
+    GList *children = gtk_container_get_children (GTK_CONTAINER (bt_list));
+    g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
+    GtkWidget *scanning = gtk_label_new ("Scanning for Bluetooth devices…");
+    gtk_list_box_insert (GTK_LIST_BOX (bt_list), scanning, -1);
+    gtk_widget_show_all (bt_list);
+    run_async ("bluetoothctl --timeout 5 scan on >/dev/null 2>&1");
+    g_object_ref (page);
+    g_timeout_add (5500, bt_scan_cb, page);
+}
+
+static void
+on_bt_refresh (GtkButton *button, gpointer data)
+{
+    (void) button;
+    bt_refresh (GTK_WIDGET (data));
+}
+
+static void
+on_bt_action (GtkButton *button, gpointer data)
+{
+    (void) button;
+    BtItem *it = g_object_get_data (G_OBJECT (data), "bt-selected");
+    if (!it) return;
+    gchar *cmd = g_strdup_printf ("bluetoothctl %s %s 2>/dev/null",
+        it->connected ? "disconnect" : "connect", it->mac);
+    run_async (cmd);
+    g_free (cmd);
+    g_object_ref (GTK_WIDGET (data));
+    g_timeout_add (3000, bt_scan_cb, data);
+}
+
+static void
+on_bt_forget (GtkButton *button, gpointer data)
+{
+    (void) button;
+    BtItem *it = g_object_get_data (G_OBJECT (data), "bt-selected");
+    if (!it) return;
+    gchar *cmd = g_strdup_printf ("bluetoothctl remove %s 2>/dev/null", it->mac);
+    run_async (cmd);
+    g_free (cmd);
+    g_object_ref (GTK_WIDGET (data));
+    g_timeout_add (1000, bt_scan_cb, data);
+}
+
+static void
+on_bt_power (GtkButton *button, gpointer data)
+{
+    (void) button;
+    gchar *out = run_cmd ("bluetoothctl show 2>/dev/null");
+    gboolean on = strstr (out, "Powered: yes") != NULL;
+    g_free (out);
+    run_async (on ? "bluetoothctl power off" : "bluetoothctl power on");
+    gtk_button_set_label (GTK_BUTTON (data), on ? "Off" : "On");
+}
+
+static GtkWidget *
+build_bt_page (void)
+{
+    GtkWidget *page = gtk_box_new (GTK_ORIENTATION_VERTICAL, 8);
+    gtk_container_set_border_width (GTK_CONTAINER (page), 16);
+    GtkWidget *header = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget *back = gtk_button_new_with_label ("‹ Back");
+    gtk_style_context_add_class (gtk_widget_get_style_context (back), "flat");
+    GtkWidget *title = gtk_label_new ("Bluetooth devices");
+    gtk_widget_set_hexpand (title, TRUE);
+    gtk_widget_set_halign (title, GTK_ALIGN_START);
+    GtkWidget *power = gtk_button_new_with_label ("On");
+    g_signal_connect (back, "clicked", G_CALLBACK (show_main_page), NULL);
+    g_signal_connect (power, "clicked", G_CALLBACK (on_bt_power), power);
+    gtk_box_pack_start (GTK_BOX (header), back, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (header), title, TRUE, TRUE, 0);
+    gtk_box_pack_end (GTK_BOX (header), power, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), header, FALSE, FALSE, 0);
+
+    GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+                                    GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_vexpand (scroll, TRUE);
+    bt_list = gtk_list_box_new ();
+    gtk_list_box_set_selection_mode (GTK_LIST_BOX (bt_list), GTK_SELECTION_SINGLE);
+    gtk_container_add (GTK_CONTAINER (scroll), bt_list);
+    gtk_box_pack_start (GTK_BOX (page), scroll, TRUE, TRUE, 0);
+
+    GtkWidget *actions = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget *action = gtk_button_new_with_label ("Connect");
+    GtkWidget *forget = gtk_button_new_with_label ("Forget");
+    GtkWidget *refresh = gtk_button_new_with_label ("Refresh");
+    g_signal_connect (action, "clicked", G_CALLBACK (on_bt_action), page);
+    g_signal_connect (forget, "clicked", G_CALLBACK (on_bt_forget), page);
+    g_signal_connect (refresh, "clicked", G_CALLBACK (on_bt_refresh), page);
+    gtk_box_pack_start (GTK_BOX (actions), action, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), forget, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), refresh, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (page), actions, FALSE, FALSE, 0);
+    g_object_set_data (G_OBJECT (page), "bt-action", action);
+    g_object_set_data (G_OBJECT (page), "bt-forget", forget);
+    g_signal_connect (bt_list, "row-selected", G_CALLBACK (bt_row_selected), page);
+    gtk_widget_set_sensitive (action, FALSE);
+    gtk_widget_set_sensitive (forget, FALSE);
+    gtk_widget_show_all (page);
+    return page;
+}
+
 static GtkWidget *
 build_wifi_page (void)
 {
@@ -1812,6 +2024,8 @@ static void build_ui (void)
     gtk_stack_add_named (GTK_STACK (qstack), main_page, "main");
     wifi_page = build_wifi_page ();
     gtk_stack_add_named (GTK_STACK (qstack), wifi_page, "wifi");
+    bt_page = build_bt_page ();
+    gtk_stack_add_named (GTK_STACK (qstack), bt_page, "bluetooth");
     wifi_password_page = build_wifi_password_page ();
     gtk_stack_add_named (GTK_STACK (qstack), wifi_password_page, "wifi-password");
     wifi_confirm_page = build_wifi_confirm_page ();
