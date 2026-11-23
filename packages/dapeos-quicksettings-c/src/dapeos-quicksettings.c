@@ -2510,7 +2510,7 @@ on_bt_action (GtkButton *button, gpointer data)
     run_async (cmd);
     g_free (cmd);
     g_object_ref (GTK_WIDGET (data));
-    g_timeout_add (3000, bt_scan_cb, data);
+    g_timeout_add (3000, bt_refresh_cb, data);
 }
 
 static void
@@ -2524,7 +2524,7 @@ on_bt_forget (GtkButton *button, gpointer data)
     g_free (cmd);
     bt_cache_remove (it->mac, it->name);
     g_object_ref (GTK_WIDGET (data));
-    g_timeout_add (1000, bt_scan_cb, data);
+    g_timeout_add (1000, bt_refresh_cb, data);
 }
 
 static void
