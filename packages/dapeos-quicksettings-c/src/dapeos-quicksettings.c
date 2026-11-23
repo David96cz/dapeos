@@ -2660,6 +2660,7 @@ static void build_ui (void)
     g_free (bat);
     update_brightness_ui ();
     install_cache_monitors ();
+    qs_trace_mark ("build-ui-end");
 }
 
 static gboolean position_done = FALSE;
