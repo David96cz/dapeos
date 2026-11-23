@@ -106,7 +106,8 @@ read_state (DapeosStatus *st)
     g_free (nm);
 
     gchar *radio = run_cmd ("nmcli -t -f WIFI radio 2>/dev/null");
-    st->wifi_enabled = strstr (radio, "enabled") != NULL;
+    g_strstrip (radio);
+    st->wifi_enabled = g_strcmp0 (radio, "enabled") == 0;
     g_free (radio);
 
     gchar *v = run_cmd ("pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null");

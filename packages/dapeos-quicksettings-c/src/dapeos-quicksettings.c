@@ -1353,7 +1353,8 @@ static gboolean
 wifi_radio_on (void)
 {
     gchar *out = run_cmd ("nmcli -t -f WIFI radio 2>/dev/null");
-    gboolean on = strstr (out, "enabled") != NULL;
+    g_strstrip (out);
+    gboolean on = g_strcmp0 (out, "enabled") == 0;
     g_free (out);
     return on;
 }
