@@ -325,13 +325,20 @@ static void update_tiles (void)
 {
     if (!window || !gtk_widget_get_visible (window)) return;
     qs_trace_mark ("update-tiles-start");
-    gboolean bt = bt_is_on ();
-    gtk_label_set_text (GTK_LABEL (bt_status_label), bt ? "On" : "Off");
-    gchar *btdev = bt_connected_name ();
-    gchar *shortdev = short_name (btdev);
-    gtk_label_set_text (GTK_LABEL (bt_label), shortdev);
-    g_free (shortdev);
-    g_free (btdev);
+    const gchar *page = qstack ? gtk_stack_get_visible_child_name (GTK_STACK (qstack)) : "main";
+    gboolean page_main = !page || g_strcmp0 (page, "main") == 0;
+    gboolean page_bt = g_strcmp0 (page, "bluetooth") == 0;
+    gboolean page_wifi = g_strcmp0 (page, "wifi") == 0;
+
+    if (page_main || page_bt) {
+        gboolean bt = bt_is_on ();
+        gtk_label_set_text (GTK_LABEL (bt_status_label), bt ? "On" : "Off");
+        gchar *btdev = bt_connected_name ();
+        gchar *shortdev = short_name (btdev);
+        gtk_label_set_text (GTK_LABEL (bt_label), shortdev);
+        g_free (shortdev);
+        g_free (btdev);
+    }
 
     gchar *nightfile = night_state_path ("nightlight_on");
     night_on = g_file_test (nightfile, G_FILE_TEST_EXISTS);
@@ -350,13 +357,15 @@ static void update_tiles (void)
         gtk_label_set_text (GTK_LABEL (night_label), "");
     }
 
-    gboolean on = wifi_radio_on ();
-    gtk_label_set_text (GTK_LABEL (net_status_label), on ? "On" : "Off");
-    if (wifi_page_toggle) gtk_button_set_label (GTK_BUTTON (wifi_page_toggle), on ? "On" : "Off");
-    if (!on) {
-        gtk_label_set_text (GTK_LABEL (net_label), "");
-    } else {
-        update_network_label ();
+    if (page_main || page_wifi) {
+        gboolean on = wifi_radio_on ();
+        gtk_label_set_text (GTK_LABEL (net_status_label), on ? "On" : "Off");
+        if (wifi_page_toggle) gtk_button_set_label (GTK_BUTTON (wifi_page_toggle), on ? "On" : "Off");
+        if (!on) {
+            gtk_label_set_text (GTK_LABEL (net_label), "");
+        } else {
+            update_network_label ();
+        }
     }
     qs_trace_mark ("update-tiles-end");
 }
