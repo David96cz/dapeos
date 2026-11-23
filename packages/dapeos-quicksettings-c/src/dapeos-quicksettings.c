@@ -2244,7 +2244,6 @@ bt_list_cb (gpointer data)
     g_strfreev (lines);
     g_free (connected);
     g_free (out);
-    bt_add_cache_rows (bt_list);
     if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
         bt_add_known_stub (bt_list);
         if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
@@ -2436,7 +2435,7 @@ bt_update_list (void)
         gchar mac[64] = "", name[256] = "";
         if (sscanf (lines[i], "Device %63s %255[^\n]", mac, name) != 2) continue;
         if (!bt_valid_name (name)) continue;
-        gboolean paired = strstr (paired_out, mac) != NULL || bt_cache_has_name (name);
+        gboolean paired = strstr (paired_out, mac) != NULL;
         gboolean connected = strstr (conn_out, mac) != NULL;
         if (paired) bt_cache_add (mac, name);
         g_hash_table_add (seen, g_strdup (mac));
@@ -2449,7 +2448,7 @@ bt_update_list (void)
         if (!GTK_IS_LIST_BOX_ROW (l->data)) continue;
         BtItem *it = g_object_get_data (G_OBJECT (l->data), "bt-item");
         if (!it) continue;
-        if (!g_hash_table_contains (seen, it->mac) && !bt_cache_has_name (it->name))
+        if (!g_hash_table_contains (seen, it->mac))
             gtk_widget_destroy (GTK_WIDGET (l->data));
     }
     g_list_free (rows);
