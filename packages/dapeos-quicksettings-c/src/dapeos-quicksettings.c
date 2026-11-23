@@ -2466,16 +2466,6 @@ bt_list_cb (gpointer data)
         }
     }
     gtk_widget_show_all (bt_list);
-    GList *rws = gtk_container_get_children (GTK_CONTAINER (bt_list));
-    for (GList *l = rws; l; l = l->next) {
-        if (!GTK_IS_LIST_BOX_ROW (l->data)) continue;
-        BtItem *it = g_object_get_data (G_OBJECT (l->data), "bt-item");
-        if (it && (it->paired || it->connected)) {
-            gtk_list_box_select_row (GTK_LIST_BOX (bt_list), GTK_LIST_BOX_ROW (l->data));
-            break;
-        }
-    }
-    g_list_free (rws);
     g_object_unref (page);
     return FALSE;
 }
@@ -2830,9 +2820,13 @@ bt_refresh (GtkWidget *page)
         return;
     }
     bt_off_shown = FALSE;
+    if (bt_auto_switch) gtk_widget_set_visible (bt_auto_switch, FALSE);
+    if (bt_auto_label) gtk_widget_set_visible (bt_auto_label, FALSE);
+    gtk_list_box_unselect_all (GTK_LIST_BOX (bt_list));
     bt_show_status ("Searching devices", TRUE);
     bt_start_scan ();
     bt_update_list ();
+    gtk_list_box_unselect_all (GTK_LIST_BOX (bt_list));
     if (!bt_poll_id)
         bt_poll_id = g_timeout_add (1000, bt_poll_cb, NULL);
 }
