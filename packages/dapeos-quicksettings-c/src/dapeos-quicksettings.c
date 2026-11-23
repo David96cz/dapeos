@@ -10,6 +10,9 @@
 
 static gchar *run_cmd (const gchar *cmd);
 static void run_async (const gchar *cmd);
+static gchar *bt_cache_path (void);
+static gboolean bt_auto_enabled (const gchar *mac);
+
 
 static GtkWidget *window;
 static GtkWidget *qstack;
@@ -2615,9 +2618,14 @@ bt_update_list (void)
         gchar mac[64] = "", name[256] = "";
         if (sscanf (lines[i], "Device %63s %255[^\n]", mac, name) != 2) continue;
         if (!bt_valid_name (name)) continue;
-        gboolean connected = strstr (conn_out, mac) != NULL;
-        if (!bt_seen_recent (mac) && !connected) continue;
         gboolean paired = bt_cache_has_mac (mac);
+        gboolean connected = FALSE;
+        if (paired) {
+            gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", mac));
+            connected = strstr (info, "Connected: yes") != NULL;
+            g_free (info);
+        }
+        if (!bt_seen_recent (mac) && !connected) continue;
         g_hash_table_add (seen, g_strdup (mac));
         bt_upsert (mac, name, connected, paired);
     }
@@ -2840,6 +2848,8 @@ build_bt_page (void)
     gtk_box_pack_start (GTK_BOX (actions), action, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), forget, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), refresh, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), auto_label, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (actions), bt_auto_switch, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), actions, FALSE, FALSE, 0);
     g_object_set_data (G_OBJECT (page), "bt-action", action);
     g_object_set_data (G_OBJECT (page), "bt-forget", forget);
@@ -2901,8 +2911,6 @@ build_wifi_page (void)
     gtk_box_pack_start (GTK_BOX (actions), forget, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), advanced, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (actions), refresh, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (actions), auto_label, FALSE, FALSE, 0);
-    gtk_box_pack_start (GTK_BOX (actions), bt_auto_switch, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (page), actions, FALSE, FALSE, 0);
 
     g_object_set_data (G_OBJECT (page), "wifi-list", list);
