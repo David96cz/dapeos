@@ -68,14 +68,19 @@ static gchar *night_state_path (const gchar *name)
 static gchar *
 bt_connected_name (void)
 {
-    gchar *out = run_cmd ("bluetoothctl devices Connected 2>/dev/null");
+    gchar *out = run_cmd ("bluetoothctl devices 2>/dev/null");
     gchar *name = NULL;
     gchar **lines = g_strsplit (out, "\n", -1);
     for (guint i = 0; lines[i]; i++) {
         gchar mac[64] = "", n[256] = "";
         if (sscanf (lines[i], "Device %63s %255[^\n]", mac, n) == 2 && *n) {
-            name = g_strdup (n);
-            break;
+            gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", mac));
+            if (strstr (info, "Connected: yes")) {
+                name = g_strdup (n);
+                g_free (info);
+                break;
+            }
+            g_free (info);
         }
     }
     g_strfreev (lines);
@@ -2102,7 +2107,7 @@ bt_list_cb (gpointer data)
         gchar *info = run_cmd (g_strdup_printf ("bluetoothctl info %s 2>/dev/null", mac));
         gboolean actually_paired = strstr (info, "Paired: yes") != NULL;
         gboolean paired = actually_paired || bt_cache_has_name (name);
-        gboolean conn = strstr (connected, mac) != NULL;
+        gboolean conn = strstr (connected, mac) != NULL || strstr (info, "Connected: yes") != NULL;
         g_free (info);
         if (actually_paired) bt_cache_add (mac, name);
 
