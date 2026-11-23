@@ -2005,6 +2005,9 @@ typedef struct {
     gchar *name;
     gboolean connected;
     gboolean paired;
+    GtkWidget *row;
+    GtkWidget *label;
+    GtkWidget *state;
 } BtItem;
 
 static void
@@ -2337,26 +2340,143 @@ bt_add_known_stub (GtkWidget *list)
     g_free (cpath);
 }
 
+static guint bt_poll_id = 0;
+
+static BtItem *
+bt_find_item (const gchar *mac)
+{
+    if (!bt_list) return NULL;
+    GList *rows = gtk_container_get_children (GTK_CONTAINER (bt_list));
+    BtItem *found = NULL;
+    for (GList *l = rows; l; l = l->next) {
+        if (!GTK_IS_LIST_BOX_ROW (l->data)) continue;
+        BtItem *it = g_object_get_data (G_OBJECT (l->data), "bt-item");
+        if (it && g_strcmp0 (it->mac, mac) == 0) { found = it; break; }
+    }
+    g_list_free (rows);
+    return found;
+}
+
+static void
+bt_upsert (const gchar *mac, const gchar *name, gboolean connected, gboolean paired)
+{
+    if (!bt_list || !mac || !name || !*name) return;
+    BtItem *it = bt_find_item (mac);
+    if (!it) {
+        GtkWidget *row = gtk_list_box_row_new ();
+        GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+        GtkWidget *label = gtk_label_new (name);
+        gtk_label_set_ellipsize (GTK_LABEL (label), PANGO_ELLIPSIZE_END);
+        gtk_widget_set_hexpand (label, TRUE);
+        gtk_widget_set_halign (label, GTK_ALIGN_START);
+        GtkWidget *state = gtk_label_new ("");
+        gtk_widget_set_halign (state, GTK_ALIGN_END);
+        gtk_style_context_add_class (gtk_widget_get_style_context (state), "dim-label");
+        gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+        gtk_box_pack_end (GTK_BOX (hbox), state, FALSE, FALSE, 0);
+        gtk_container_add (GTK_CONTAINER (row), hbox);
+        it = g_new0 (BtItem, 1);
+        it->mac = g_strdup (mac);
+        it->name = g_strdup (name);
+        it->row = row;
+        it->label = label;
+        it->state = state;
+        g_object_set_data_full (G_OBJECT (row), "bt-item", it, bt_item_free);
+        gtk_list_box_insert (GTK_LIST_BOX (bt_list), row, (connected || paired) ? 0 : -1);
+    }
+    it->connected = connected;
+    it->paired = paired;
+    gtk_label_set_text (GTK_LABEL (it->label), name);
+    gtk_label_set_text (GTK_LABEL (it->state),
+                        connected ? "✓ Connected" : (paired ? "Paired" : ""));
+    gtk_widget_show_all (it->row);
+}
+
+static void
+bt_clear_list (void)
+{
+    if (!bt_list) return;
+    GList *children = gtk_container_get_children (GTK_CONTAINER (bt_list));
+    g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
+}
+
+static void
+bt_update_list (void)
+{
+    if (!bt_list) return;
+    gchar *dev = run_cmd ("bluetoothctl devices 2>/dev/null");
+    gchar *paired_out = run_cmd ("bluetoothctl devices Paired 2>/dev/null");
+    gchar *conn_out = run_cmd ("bluetoothctl devices Connected 2>/dev/null");
+    GHashTable *seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+
+    gchar **lines = g_strsplit (dev, "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        gchar mac[64] = "", name[256] = "";
+        if (sscanf (lines[i], "Device %63s %255[^\n]", mac, name) != 2) continue;
+        if (!bt_valid_name (name)) continue;
+        gboolean paired = strstr (paired_out, mac) != NULL || bt_cache_has_name (name);
+        gboolean connected = strstr (conn_out, mac) != NULL;
+        if (paired) bt_cache_add (mac, name);
+        g_hash_table_add (seen, g_strdup (mac));
+        bt_upsert (mac, name, connected, paired);
+    }
+    g_strfreev (lines);
+
+    GList *rows = gtk_container_get_children (GTK_CONTAINER (bt_list));
+    for (GList *l = rows; l; l = l->next) {
+        if (!GTK_IS_LIST_BOX_ROW (l->data)) continue;
+        BtItem *it = g_object_get_data (G_OBJECT (l->data), "bt-item");
+        if (!it) continue;
+        if (!g_hash_table_contains (seen, it->mac) && !bt_cache_has_name (it->name))
+            gtk_widget_destroy (GTK_WIDGET (l->data));
+    }
+    g_list_free (rows);
+    g_hash_table_destroy (seen);
+    g_free (dev); g_free (paired_out); g_free (conn_out);
+
+    if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
+        GtkWidget *empty = gtk_label_new ("No Bluetooth devices found");
+        gtk_list_box_insert (GTK_LIST_BOX (bt_list), empty, -1);
+    }
+    gtk_widget_show_all (bt_list);
+}
+
+static gboolean
+bt_poll_cb (gpointer data)
+{
+    (void) data;
+    if (!bt_page || g_strcmp0 (gtk_stack_get_visible_child_name (GTK_STACK (qstack)), "bluetooth") != 0) {
+        bt_poll_id = 0;
+        return G_SOURCE_REMOVE;
+    }
+    if (!bt_is_on ()) {
+        bt_clear_list ();
+        gtk_list_box_insert (GTK_LIST_BOX (bt_list), gtk_label_new ("Bluetooth is off"), -1);
+        gtk_widget_show_all (bt_list);
+        return G_SOURCE_CONTINUE;
+    }
+    bt_update_list ();
+    static guint tick = 0;
+    if ((tick++ % 5) == 0)
+        run_async ("bluetoothctl --timeout 2 scan on >/dev/null 2>&1");
+    return G_SOURCE_CONTINUE;
+}
+
 static void
 bt_refresh (GtkWidget *page)
 {
     qs_trace_mark ("bt-refresh-start");
     if (!bt_list) return;
-    GList *children = gtk_container_get_children (GTK_CONTAINER (bt_list));
-    g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
-    bt_add_known_stub (bt_list);
+    bt_clear_list ();
     if (!bt_is_on ()) {
-        GtkWidget *off = gtk_label_new ("Bluetooth is off");
-        gtk_list_box_insert (GTK_LIST_BOX (bt_list), off, -1);
+        gtk_list_box_insert (GTK_LIST_BOX (bt_list), gtk_label_new ("Bluetooth is off"), -1);
         gtk_widget_show_all (bt_list);
         return;
     }
-    GtkWidget *scanning = gtk_label_new ("Scanning for Bluetooth devices…");
-    gtk_list_box_insert (GTK_LIST_BOX (bt_list), scanning, -1);
-    gtk_widget_show_all (bt_list);
-    run_async ("bluetoothctl --timeout 5 scan on >/dev/null 2>&1");
-    g_object_ref (page);
-    g_timeout_add (5500, bt_scan_cb, page);
+    bt_update_list ();
+    run_async ("bluetoothctl --timeout 2 scan on >/dev/null 2>&1");
+    if (!bt_poll_id)
+        bt_poll_id = g_timeout_add (1000, bt_poll_cb, NULL);
 }
 
 static gboolean
