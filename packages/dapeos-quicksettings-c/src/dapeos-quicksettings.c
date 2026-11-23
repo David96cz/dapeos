@@ -373,7 +373,8 @@ bt_connect_known_cb (gpointer data)
 static void on_bt_clicked (GtkButton *button, gpointer data)
 {
     (void) button; (void) data;
-    if (bt_is_on ())
+    gboolean was_on = bt_is_on ();
+    if (was_on)
         run_async ("bluetoothctl power off");
     else
         run_async ("rfkill unblock bluetooth; bluetoothctl power on");
@@ -381,7 +382,7 @@ static void on_bt_clicked (GtkButton *button, gpointer data)
         g_object_ref (bt_page);
         g_timeout_add (800, bt_refresh_cb, bt_page);
     }
-    g_timeout_add (1200, bt_connect_known_cb, NULL);
+    if (!was_on) g_timeout_add (1200, bt_connect_known_cb, NULL);
     g_timeout_add (400, update_tiles_cb, NULL);
 }
 
