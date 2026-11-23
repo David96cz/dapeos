@@ -2073,6 +2073,7 @@ bt_add_known_stub (GtkWidget *list)
         gboolean conn = strstr (info, "Connected: yes") != NULL;
         g_free (info);
         if (!paired) continue;
+        bt_cache_add (mac, name);
 
         BtItem *it = g_new0 (BtItem, 1);
         it->mac = g_strdup (mac);
