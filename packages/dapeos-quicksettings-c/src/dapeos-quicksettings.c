@@ -2133,6 +2133,27 @@ bt_cache_remove (const gchar *mac, const gchar *name)
 }
 
 static gboolean
+bt_cache_has_mac (const gchar *mac)
+{
+    if (!mac) return FALSE;
+    gchar *path = bt_cache_path ();
+    gchar *cache = NULL;
+    g_file_get_contents (path, &cache, NULL, NULL);
+    gboolean found = FALSE;
+    gchar **lines = g_strsplit (cache ? cache : "", "\n", -1);
+    for (guint i = 0; lines[i]; i++) {
+        if (g_str_has_prefix (lines[i], mac) && lines[i][strlen (mac)] == '\t') {
+            found = TRUE;
+            break;
+        }
+    }
+    g_strfreev (lines);
+    g_free (cache);
+    g_free (path);
+    return found;
+}
+
+static gboolean
 bt_cache_has_name (const gchar *name)
 {
     if (!name || !*name) return FALSE;
@@ -2484,7 +2505,6 @@ bt_update_list (void)
     }
     g_list_free (old_rows);
     gchar *dev = run_cmd ("bluetoothctl devices 2>/dev/null");
-    gchar *paired_out = run_cmd ("bluetoothctl devices Paired 2>/dev/null");
     gchar *conn_out = run_cmd ("bluetoothctl devices Connected 2>/dev/null");
     GHashTable *seen = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
@@ -2495,8 +2515,7 @@ bt_update_list (void)
         if (!bt_valid_name (name)) continue;
         gboolean connected = strstr (conn_out, mac) != NULL;
         if (!bt_seen_recent (mac) && !connected) continue;
-        gboolean paired = strstr (paired_out, mac) != NULL;
-        if (paired) bt_cache_add (mac, name);
+        gboolean paired = bt_cache_has_mac (mac);
         g_hash_table_add (seen, g_strdup (mac));
         bt_upsert (mac, name, connected, paired);
     }
@@ -2512,7 +2531,7 @@ bt_update_list (void)
     }
     g_list_free (rows);
     g_hash_table_destroy (seen);
-    g_free (dev); g_free (paired_out); g_free (conn_out);
+    g_free (dev); g_free (conn_out);
 
     if (gtk_list_box_get_row_at_index (GTK_LIST_BOX (bt_list), 0) == NULL) {
         GtkWidget *empty = gtk_label_new ("No Bluetooth devices found");
@@ -2581,6 +2600,8 @@ on_bt_action (GtkButton *button, gpointer data)
     (void) button;
     BtItem *it = g_object_get_data (G_OBJECT (data), "bt-selected");
     if (!it) return;
+    if (!it->connected && !it->paired)
+        bt_cache_add (it->mac, it->name);
     gchar *cmd = it->connected
         ? g_strdup_printf ("bluetoothctl disconnect %s 2>/dev/null", it->mac)
         : (it->paired
