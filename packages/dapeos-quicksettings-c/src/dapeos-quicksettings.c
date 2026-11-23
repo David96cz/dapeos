@@ -605,26 +605,34 @@ bt_auto_connect_cb (gpointer data)
     return FALSE;
 }
 
-static void on_bt_clicked (GtkButton *button, gpointer data)
+static void
+bt_set_power (gboolean on)
 {
-    qs_trace_mark ("bt-toggle");
-    (void) button; (void) data;
-    gboolean was_on = bt_is_on ();
-    bt_off_shown = was_on;
+    bt_off_shown = !on;
+    if (!on) bt_scanning = FALSE;
     if (bt_power_switch) {
         bt_power_updating = TRUE;
-        dapeos_switch_set_active (bt_power_switch, !was_on);
+        dapeos_switch_set_active (bt_power_switch, on);
         bt_power_updating = FALSE;
     }
-    if (was_on)
-        run_async ("bluetoothctl power off");
-    else
+    if (on)
         run_async ("rfkill unblock bluetooth; bluetoothctl power on; bluetoothctl bondable on; bluetoothctl pairable on");
+    else
+        run_async ("bluetoothctl power off");
     if (bt_page) {
         g_object_ref (bt_page);
         g_timeout_add (800, bt_refresh_cb, bt_page);
     }
+    if (on)
+        g_timeout_add (2500, bt_auto_connect_cb, NULL);
     g_timeout_add (400, update_tiles_cb, NULL);
+}
+
+static void on_bt_clicked (GtkButton *button, gpointer data)
+{
+    qs_trace_mark ("bt-toggle");
+    (void) button; (void) data;
+    bt_set_power (!bt_is_on ());
 }
 
 static void primary_output (gchar *out, gsize len)
@@ -2901,19 +2909,7 @@ on_bt_power_switch (GtkToggleButton *button, gpointer data)
 {
     (void) data;
     if (bt_power_updating) return;
-    gboolean active = gtk_toggle_button_get_active (button);
-    bt_off_shown = !active;
-    if (!active) bt_scanning = FALSE;
-    if (active)
-        run_async ("rfkill unblock bluetooth; bluetoothctl power on; bluetoothctl bondable on; bluetoothctl pairable on");
-    else
-        run_async ("bluetoothctl power off");
-    if (bt_page) {
-        g_object_ref (bt_page);
-        g_timeout_add (800, bt_refresh_cb, bt_page);
-    }
-    g_timeout_add (2500, bt_auto_connect_cb, NULL);
-    g_timeout_add (400, update_tiles_cb, NULL);
+    bt_set_power (gtk_toggle_button_get_active (button));
 }
 
 static void
@@ -2928,17 +2924,8 @@ bt_auto_toggle (GtkToggleButton *button, gpointer data)
 static void
 on_bt_power (GtkButton *button, gpointer data)
 {
-    (void) button;
-    gboolean on = bt_is_on ();
-    if (on)
-        run_async ("bluetoothctl power off");
-    else
-        run_async ("rfkill unblock bluetooth; bluetoothctl power on; bluetoothctl bondable on; bluetoothctl pairable on");
-    gtk_button_set_label (GTK_BUTTON (data), on ? "Off" : "On");
-    if (bt_page) {
-        g_object_ref (bt_page);
-        g_timeout_add (800, bt_refresh_cb, bt_page);
-    }
+    (void) button; (void) data;
+    bt_set_power (!bt_is_on ());
 }
 
 static GtkWidget *
