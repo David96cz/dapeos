@@ -2165,8 +2165,11 @@ build_night_page (void)
     GtkWidget *schedlabel = gtk_label_new ("Schedule");
     gtk_widget_set_halign (schedlabel, GTK_ALIGN_START);
     night_sched_switch = dapeos_switch_new ();
-    gtk_box_pack_start (GTK_BOX (schedrow), schedlabel, TRUE, TRUE, 0);
-    gtk_box_pack_end (GTK_BOX (schedrow), night_sched_switch, FALSE, FALSE, 0);
+    gtk_widget_set_valign (schedlabel, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign (night_sched_switch, GTK_ALIGN_CENTER);
+    gtk_box_pack_start (GTK_BOX (schedrow), schedlabel, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (schedrow), night_sched_switch, FALSE, FALSE, 0);
+    gtk_widget_set_halign (schedrow, GTK_ALIGN_START);
     gtk_box_pack_start (GTK_BOX (page), schedrow, FALSE, FALSE, 0);
 
     g_signal_connect (night_from_hour, "value-changed", G_CALLBACK (night_schedule_changed), NULL);
