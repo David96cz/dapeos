@@ -367,6 +367,22 @@ bt_connect_known_cb (gpointer data)
     }
     g_strfreev (lines);
     g_free (out);
+    gchar *cpath = bt_cache_path ();
+    gchar *cache = NULL;
+    g_file_get_contents (cpath, &cache, NULL, NULL);
+    gchar **cl = g_strsplit (cache ? cache : "", "\n", -1);
+    for (guint i = 0; cl[i]; i++) {
+        gchar **kv = g_strsplit (cl[i], "\t", 2);
+        if (kv[0]) {
+            gchar *cmd = g_strdup_printf ("bluetoothctl connect %s >/dev/null 2>&1", kv[0]);
+            run_async (cmd);
+            g_free (cmd);
+        }
+        g_strfreev (kv);
+    }
+    g_strfreev (cl);
+    g_free (cache);
+    g_free (cpath);
     return FALSE;
 }
 
@@ -1923,6 +1939,36 @@ bt_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
 
 static void bt_refresh (GtkWidget *page);
 
+static gchar *
+bt_cache_path (void)
+{
+    gchar *dir = g_build_filename (g_get_user_cache_dir (), "dapeos", NULL);
+    g_mkdir_with_parents (dir, 0700);
+    gchar *path = g_build_filename (dir, "bt-known", NULL);
+    g_free (dir);
+    return path;
+}
+
+static void
+bt_cache_add (const gchar *mac, const gchar *name)
+{
+    if (!mac || !name || !*name) return;
+    gchar *path = bt_cache_path ();
+    gchar *old = NULL;
+    g_file_get_contents (path, &old, NULL, NULL);
+    gchar **lines = g_strsplit (old ? old : "", "\n", -1);
+    gboolean found = FALSE;
+    for (guint i = 0; lines[i]; i++)
+        if (g_str_has_prefix (lines[i], mac) && lines[i][strlen (mac)] == '\t') { found = TRUE; break; }
+    if (!found) {
+        FILE *f = fopen (path, "a");
+        if (f) { fprintf (f, "%s\t%s\n", mac, name); fclose (f); }
+    }
+    g_strfreev (lines);
+    g_free (old);
+    g_free (path);
+}
+
 static gboolean
 bt_valid_name (const gchar *name)
 {
@@ -1957,6 +2003,7 @@ bt_list_cb (gpointer data)
         gboolean paired = strstr (info, "Paired: yes") != NULL;
         gboolean conn = strstr (connected, mac) != NULL;
         g_free (info);
+        if (paired) bt_cache_add (mac, name);
 
         BtItem *it = g_new0 (BtItem, 1);
         it->mac = g_strdup (mac);
@@ -2044,6 +2091,37 @@ bt_add_known_stub (GtkWidget *list)
     }
     g_strfreev (lines);
     g_free (out);
+
+    // fallback: paired devices remembered from previous sessions
+    gchar *cpath = bt_cache_path ();
+    gchar *cache = NULL;
+    g_file_get_contents (cpath, &cache, NULL, NULL);
+    gchar **cl = g_strsplit (cache ? cache : "", "\n", -1);
+    for (guint i = 0; cl[i]; i++) {
+        gchar **kv = g_strsplit (cl[i], "\t", 2);
+        if (kv[0] && kv[1]) {
+            GtkWidget *row = gtk_list_box_row_new ();
+            GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+            GtkWidget *label = gtk_label_new (kv[1]);
+            gtk_label_set_ellipsize (GTK_LABEL (label), PANGO_ELLIPSIZE_END);
+            gtk_widget_set_hexpand (label, TRUE);
+            GtkWidget *state = gtk_label_new ("Paired");
+            gtk_style_context_add_class (gtk_widget_get_style_context (state), "dim-label");
+            gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+            gtk_box_pack_end (GTK_BOX (hbox), state, FALSE, FALSE, 0);
+            gtk_container_add (GTK_CONTAINER (row), hbox);
+            BtItem *it = g_new0 (BtItem, 1);
+            it->mac = g_strdup (kv[0]);
+            it->name = g_strdup (kv[1]);
+            it->paired = TRUE;
+            g_object_set_data_full (G_OBJECT (row), "bt-item", it, bt_item_free);
+            gtk_list_box_insert (GTK_LIST_BOX (list), row, -1);
+        }
+        g_strfreev (kv);
+    }
+    g_strfreev (cl);
+    g_free (cache);
+    g_free (cpath);
 }
 
 static void
