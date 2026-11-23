@@ -509,6 +509,7 @@ static void on_night_clicked (GtkButton *button, gpointer data)
 
 static gchar *run_cmd (const gchar *cmd)
 {
+    gint64 _t0 = g_get_monotonic_time ();
     gchar *out = NULL;
     gint status = 0;
     gchar *quoted = g_shell_quote (cmd);
