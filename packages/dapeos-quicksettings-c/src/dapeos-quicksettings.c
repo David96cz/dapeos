@@ -765,9 +765,8 @@ static void apply_css (void)
             "#dapeos-qs button { background: #3a3a3a; border: 1px solid #4a4a4a; border-radius: 8px; padding: 6px 10px; }"
             "#dapeos-qs label#wifi-error { color: #ff6b6b; }"
             "#dapeos-qs label#brightness-icon { color: #eaeaea; font-size: 16pt; }"
-            "#dapeos-qs switch { background: #555; border-radius: 999px; min-width: 44px; min-height: 24px; }"
+            "#dapeos-qs switch { background: #555; padding: 0; min-width: 46px; min-height: 26px; border-radius: 999px; }"
             "#dapeos-qs switch:checked { background: #34c759; }"
-            "#dapeos-qs switch { padding: 0; min-width: 46px; min-height: 26px; border-radius: 999px; }"
             "#dapeos-qs switch slider { background: #fff; border-radius: 999px; min-width: 18px; min-height: 18px; margin: 2px; }";
     } else {
         data =
@@ -785,9 +784,8 @@ static void apply_css (void)
             "#dapeos-qs button { background: #ffffff; border: 1px solid #dcdcdc; border-radius: 8px; padding: 6px 10px; }"
             "#dapeos-qs label#wifi-error { color: #c62828; }"
             "#dapeos-qs label#brightness-icon { color: #1a1a1a; font-size: 16pt; }"
-            "#dapeos-qs switch { background: #ccc; border-radius: 999px; min-width: 44px; min-height: 24px; }"
+            "#dapeos-qs switch { background: #ccc; padding: 0; min-width: 46px; min-height: 26px; border-radius: 999px; }"
             "#dapeos-qs switch:checked { background: #34c759; }"
-            "#dapeos-qs switch { padding: 0; min-width: 46px; min-height: 26px; border-radius: 999px; }"
             "#dapeos-qs switch slider { background: #fff; border-radius: 999px; min-width: 18px; min-height: 18px; margin: 2px; }";
     }
     gtk_css_provider_load_from_data (css, data, -1, NULL);
