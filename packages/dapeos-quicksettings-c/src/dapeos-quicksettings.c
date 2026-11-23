@@ -84,6 +84,7 @@ static gboolean backlight_info (gint *current, gint *maximum);
 static void update_tiles (void);
 static gboolean wifi_radio_on (void);
 static void on_bt_open (GtkButton *button, gpointer data);
+static void show_main_page (GtkButton *button, gpointer data);
 static void on_night_open (GtkButton *button, gpointer data);
 
 static gboolean update_volume_cb (gpointer data) { (void) data; update_volume_ui (); return FALSE; }
