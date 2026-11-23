@@ -147,10 +147,8 @@ static gboolean update_tiles_cb (gpointer data) { (void) data; update_tiles (); 
 static gboolean tiles_tick (gpointer data)
 {
     (void) data;
-    if (!window || !gtk_widget_get_visible (window)) {
-        qs_trace_mark ("update-tiles-skipped");
+    if (!window || !gtk_widget_get_visible (window))
         return G_SOURCE_CONTINUE;
-    }
     update_tiles ();
     return G_SOURCE_CONTINUE;
 }
@@ -325,6 +323,7 @@ short_name (const gchar *s)
 
 static void update_tiles (void)
 {
+    if (!window || !gtk_widget_get_visible (window)) return;
     qs_trace_mark ("update-tiles-start");
     gboolean bt = bt_is_on ();
     gtk_label_set_text (GTK_LABEL (bt_status_label), bt ? "On" : "Off");
