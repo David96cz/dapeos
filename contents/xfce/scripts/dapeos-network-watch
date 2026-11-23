@@ -14,8 +14,12 @@ write_state() {
 }
 
 write_state
+
+# rádiová změna nemusí přijít jako nmcli monitor událost
+( while :; do sleep 5; write_state; done ) &
+
 nmcli monitor 2>/dev/null | while IFS= read -r line; do
     case "$line" in
-        *"device"*|*"connection"*|*"connectivity"*) write_state ;;
+        *"device"*|*"connection"*|*"connectivity"*|*"radio"*|*"wifi"*) write_state ;;
     esac
 done
