@@ -412,9 +412,7 @@ static void update_tiles (void)
         gtk_label_set_text (GTK_LABEL (bt_status_label), bt ? "On" : "Off");
         if (bt_power_switch) {
             bt_power_updating = TRUE;
-            bt_power_updating = TRUE;
             dapeos_switch_set_active (bt_power_switch, bt);
-            bt_power_updating = FALSE;
             bt_power_updating = FALSE;
         }
         gchar *btdev = bt_connected_name ();
