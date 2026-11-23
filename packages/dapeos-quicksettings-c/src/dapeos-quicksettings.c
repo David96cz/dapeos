@@ -2140,7 +2140,7 @@ static void build_ui (void)
     gtk_widget_set_name (window, "dapeos-qs");
     gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
     gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
-    gtk_window_set_type_hint (GTK_WINDOW (window), GTK_WINDOW_TYPE_HINT_UTILITY);
+    gtk_window_set_type_hint (GTK_WINDOW (window), GDK_WINDOW_TYPE_HINT_UTILITY);
     gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
     gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
     gtk_window_set_default_size (GTK_WINDOW (window), 504, 300);
