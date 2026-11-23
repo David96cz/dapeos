@@ -246,8 +246,9 @@ class SettingsHub(QWidget):
                                    stdout=subprocess.DEVNULL,
                                    stderr=subprocess.DEVNULL)
                     return True
+            return True
         except Exception:
-            pass
+            return bool(prog)
         return False
 
     def launch(self, command):

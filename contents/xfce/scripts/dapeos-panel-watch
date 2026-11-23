@@ -2,8 +2,12 @@
 # Restartuje panel po zmene dark-mode nebo motivu/ikon (whiskermenu ikony).
 exec 9>/tmp/dapeos-panel-watch.lock
 if ! flock -n 9; then
-    echo "$(date +%H:%M:%S) watcher: lock busy, exiting" >> /tmp/dapeos-panel-watch.log
-    exit 0
+    rm -f /tmp/dapeos-panel-watch.lock
+    exec 9>/tmp/dapeos-panel-watch.lock
+    if ! flock -n 9; then
+        echo "$(date +%H:%M:%S) watcher: lock busy, exiting" >> /tmp/dapeos-panel-watch.log
+        exit 0
+    fi
 fi
 echo "$(date +%H:%M:%S) watcher: started pid=$$" >> /tmp/dapeos-panel-watch.log
 
@@ -30,6 +34,7 @@ restart_panel() {
 }
 
 watch_channel() {
+    exec 9>&-
     xfconf-query -c "$1" -m 2>/dev/null | while IFS= read -r line; do
         printf '%s %s: %s\n' "$(date +%H:%M:%S)" "$1" "$line" >> /tmp/dapeos-panel-watch.log
         case "$line" in
@@ -47,6 +52,7 @@ watch_channel() {
 }
 
 watch_dark_poll() {
+    exec 9>&-
     local last
     last=$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)
     while :; do
