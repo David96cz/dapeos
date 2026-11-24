@@ -1,16 +1,18 @@
 #!/bin/sh
-# One visible DapeOS theme for the system and one hidden inverse theme for the panel.
+# Build one visible DapeOS theme and one hidden inverse panel theme.
 set -eu
 SYSTEM_THEME="$HOME/.local/share/icons/DapeOS"
 PANEL_THEME="$HOME/.local/share/icons/DapeOS-Panel"
 PANEL_ICONS="/usr/local/share/dapeos/panel"
+
+rm -rf "$HOME/.local/share/icons/DapeOS.tmp."* \
+       "$HOME/.local/share/icons/DapeOS-Panel.tmp."* 2>/dev/null || true
 
 theme_name="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || true)"
 case "$theme_name" in
     *[Dd]ark*) system_src="/usr/share/icons/Papirus-Dark" ;;
     *)         system_src="/usr/share/icons/Papirus-Light" ;;
 esac
-
 panel_dark="$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)"
 if [ "$panel_dark" = "true" ]; then
     panel_src="/usr/share/icons/Papirus-Light"
@@ -21,18 +23,25 @@ fi
 build_theme() {
     src="$1"
     dest="$2"
-    theme_name_out="$3"
-    theme_comment="$4"
+    out_name="$3"
+    out_comment="$4"
     hidden="$5"
     [ -d "$src" ] || return 0
+
+    src_index="$src/index.theme"
+    [ -f "$src_index" ] || src_index="$src/index.theme.dapeos-hidden"
+    [ -f "$src_index" ] || return 0
+
     tmp="$dest.tmp.$$"
     rm -rf "$tmp"
+    trap 'rm -rf "$tmp"' EXIT HUP INT TERM
     mkdir -p "$tmp/scalable"
 
     for entry in "$src"/*; do
         [ -e "$entry" ] || continue
         name=$(basename "$entry")
         [ "$name" = "index.theme" ] && continue
+        [ "$name" = "index.theme.dapeos-hidden" ] && continue
         [ "$name" = "scalable" ] && continue
         ln -s "$entry" "$tmp/$name"
     done
@@ -46,20 +55,21 @@ build_theme() {
     if [ -d "$PANEL_ICONS" ]; then
         cp -f "$PANEL_ICONS"/*.svg "$tmp/scalable/" 2>/dev/null || true
     fi
-    [ -f "$tmp/scalable/edit-find.svg" ] && cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/search.svg"
-    [ -f "$tmp/scalable/edit-find.svg" ] && cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/system-search.svg"
+    if [ -f "$tmp/scalable/edit-find.svg" ]; then
+        cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/search.svg"
+        cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/system-search.svg"
+    fi
 
+    sed -e "s/^Name=.*/Name=$out_name/" \
+        -e "s/^Comment=.*/Comment=$out_comment/" \
+        -e 's/^Inherits=.*/Inherits=hicolor/' \
+        -e 's/^Directories=/Directories=scalable,/' \
+        -e '/^Name\[/d' -e '/^Comment\[/d' \
+        "$src_index" > "$tmp/index.theme"
+    if [ "$hidden" = "1" ]; then
+        sed -i '/^\[Icon Theme\]/a Hidden=true' "$tmp/index.theme"
+    fi
     {
-        echo '[Icon Theme]'
-        echo "Name=$theme_name_out"
-        echo "Comment=$theme_comment"
-        echo 'Inherits=hicolor'
-        if [ "$hidden" = "1" ]; then echo 'Hidden=true'; fi
-        dirs="scalable"
-        for d in $(sed -n 's/^Directories=//p' "$src/index.theme" 2>/dev/null | tr ',' ' '); do
-            [ -n "$d" ] && dirs="$dirs,$d"
-        done
-        echo "Directories=$dirs"
         echo
         echo '[scalable]'
         echo 'Size=64'
@@ -67,18 +77,16 @@ build_theme() {
         echo 'MaxSize=512'
         echo 'Type=Scalable'
         echo 'Context=Applications'
-        awk '/^\[/{n++} n>=2' "$src/index.theme" 2>/dev/null
-    } > "$tmp/index.theme"
+    } >> "$tmp/index.theme"
 
     mkdir -p "$(dirname "$dest")"
     rm -rf "$dest"
     mv "$tmp" "$dest"
+    trap - EXIT HUP INT TERM
     command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$dest" >/dev/null 2>&1 || true
 }
 
 build_theme "$system_src" "$SYSTEM_THEME" "DapeOS" "DapeOS icon theme" 0
-rm -rf "$HOME/.local/share/icons/DapeOS-Panel"
 build_theme "$panel_src" "$PANEL_THEME" "DapeOS Panel" "DapeOS panel icons" 1
 rm -rf "$HOME/.local/share/dapeos/panel-data"
-
 xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true
