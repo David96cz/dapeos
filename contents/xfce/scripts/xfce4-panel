@@ -14,23 +14,21 @@ theme_ready() {
 
 if [ "$dark" = "true" ]; then
     export GTK_THEME=Adwaita:dark
-    theme=Papirus-Panel
-    fallback=Papirus-Dark
 else
     export GTK_THEME=Adwaita:light
-    theme=Papirus-Panel-Light
-    fallback=Papirus-Light
 fi
 
+theme="$HOME/.local/share/icons/DapeOS"
 i=0
-while [ "$i" -lt 20 ] && ! theme_ready "/usr/share/icons/$theme"; do
+while [ "$i" -lt 20 ] && ! theme_ready "$theme"; do
     sleep 0.1
     i=$((i + 1))
 done
-if ! theme_ready "/usr/share/icons/$theme"; then
-    theme="$fallback"
+if ! theme_ready "$theme"; then
+    theme="hicolor"
 fi
-export PANEL_ICON_THEME="$theme"
+export PANEL_ICON_THEME=DapeOS
+export PANEL_ICON_THEME_PATH="$theme"
 
 if [ -x /usr/bin/xfce4-panel.orig ]; then
     exec /usr/bin/xfce4-panel.orig "$@"

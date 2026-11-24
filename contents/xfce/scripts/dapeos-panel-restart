@@ -1,6 +1,7 @@
 #!/bin/sh
 reopen=0
 pgrep -f 'xfce4-panel --settings' >/dev/null 2>&1 && reopen=1
+command -v dapeos-icon-sync >/dev/null 2>&1 && dapeos-icon-sync >/dev/null 2>&1 || true
 qs_was_running=0
 if pgrep -f '[d]apeos-quicksettings-c' >/dev/null 2>&1; then
     qs_was_running=1

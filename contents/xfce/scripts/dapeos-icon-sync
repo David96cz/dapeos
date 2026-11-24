@@ -1,0 +1,55 @@
+#!/bin/sh
+# Build one visible DapeOS icon theme and keep it in sync with GTK light/dark.
+set -eu
+THEME="$HOME/.local/share/icons/DapeOS"
+PANEL_ICONS="/usr/local/share/dapeos/panel"
+theme_name="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || true)"
+case "$theme_name" in
+    *[Dd]ark*) src="/usr/share/icons/Papirus-Dark" ;;
+    *)         src="/usr/share/icons/Papirus-Light" ;;
+esac
+[ -d "$src" ] || exit 0
+
+tmp="$THEME.tmp.$$"
+rm -rf "$tmp"
+mkdir -p "$tmp/scalable"
+
+# Reuse the complete Papirus tree, but keep our own index.theme and overrides.
+for entry in "$src"/*; do
+    [ -e "$entry" ] || continue
+    name=$(basename "$entry")
+    [ "$name" = "index.theme" ] && continue
+    ln -s "$entry" "$tmp/$name"
+done
+
+if [ -d "$PANEL_ICONS" ]; then
+    cp -f "$PANEL_ICONS"/*.svg "$tmp/scalable/" 2>/dev/null || true
+fi
+[ -f "$tmp/scalable/edit-find.svg" ] && cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/search.svg"
+[ -f "$tmp/scalable/edit-find.svg" ] && cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/system-search.svg"
+
+{
+    echo '[Icon Theme]'
+    echo 'Name=DapeOS'
+    echo 'Comment=DapeOS icon theme'
+    echo 'Inherits=hicolor'
+    dirs="scalable"
+    while IFS= read -r d; do
+        [ -n "$d" ] && dirs="$dirs,$d"
+    done < <(sed -n 's/^Directories=//p' "$src/index.theme" 2>/dev/null | tr ',' '\n')
+    echo "Directories=$dirs"
+    echo
+    echo '[scalable]'
+    echo 'Size=64'
+    echo 'MinSize=8'
+    echo 'MaxSize=512'
+    echo 'Type=Scalable'
+    echo 'Context=Applications'
+    sed -n '/^\[/,$p' "$src/index.theme" 2>/dev/null | sed '1d'
+} > "$tmp/index.theme"
+
+# Publish atomically so the panel never sees a half-written theme.
+rm -rf "$THEME"
+mv "$tmp" "$THEME"
+command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$THEME" >/dev/null 2>&1 || true
+xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true
