@@ -49,24 +49,23 @@ build_theme() {
         cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/system-search.svg"
     fi
 
-    sed -e "s/^Name=.*/Name=$out_name/" \
-        -e "s/^Comment=.*/Comment=$out_comment/" \
-        -e 's/^Inherits=.*/Inherits=hicolor/' \
-        -e 's/^Directories=/Directories=scalable,/' \
-        -e '/^Name\[/d' -e '/^Comment\[/d' \
-        "$src_index" > "$tmp/index.theme"
+    cp "$src_index" "$tmp/index.theme"
+    sed -i "s/^Name=.*/Name=$out_name/" "$tmp/index.theme"
+    sed -i "s/^Comment=.*/Comment=$out_comment/" "$tmp/index.theme"
+    sed -i '/^Name\[/d' "$tmp/index.theme"
+    sed -i '/^Comment\[/d' "$tmp/index.theme"
     if [ "$hidden" = "1" ]; then
         sed -i '/^\[Icon Theme\]/a Hidden=true' "$tmp/index.theme"
     fi
-    {
-        echo
-        echo '[scalable]'
-        echo 'Size=64'
-        echo 'MinSize=8'
-        echo 'MaxSize=512'
-        echo 'Type=Scalable'
-        echo 'Context=Applications'
-    } >> "$tmp/index.theme"
+
+    # Keep Papirus index structure intact. Only panel theme gets custom panel icons,
+    # copied into the existing size/panel directories (not into a new scalable dir).
+    if [ "$hidden" = "1" ] && [ -d "$PANEL_ICONS" ]; then
+        for sz in 16x16 22x22 24x24 32x32 48x48 scalable; do
+            [ -d "$tmp/$sz/panel" ] || continue
+            cp -f "$PANEL_ICONS"/*.svg "$tmp/$sz/panel/" 2>/dev/null || true
+        done
+    fi
 
     mkdir -p "$(dirname "$dest")"
     rm -rf "$dest"
