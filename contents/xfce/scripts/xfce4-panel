@@ -8,21 +8,29 @@ for prop in $(xfconf-query -c xfce4-panel -l 2>/dev/null | grep '/dark-mode$'); 
     [ "$(xfconf-query -c xfce4-panel -p "$prop" 2>/dev/null)" = "true" ] && dark=true
 done
 
+theme_ready() {
+    [ -f "$1/index.theme" ] && [ -e "$1/scalable/search.svg" ]
+}
+
 if [ "$dark" = "true" ]; then
     export GTK_THEME=Adwaita:dark
-    if [ -d /usr/share/icons/Papirus-Panel ]; then
-        export PANEL_ICON_THEME=Papirus-Panel
-    else
-        export PANEL_ICON_THEME=Papirus-Dark
-    fi
+    theme=Papirus-Panel
+    fallback=Papirus-Dark
 else
     export GTK_THEME=Adwaita:light
-    if [ -d /usr/share/icons/Papirus-Panel-Light ]; then
-        export PANEL_ICON_THEME=Papirus-Panel-Light
-    else
-        export PANEL_ICON_THEME=Papirus-Light
-    fi
+    theme=Papirus-Panel-Light
+    fallback=Papirus-Light
 fi
+
+i=0
+while [ "$i" -lt 20 ] && ! theme_ready "/usr/share/icons/$theme"; do
+    sleep 0.1
+    i=$((i + 1))
+done
+if ! theme_ready "/usr/share/icons/$theme"; then
+    theme="$fallback"
+fi
+export PANEL_ICON_THEME="$theme"
 
 if [ -x /usr/bin/xfce4-panel.orig ]; then
     exec /usr/bin/xfce4-panel.orig "$@"
