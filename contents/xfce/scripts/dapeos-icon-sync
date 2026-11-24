@@ -37,21 +37,10 @@ build_theme() {
     trap 'rm -rf "$tmp"' EXIT HUP INT TERM
     mkdir -p "$tmp/scalable"
 
-    for entry in "$src"/*; do
-        [ -e "$entry" ] || continue
-        name=$(basename "$entry")
-        [ "$name" = "index.theme" ] && continue
-        [ "$name" = "index.theme.dapeos-hidden" ] && continue
-        [ "$name" = "scalable" ] && continue
-        ln -s "$entry" "$tmp/$name"
-    done
+    # Full copy avoids broken symlink/theme-cache lookups in some GTK versions.
+    cp -a "$src"/. "$tmp/"
+    rm -f "$tmp/index.theme" "$tmp/index.theme.dapeos-hidden"
 
-    if [ -d "$src/scalable" ]; then
-        for entry in "$src/scalable"/*; do
-            [ -e "$entry" ] || continue
-            ln -s "$entry" "$tmp/scalable/$(basename "$entry")"
-        done
-    fi
     if [ -d "$PANEL_ICONS" ]; then
         cp -f "$PANEL_ICONS"/*.svg "$tmp/scalable/" 2>/dev/null || true
     fi
