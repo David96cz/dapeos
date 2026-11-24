@@ -28,9 +28,11 @@ while [ "$i" -lt 20 ] && ! theme_ready "$panel_theme"; do
 done
 if theme_ready "$panel_theme"; then
     export PANEL_ICON_THEME=DapeOS-Panel
+    export PANEL_ICONS_FORCE=1
 else
     export PANEL_ICON_THEME=DapeOS
 fi
+printf '%s dark=%s theme=%s\n' "$(date +%H:%M:%S)" "$dark" "$PANEL_ICON_THEME" >> /tmp/dapeos-panel-icons.log 2>/dev/null || true
 
 if [ -x /usr/bin/xfce4-panel.orig ]; then
     exec /usr/bin/xfce4-panel.orig "$@"
