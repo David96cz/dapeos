@@ -39,7 +39,9 @@ else
 fi
 printf '%s dark=%s theme=%s\n' "$(date +%H:%M:%S)" "$dark" "$PANEL_ICON_THEME" >> /tmp/dapeos-panel-icons.log 2>/dev/null || true
 
-if [ -x /usr/bin/xfce4-panel.realbin ]; then
+if [ -x /usr/bin/xfce4-panel.actual ]; then
+    exec /usr/bin/xfce4-panel.actual "$@"
+elif [ -x /usr/bin/xfce4-panel.realbin ]; then
     exec /usr/bin/xfce4-panel.realbin "$@"
 elif [ -x /usr/bin/xfce4-panel.orig ]; then
     exec /usr/bin/xfce4-panel.orig "$@"
