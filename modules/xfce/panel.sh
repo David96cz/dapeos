@@ -101,6 +101,7 @@ xfce_panel_icons() {
             mv -f "$d/index.theme" "$d/index.theme.dapeos-hidden"
         fi
     done
+    rm -rf /usr/share/icons/DapeOS /usr/share/icons/DapeOS-Panel
     sudo -u "$REAL_USER" /usr/local/bin/dapeos-icon-sync || true
 }
 

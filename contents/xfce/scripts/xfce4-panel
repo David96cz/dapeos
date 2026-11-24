@@ -18,17 +18,18 @@ else
     export GTK_THEME=Adwaita:light
 fi
 
-theme="$HOME/.local/share/icons/DapeOS"
+export XDG_DATA_DIRS="$HOME/.local/share/dapeos/panel-data:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+panel_theme="$HOME/.local/share/dapeos/panel-data/icons/DapeOS-Panel"
 i=0
-while [ "$i" -lt 20 ] && ! theme_ready "$theme"; do
+while [ "$i" -lt 20 ] && ! theme_ready "$panel_theme"; do
     sleep 0.1
     i=$((i + 1))
 done
-if ! theme_ready "$theme"; then
-    theme="hicolor"
+if theme_ready "$panel_theme"; then
+    export PANEL_ICON_THEME=DapeOS-Panel
+else
+    export PANEL_ICON_THEME=DapeOS
 fi
-export PANEL_ICON_THEME=DapeOS
-export PANEL_ICON_THEME_PATH="$theme"
 
 if [ -x /usr/bin/xfce4-panel.orig ]; then
     exec /usr/bin/xfce4-panel.orig "$@"

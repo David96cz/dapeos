@@ -1,56 +1,79 @@
 #!/bin/sh
-# Build one visible DapeOS icon theme and keep it in sync with GTK light/dark.
+# One visible DapeOS theme for the system and one hidden inverse theme for the panel.
 set -eu
-THEME="$HOME/.local/share/icons/DapeOS"
+SYSTEM_THEME="$HOME/.local/share/icons/DapeOS"
+PANEL_ROOT="$HOME/.local/share/dapeos/panel-data"
+PANEL_THEME="$PANEL_ROOT/icons/DapeOS-Panel"
 PANEL_ICONS="/usr/local/share/dapeos/panel"
+
 theme_name="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || true)"
 case "$theme_name" in
-    *[Dd]ark*) src="/usr/share/icons/Papirus-Dark" ;;
-    *)         src="/usr/share/icons/Papirus-Light" ;;
+    *[Dd]ark*) system_src="/usr/share/icons/Papirus-Dark" ;;
+    *)         system_src="/usr/share/icons/Papirus-Light" ;;
 esac
-[ -d "$src" ] || exit 0
 
-tmp="$THEME.tmp.$$"
-rm -rf "$tmp"
-mkdir -p "$tmp/scalable"
-
-# Reuse the complete Papirus tree, but keep our own index.theme and overrides.
-for entry in "$src"/*; do
-    [ -e "$entry" ] || continue
-    name=$(basename "$entry")
-    [ "$name" = "index.theme" ] && continue
-    [ "$name" = "scalable" ] && continue
-    ln -s "$entry" "$tmp/$name"
-done
-
-if [ -d "$PANEL_ICONS" ]; then
-    cp -f "$PANEL_ICONS"/*.svg "$tmp/scalable/" 2>/dev/null || true
+panel_dark="$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)"
+if [ "$panel_dark" = "true" ]; then
+    panel_src="/usr/share/icons/Papirus-Light"
+else
+    panel_src="/usr/share/icons/Papirus-Dark"
 fi
-[ -f "$tmp/scalable/edit-find.svg" ] && cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/search.svg"
-[ -f "$tmp/scalable/edit-find.svg" ] && cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/system-search.svg"
 
-{
-    echo '[Icon Theme]'
-    echo 'Name=DapeOS'
-    echo 'Comment=DapeOS icon theme'
-    echo 'Inherits=hicolor'
-    dirs="scalable"
-    for d in $(sed -n 's/^Directories=//p' "$src/index.theme" 2>/dev/null | tr ',' ' '); do
-        [ -n "$d" ] && dirs="$dirs,$d"
+build_theme() {
+    src="$1"
+    dest="$2"
+    [ -d "$src" ] || return 0
+    tmp="$dest.tmp.$$"
+    rm -rf "$tmp"
+    mkdir -p "$tmp/scalable"
+
+    for entry in "$src"/*; do
+        [ -e "$entry" ] || continue
+        name=$(basename "$entry")
+        [ "$name" = "index.theme" ] && continue
+        [ "$name" = "scalable" ] && continue
+        ln -s "$entry" "$tmp/$name"
     done
-    echo "Directories=$dirs"
-    echo
-    echo '[scalable]'
-    echo 'Size=64'
-    echo 'MinSize=8'
-    echo 'MaxSize=512'
-    echo 'Type=Scalable'
-    echo 'Context=Applications'
-    awk '/^\[/{n++} n>=2' "$src/index.theme" 2>/dev/null
-} > "$tmp/index.theme"
 
-# Publish atomically so the panel never sees a half-written theme.
-rm -rf "$THEME"
-mv "$tmp" "$THEME"
-command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$THEME" >/dev/null 2>&1 || true
+    if [ -d "$src/scalable" ]; then
+        for entry in "$src/scalable"/*; do
+            [ -e "$entry" ] || continue
+            ln -s "$entry" "$tmp/scalable/$(basename "$entry")"
+        done
+    fi
+    if [ -d "$PANEL_ICONS" ]; then
+        cp -f "$PANEL_ICONS"/*.svg "$tmp/scalable/" 2>/dev/null || true
+    fi
+    [ -f "$tmp/scalable/edit-find.svg" ] && cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/search.svg"
+    [ -f "$tmp/scalable/edit-find.svg" ] && cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/system-search.svg"
+
+    {
+        echo '[Icon Theme]'
+        echo 'Name=DapeOS'
+        echo 'Comment=DapeOS icon theme'
+        echo 'Inherits=hicolor'
+        dirs="scalable"
+        for d in $(sed -n 's/^Directories=//p' "$src/index.theme" 2>/dev/null | tr ',' ' '); do
+            [ -n "$d" ] && dirs="$dirs,$d"
+        done
+        echo "Directories=$dirs"
+        echo
+        echo '[scalable]'
+        echo 'Size=64'
+        echo 'MinSize=8'
+        echo 'MaxSize=512'
+        echo 'Type=Scalable'
+        echo 'Context=Applications'
+        awk '/^\[/{n++} n>=2' "$src/index.theme" 2>/dev/null
+    } > "$tmp/index.theme"
+
+    mkdir -p "$(dirname "$dest")"
+    rm -rf "$dest"
+    mv "$tmp" "$dest"
+    command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$dest" >/dev/null 2>&1 || true
+}
+
+build_theme "$system_src" "$SYSTEM_THEME"
+build_theme "$panel_src" "$PANEL_THEME"
+
 xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true
