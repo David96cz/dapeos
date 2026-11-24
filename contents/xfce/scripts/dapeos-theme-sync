@@ -1,5 +1,5 @@
 #!/bin/sh
-# Sync Papirus icon theme with the GTK theme (panel dark mode is independent).
+# Sync the single DapeOS icon theme with the GTK theme.
 theme="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || echo Adwaita)"
 case "$theme" in
     *[Dd]ark*) dark=true ;;

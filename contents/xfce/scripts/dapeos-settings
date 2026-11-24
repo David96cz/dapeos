@@ -419,7 +419,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     apply_theme(app)
     install_theme_watch(app)
-    QIcon.setThemeName("Papirus")
+    QIcon.setThemeName("DapeOS")
 
     if raise_existing():
         sys.exit(0)

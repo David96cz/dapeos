@@ -237,7 +237,7 @@ def panel_icon_theme():
                              capture_output=True, text=True, timeout=2).stdout.strip()
         return "DapeOS"
     except Exception:
-        return "Papirus"
+        return "DapeOS"
 
 
 if __name__ == "__main__":
