@@ -1171,6 +1171,7 @@ wifi_row_selected (GtkListBox *list, GtkListBoxRow *row, gpointer data)
 }
 
 static void wifi_start_scan (GtkWidget *dialog);
+static void wifi_stop_scan_anim (void);
 static void show_wifi_password (const gchar *ssid, gboolean known);
 
 static gboolean
