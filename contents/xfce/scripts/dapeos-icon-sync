@@ -51,9 +51,10 @@ build_theme() {
 
     {
         echo '[Icon Theme]'
-        echo 'Name=DapeOS'
-        echo 'Comment=DapeOS icon theme'
+        echo "Name=$theme_name_out"
+        echo "Comment=$theme_comment"
         echo 'Inherits=hicolor'
+        if [ "$hidden" = "1" ]; then echo 'Hidden=true'; fi
         dirs="scalable"
         for d in $(sed -n 's/^Directories=//p' "$src/index.theme" 2>/dev/null | tr ',' ' '); do
             [ -n "$d" ] && dirs="$dirs,$d"
