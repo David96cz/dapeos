@@ -171,8 +171,10 @@ class CmdWorker(QThread):
 
 
 def icon_path(name, dark):
-    if dark:
-        return f"/usr/share/icons/Papirus-Panel/scalable/{name}.svg"
+    base = os.path.expanduser("~/.local/share/icons/DapeOS")
+    p = f"{base}/scalable/{name}.svg"
+    if os.path.exists(p):
+        return p
     return f"/usr/share/icons/Papirus-Light/22x22/panel/{name}.svg"
 
 
@@ -1472,7 +1474,7 @@ class QuickSettings(QWidget):
 def main():
     app = QApplication(sys.argv)
     dbg("start")
-    QIcon.setThemeName("Papirus-Light")
+    QIcon.setThemeName("DapeOS")
     signal.signal(signal.SIGINT, lambda *_: app.quit())
     wake = QTimer()
     wake.start(200)

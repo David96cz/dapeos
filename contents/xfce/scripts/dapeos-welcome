@@ -297,7 +297,7 @@ def main():
     app = QApplication(sys.argv)
     apply_theme(app)
     install_theme_watch(app)
-    QIcon.setThemeName("Papirus-Light")
+    QIcon.setThemeName("DapeOS")
     QIcon.setFallbackThemeName("hicolor")
 
     if "--first-run" in sys.argv and os.path.exists(FLAG):

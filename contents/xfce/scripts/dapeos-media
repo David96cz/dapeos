@@ -235,7 +235,7 @@ def panel_icon_theme():
     try:
         out = subprocess.run(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/dark-mode"],
                              capture_output=True, text=True, timeout=2).stdout.strip()
-        return "Papirus-Dark" if out == "true" else "Papirus-Light"
+        return "DapeOS"
     except Exception:
         return "Papirus"
 

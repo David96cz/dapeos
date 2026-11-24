@@ -838,7 +838,7 @@ static gint panel_height (void)
 static GtkWidget *
 volume_icon (const gchar *name)
 {
-    const gchar *theme_name = is_dark () ? "Papirus-Dark" : "Papirus-Light";
+    const gchar *theme_name = "DapeOS";
     GtkIconTheme *theme = gtk_icon_theme_new ();
     gtk_icon_theme_set_custom_theme (theme, theme_name);
     GdkPixbuf *pix = gtk_icon_theme_load_icon (theme, name, 24, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);

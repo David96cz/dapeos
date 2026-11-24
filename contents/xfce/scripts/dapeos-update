@@ -520,7 +520,7 @@ def main():
     app = QApplication(sys.argv)
     apply_theme(app)
     install_theme_watch(app)
-    QIcon.setThemeName("Papirus-Light")
+    QIcon.setThemeName("DapeOS")
     QIcon.setFallbackThemeName("hicolor")
     app.setQuitOnLastWindowClosed(False)
     app.setApplicationName("dapeos-update")

@@ -20,7 +20,7 @@ def apply_theme(app=None):
     app = app or QApplication.instance()
     app.setStyle("Fusion")
     dark = is_dark()
-    QIcon.setThemeName("Papirus-Dark" if dark else "Papirus-Light")
+    QIcon.setThemeName("DapeOS")
     if not dark:
         p = QPalette()
         p.setColor(QPalette.Window, QColor("#f5f5f5"))
