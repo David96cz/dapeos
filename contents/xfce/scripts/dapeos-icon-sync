@@ -46,7 +46,7 @@ fi
     echo 'MaxSize=512'
     echo 'Type=Scalable'
     echo 'Context=Applications'
-    sed -n '/^\[/,$p' "$src/index.theme" 2>/dev/null | sed '1d'
+    awk '/^\[/{n++} n>=2' "$src/index.theme" 2>/dev/null
 } > "$tmp/index.theme"
 
 # Publish atomically so the panel never sees a half-written theme.
