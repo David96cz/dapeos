@@ -13,5 +13,4 @@ if [ "$dark" = "true" ]; then
 else
     export GTK_THEME=Adwaita:light
 fi
-export XDG_DATA_DIRS="$HOME/.local/share/dapeos/panel-data:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 export PANEL_ICON_THEME=DapeOS-Panel

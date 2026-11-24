@@ -96,9 +96,9 @@ xfce_panel_icons() {
 
     # Jediný viditelný icon pack v Appearance je DapeOS.
     for theme in Papirus Papirus-Dark Papirus-Light Papirus-Panel Papirus-Panel-Light Adwaita; do
-        d="/usr/share/icons/$theme"
-        if [ -f "$d/index.theme" ]; then
-            mv -f "$d/index.theme" "$d/index.theme.dapeos-hidden"
+        d="/usr/share/icons/$theme/index.theme"
+        if [ -f "$d" ] && ! grep -q '^Hidden=true' "$d"; then
+            sed -i '/^\[Icon Theme\]/a Hidden=true' "$d"
         fi
     done
     rm -rf /usr/share/icons/DapeOS /usr/share/icons/DapeOS-Panel

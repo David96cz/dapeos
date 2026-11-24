@@ -18,8 +18,7 @@ else
     export GTK_THEME=Adwaita:light
 fi
 
-export XDG_DATA_DIRS="$HOME/.local/share/dapeos/panel-data:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
-panel_theme="$HOME/.local/share/dapeos/panel-data/icons/DapeOS-Panel"
+panel_theme="$HOME/.local/share/icons/DapeOS-Panel"
 i=0
 while [ "$i" -lt 20 ] && ! theme_ready "$panel_theme"; do
     sleep 0.1

@@ -2,8 +2,7 @@
 # One visible DapeOS theme for the system and one hidden inverse theme for the panel.
 set -eu
 SYSTEM_THEME="$HOME/.local/share/icons/DapeOS"
-PANEL_ROOT="$HOME/.local/share/dapeos/panel-data"
-PANEL_THEME="$PANEL_ROOT/icons/DapeOS-Panel"
+PANEL_THEME="$HOME/.local/share/icons/DapeOS-Panel"
 PANEL_ICONS="/usr/local/share/dapeos/panel"
 
 theme_name="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || true)"
@@ -22,6 +21,9 @@ fi
 build_theme() {
     src="$1"
     dest="$2"
+    theme_name_out="$3"
+    theme_comment="$4"
+    hidden="$5"
     [ -d "$src" ] || return 0
     tmp="$dest.tmp.$$"
     rm -rf "$tmp"
@@ -73,7 +75,9 @@ build_theme() {
     command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$dest" >/dev/null 2>&1 || true
 }
 
-build_theme "$system_src" "$SYSTEM_THEME"
-build_theme "$panel_src" "$PANEL_THEME"
+build_theme "$system_src" "$SYSTEM_THEME" "DapeOS" "DapeOS icon theme" 0
+rm -rf "$HOME/.local/share/icons/DapeOS-Panel"
+build_theme "$panel_src" "$PANEL_THEME" "DapeOS Panel" "DapeOS panel icons" 1
+rm -rf "$HOME/.local/share/dapeos/panel-data"
 
 xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true
