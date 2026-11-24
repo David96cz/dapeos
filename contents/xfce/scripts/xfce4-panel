@@ -1,4 +1,5 @@
 #!/bin/sh
+printf '%s wrapper=%s args=%s\n' "$(date +%H:%M:%S)" "$0" "$*" >> /tmp/dapeos-panel-wrapper.log 2>/dev/null || true
 lib=/usr/local/lib/dapeos/panel-icons.so
 [ -f "$lib" ] || lib=/usr/local/lib/debiconf/panel-icons.so
 [ -f "$lib" ] && export LD_PRELOAD="$lib${LD_PRELOAD:+:$LD_PRELOAD}"
