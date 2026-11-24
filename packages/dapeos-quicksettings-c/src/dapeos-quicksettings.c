@@ -59,6 +59,9 @@ static GtkWidget *wifi_confirm_label;
 static gchar *wifi_confirm_ssid;
 static gboolean wifi_confirm_connected;
 static guint wifi_error_timeout = 0;
+static GtkWidget *wifi_scan_label = NULL;
+static guint wifi_scan_timer = 0;
+static gint wifi_scan_phase = 0;
 static GtkWidget *vol_scale;
 static GtkWidget *vol_label;
 static GtkWidget *mute_button;
@@ -1478,6 +1481,7 @@ wifi_scan_done (GObject *source, GAsyncResult *res, gpointer data)
     GSubprocess *proc = G_SUBPROCESS (source);
     gboolean ok = g_subprocess_communicate_utf8_finish (proc, res, &out, NULL, &error);
 
+    wifi_stop_scan_anim ();
     GList *children = gtk_container_get_children (GTK_CONTAINER (list));
     g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
 
@@ -1792,6 +1796,25 @@ wifi_list_cb (gpointer data)
     return FALSE;
 }
 
+static gboolean
+wifi_scan_anim_tick (gpointer data)
+{
+    (void) data;
+    if (!wifi_scan_label) { wifi_scan_timer = 0; return G_SOURCE_REMOVE; }
+    wifi_scan_phase = (wifi_scan_phase + 1) % 4;
+    gchar *text = g_strdup_printf ("Searching for networks%.*s", wifi_scan_phase, "...");
+    gtk_label_set_text (GTK_LABEL (wifi_scan_label), text);
+    g_free (text);
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+wifi_stop_scan_anim (void)
+{
+    if (wifi_scan_timer) { g_source_remove (wifi_scan_timer); wifi_scan_timer = 0; }
+    wifi_scan_label = NULL;
+}
+
 static void
 wifi_start_scan (GtkWidget *dialog)
 {
@@ -1802,8 +1825,13 @@ wifi_start_scan (GtkWidget *dialog)
     GList *children = gtk_container_get_children (GTK_CONTAINER (list));
     g_list_free_full (children, (GDestroyNotify) gtk_widget_destroy);
     wifi_add_connected_stub (list);
-    GtkWidget *scanning = gtk_label_new ("Scanning for networks…");
-    gtk_list_box_insert (GTK_LIST_BOX (list), scanning, -1);
+    wifi_stop_scan_anim ();
+    wifi_scan_label = gtk_label_new ("Searching for networks");
+    gtk_widget_set_halign (wifi_scan_label, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand (wifi_scan_label, TRUE);
+    gtk_list_box_insert (GTK_LIST_BOX (list), wifi_scan_label, -1);
+    wifi_scan_phase = 0;
+    wifi_scan_timer = g_timeout_add (350, wifi_scan_anim_tick, NULL);
     gtk_widget_show_all (list);
 
     gchar *dev = wifi_device ();
