@@ -1,4 +1,6 @@
 #!/bin/sh
+exec 7>/tmp/dapeos-theme-sync.lock
+flock -w 10 7 || exit 0
 # Sync the single DapeOS icon theme with the GTK theme.
 theme="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || echo Adwaita)"
 case "$theme" in
