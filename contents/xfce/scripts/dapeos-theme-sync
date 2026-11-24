@@ -8,6 +8,10 @@ esac
 
 if command -v dapeos-icon-sync >/dev/null 2>&1; then
     dapeos-icon-sync || true
+    # Force running GTK apps to reload the same theme name after its contents changed.
+    xfconf-query -c xsettings -p /Net/IconThemeName -s hicolor 2>/dev/null || true
+    sleep 0.15
+    xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true
 else
     xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true
 fi
