@@ -37,16 +37,17 @@ build_theme() {
     trap 'rm -rf "$tmp"' EXIT HUP INT TERM
     mkdir -p "$tmp/scalable"
 
-    # Full copy avoids broken symlink/theme-cache lookups in some GTK versions.
-    cp -aL "$src"/. "$tmp/"
+    # Hardlink dereferenced files: fast and no broken Papirus symlinks.
+    cp -alL "$src"/. "$tmp/" 2>/dev/null || cp -aL "$src"/. "$tmp/"
     rm -f "$tmp/index.theme" "$tmp/index.theme.dapeos-hidden" "$tmp/.icon-theme.cache"
 
-    if [ -d "$PANEL_ICONS" ]; then
+    if [ "$hidden" = "1" ] && [ -d "$PANEL_ICONS" ]; then
+        mkdir -p "$tmp/scalable"
         cp -f "$PANEL_ICONS"/*.svg "$tmp/scalable/" 2>/dev/null || true
-    fi
-    if [ -f "$tmp/scalable/edit-find.svg" ]; then
-        cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/search.svg"
-        cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/system-search.svg"
+        if [ -f "$tmp/scalable/edit-find.svg" ]; then
+            cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/search.svg"
+            cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/system-search.svg"
+        fi
     fi
 
     cp "$src_index" "$tmp/index.theme"
@@ -63,7 +64,12 @@ build_theme() {
     if [ "$hidden" = "1" ] && [ -d "$PANEL_ICONS" ]; then
         for sz in 16x16 22x22 24x24 32x32 48x48 scalable; do
             [ -d "$tmp/$sz/panel" ] || continue
-            cp -f "$PANEL_ICONS"/*.svg "$tmp/$sz/panel/" 2>/dev/null || true
+            for icon in "$PANEL_ICONS"/*.svg; do
+                [ -e "$icon" ] || continue
+                target="$tmp/$sz/panel/$(basename "$icon")"
+                rm -f "$target"
+                cp -f "$icon" "$target"
+            done
         done
     fi
 
