@@ -19,6 +19,7 @@ for entry in "$src"/*; do
     [ -e "$entry" ] || continue
     name=$(basename "$entry")
     [ "$name" = "index.theme" ] && continue
+    [ "$name" = "scalable" ] && continue
     ln -s "$entry" "$tmp/$name"
 done
 
@@ -34,9 +35,9 @@ fi
     echo 'Comment=DapeOS icon theme'
     echo 'Inherits=hicolor'
     dirs="scalable"
-    while IFS= read -r d; do
+    for d in $(sed -n 's/^Directories=//p' "$src/index.theme" 2>/dev/null | tr ',' ' '); do
         [ -n "$d" ] && dirs="$dirs,$d"
-    done < <(sed -n 's/^Directories=//p' "$src/index.theme" 2>/dev/null | tr ',' '\n')
+    done
     echo "Directories=$dirs"
     echo
     echo '[scalable]'

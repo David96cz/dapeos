@@ -86,6 +86,7 @@ xfce_panel_icons() {
     install -m 644 -o root -g root "$SRC_SO" /usr/local/lib/dapeos/panel-icons.so
     install -m 644 "$CONTENTS_DIR"/xfce/icons/panel/*.svg /usr/local/share/dapeos/panel/
 
+    install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-icon-sync" /usr/local/bin/
     install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-theme" /usr/local/sbin/
     install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-theme-light" /usr/local/sbin/
     install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-watch" /usr/local/bin/
@@ -93,5 +94,13 @@ xfce_panel_icons() {
     /usr/local/sbin/dapeos-panel-theme /usr/local/share/dapeos/panel
     /usr/local/sbin/dapeos-panel-theme-light /usr/local/share/dapeos/panel
 
+    # Jediný viditelný icon pack v Appearance je DapeOS.
+    for theme in Papirus Papirus-Dark Papirus-Light Papirus-Panel Papirus-Panel-Light Adwaita; do
+        d="/usr/share/icons/$theme"
+        if [ -f "$d/index.theme" ]; then
+            mv -f "$d/index.theme" "$d/index.theme.dapeos-hidden"
+        fi
+    done
+    sudo -u "$REAL_USER" /usr/local/bin/dapeos-icon-sync || true
 }
 
