@@ -38,7 +38,7 @@ build_theme() {
     mkdir -p "$tmp/scalable"
 
     # Full copy avoids broken symlink/theme-cache lookups in some GTK versions.
-    cp -a "$src"/. "$tmp/"
+    cp -aL "$src"/. "$tmp/"
     rm -f "$tmp/index.theme" "$tmp/index.theme.dapeos-hidden" "$tmp/.icon-theme.cache"
 
     if [ -d "$PANEL_ICONS" ]; then
