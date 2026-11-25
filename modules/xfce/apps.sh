@@ -2,6 +2,18 @@
 # shellcheck shell=bash
 # Aplikace: nasazení skriptů, .desktop soubory, akce, autostart.
 
+dapeos_quicksettings_c_setup() {
+    local pkg="$CONTENTS_DIR/../packages/dapeos-quicksettings-c"
+    [ -d "$pkg" ] || return 0
+    command -v gcc >/dev/null 2>&1 || { log "VAROVÁNÍ: gcc není k dispozici, C quicksettings se nepřeloží."; return 0; }
+    pkg-config --exists gtk+-3.0 || { log "VAROVÁNÍ: chybí GTK3 development balíčky."; return 0; }
+    ( cd "$pkg" && ./build-deb.sh ) || { log "VAROVÁNÍ: C quicksettings build selhal."; return 0; }
+    local arch deb
+    arch="$(dpkg --print-architecture)"
+    deb="$pkg/dapeos-quicksettings-c_1.0_${arch}.deb"
+    [ -f "$deb" ] && dpkg -i "$deb" || log "VAROVÁNÍ: C quicksettings deb se nenainstaloval."
+}
+
 xfce_deploy_scripts() {
     local SCRIPTS_SRC="$CONTENTS_DIR/xfce/scripts"
     local f
