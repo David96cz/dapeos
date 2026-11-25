@@ -1,6 +1,7 @@
 #!/bin/sh
 exec 6>/tmp/dapeos-panel-restart.lock
 flock -w 10 6 || exit 0
+command -v dapeos-panel-icon-sync >/dev/null 2>&1 && dapeos-panel-icon-sync >/dev/null 2>&1 || true
 reopen=0
 pgrep -f 'xfce4-panel --settings' >/dev/null 2>&1 && reopen=1
 command -v dapeos-icon-sync >/dev/null 2>&1 && dapeos-icon-sync >/dev/null 2>&1 || true

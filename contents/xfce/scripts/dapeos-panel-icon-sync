@@ -1,0 +1,14 @@
+#!/bin/sh
+# Switch only the panel icon set, based only on the panel's own dark-mode.
+set -eu
+exec 7>/tmp/dapeos-panel-icon-sync.lock
+flock -w 5 7 || exit 0
+STORE="$HOME/.local/share/dapeos/iconsets"
+LINK="$HOME/.local/share/icons/DapeOS-Panel"
+panel_dark="$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)"
+if [ "$panel_dark" = "true" ]; then want="panel-light"; else want="panel-dark"; fi
+target="$STORE/$want"
+[ -f "$target/index.theme" ] || exit 0
+mkdir -p "$(dirname "$LINK")"
+ln -sfn "$target" "$LINK.tmp"
+mv -Tf "$LINK.tmp" "$LINK"
