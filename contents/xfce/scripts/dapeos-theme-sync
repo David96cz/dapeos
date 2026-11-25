@@ -6,14 +6,23 @@ case "$theme" in
     *)         icon="Papirus-Light" ;;
 esac
 DIR="$HOME/.local/share/icons/DapeOS-Icons"
-mkdir -p "$DIR"
+SWAP="$HOME/.local/share/icons/DapeOS-Icons-Swap"
+mkdir -p "$DIR" "$SWAP"
 cat > "$DIR/index.theme" <<EOF
 [Icon Theme]
 Name=DapeOS Icons
 Comment=Default icons for DapeOS system
 Inherits=$icon
 EOF
-xfconf-query -c xsettings -p /Net/IconThemeName -s hicolor 2>/dev/null || true
+cat > "$SWAP/index.theme" <<EOF
+[Icon Theme]
+Name=DapeOS Icons Swap
+Comment=Internal DapeOS icon reload helper
+Hidden=true
+Inherits=$icon
+EOF
+# Use the same Papirus icons during reload, never hicolor fallback.
+xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS-Icons-Swap 2>/dev/null || true
 sleep 0.15
 xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS-Icons 2>/dev/null || true
 
