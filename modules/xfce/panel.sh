@@ -96,7 +96,7 @@ xfce_panel_icons() {
     SEARCH_ICON="$CONTENTS_DIR/xfce/icons/panel/edit-find.svg"
     if [ -f "$SEARCH_ICON" ]; then
         for theme in Papirus-Dark Papirus-Light; do
-            find "/usr/share/icons/$theme" \( -name search.svg -o -name system-search.svg \) -print0 2>/dev/null |
+            find -L "/usr/share/icons/$theme" \( -name search.svg -o -name system-search.svg \) -print0 2>/dev/null |
             while IFS= read -r -d '' f; do
                 cp -f "$SEARCH_ICON" "$f"
             done
