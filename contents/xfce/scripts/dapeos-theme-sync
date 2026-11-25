@@ -17,8 +17,5 @@ if command -v dapeos-icon-sync >/dev/null 2>&1; then
 else
     xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true
 fi
-xfconf-query -c xsettings -p /Gtk/ApplicationPreferDarkTheme -n -t bool -s "$dark" 2>/dev/null || \
-    xfconf-query -c xsettings -p /Gtk/ApplicationPreferDarkTheme -s "$dark" 2>/dev/null || true
-
 # Never let the standalone clipman daemon block the panel plugin.
 pkill -x xfce4-clipman 2>/dev/null || true
