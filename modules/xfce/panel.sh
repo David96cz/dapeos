@@ -93,5 +93,11 @@ xfce_panel_icons() {
     /usr/local/sbin/dapeos-panel-theme /usr/local/share/dapeos/panel
     /usr/local/sbin/dapeos-panel-theme-light /usr/local/share/dapeos/panel
 
+    # Only DapeOS Icons remains visible in Appearance.
+    for theme in Papirus Papirus-Dark Papirus-Light Papirus-Panel Papirus-Panel-Light; do
+        f="/usr/share/icons/$theme/index.theme"
+        [ -f "$f" ] || continue
+        grep -q '^Hidden=true' "$f" || sed -i '/^\[Icon Theme\]/a Hidden=true' "$f"
+    done
 }
 

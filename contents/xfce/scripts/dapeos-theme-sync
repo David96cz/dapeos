@@ -37,6 +37,14 @@ MaxSize=512
 Type=Scalable
 Context=Applications
 EOF
+# gtk-update-icon-cache needs at least one real icon.
+for d in "$DIR" "$SWAP"; do
+    if [ ! -f "$d/scalable/folder.svg" ]; then
+        cat > "$d/scalable/folder.svg" <<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22"><path fill="#2a7fca" d="M2 5h6l2 2h10v11H2z"/></svg>
+SVG
+    fi
+done
 # Use the same Papirus icons during reload, never hicolor fallback.
 if command -v gtk-update-icon-cache >/dev/null 2>&1; then
     gtk-update-icon-cache -f -t "$DIR" >/dev/null 2>&1 || true
