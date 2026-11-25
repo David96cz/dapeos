@@ -17,8 +17,8 @@ Package: dapeos-quicksettings-c
 Version: 1.0
 Architecture: $ARCH
 Maintainer: DapeOS <dapeos@localhost>
-Depends: libgtk-3-0, libglib2.0-0, libpango-1.0-0, libcairo2, libgdk-pixbuf-2.0-0
+Depends: libgtk-3-0t64 | libgtk-3-0, libglib2.0-0t64 | libglib2.0-0, libpango-1.0-0t64 | libpango-1.0-0, libcairo2, libgdk-pixbuf-2.0-0t64 | libgdk-pixbuf-2.0-0
 Description: DapeOS C quick settings
  Lightweight GTK quick settings for DapeOS.
 CTRL
-dpkg-deb --build "$PKG" "$HERE/dapeos-quicksettings-c_1.0_${ARCH}.deb"
+dpkg-deb --root-owner-group --build "$PKG" "$HERE/dapeos-quicksettings-c_1.0_${ARCH}.deb"

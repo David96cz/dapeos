@@ -11,7 +11,7 @@ dapeos_quicksettings_c_setup() {
     local arch deb
     arch="$(dpkg --print-architecture)"
     deb="$pkg/dapeos-quicksettings-c_1.0_${arch}.deb"
-    [ -f "$deb" ] && dpkg -i "$deb" || log "VAROVÁNÍ: C quicksettings deb se nenainstaloval."
+    [ -f "$deb" ] && apt-get install -y "$deb" || log "VAROVÁNÍ: C quicksettings deb se nenainstaloval."
 }
 
 xfce_deploy_scripts() {
