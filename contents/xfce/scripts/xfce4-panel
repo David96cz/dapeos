@@ -30,6 +30,8 @@ if [ -x /usr/bin/xfce4-panel.actual ]; then
     exec /usr/bin/xfce4-panel.actual "$@"
 elif [ -x /usr/bin/xfce4-panel.realbin ]; then
     exec /usr/bin/xfce4-panel.realbin "$@"
+elif [ -x /usr/bin/xfce4-panel.actual ]; then
+    exec /usr/bin/xfce4-panel.actual "$@"
 elif [ -x /usr/bin/xfce4-panel.orig ]; then
     exec /usr/bin/xfce4-panel.orig "$@"
 elif [ -x /usr/bin/xfce4-panel.bin ]; then
