@@ -87,6 +87,7 @@ xfce_panel_icons() {
     install -m 644 "$CONTENTS_DIR"/xfce/icons/panel/*.svg /usr/local/share/dapeos/panel/
 
     install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-icon-sync" /usr/local/bin/
+    install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-icon-sync" /usr/local/bin/
     install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-theme" /usr/local/sbin/
     install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-theme-light" /usr/local/sbin/
     install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-watch" /usr/local/bin/
