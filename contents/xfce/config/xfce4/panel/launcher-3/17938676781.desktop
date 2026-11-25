@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name[cs]=Správce souborů Thunar
-Name=Thunar File Manager
-Comment[cs]=Procházet systém souborů správcem souborů
-Comment=Browse the filesystem with the file manager
+Name[cs]=Správce souborů
+Name=File Manager
+Comment[cs]=Procházet systém souborů
+Comment=Browse the filesystem
 GenericName[cs]=Správce souborů
 GenericName=File Manager
 Keywords[cs]=správce souborů;průzkumník;finder;prohlížeč;adresář;adresáře;oddíly;jednotky;disky;mechaniky;síť;zařízení;přejmenovat;přejmenování;přesun;přesunutí;přesunout;kopie;kopírovat;zkopírovat;kopíruj;zkopíruj;vymaž;smaž;vymazat;smazat;odstranit;odstraň;práva;oprávnění;domů;domov;koš;
@@ -15,19 +15,19 @@ Type=Application
 Categories=System;Core;GTK;FileTools;FileManager;
 MimeType=inode/directory;
 Actions=open-home;open-computer;open-trash;
-X-XFCE-Source=file:///usr/share/applications/thunar.desktop
+X-XFCE-Source=file:///usr/share/applications/system-file-manager.desktop
 
 [Desktop Action open-home]
-Name[cs]=Domovská složka
-Name=Home
+Name[cs]=Správce souborů
+Name=File Manager
 Exec=thunar %U
 
 [Desktop Action open-computer]
-Name[cs]=Počítač
-Name=Computer
+Name[cs]=Správce souborů
+Name=File Manager
 Exec=thunar computer:///
 
 [Desktop Action open-trash]
-Name[cs]=Koš
-Name=Trash
+Name[cs]=Správce souborů
+Name=File Manager
 Exec=thunar trash:///

@@ -93,5 +93,22 @@ xfce_panel_icons() {
     /usr/local/sbin/dapeos-panel-theme /usr/local/share/dapeos/panel
     /usr/local/sbin/dapeos-panel-theme-light /usr/local/share/dapeos/panel
 
+    SEARCH_ICON="$CONTENTS_DIR/xfce/icons/panel/edit-find.svg"
+    if [ -f "$SEARCH_ICON" ]; then
+        for theme in Papirus-Dark Papirus-Light; do
+            find "/usr/share/icons/$theme" \( -name search.svg -o -name system-search.svg \) -print0 2>/dev/null |
+            while IFS= read -r -d '' f; do
+                cp -f "$SEARCH_ICON" "$f"
+            done
+            gtk-update-icon-cache -f -t "/usr/share/icons/$theme" >/dev/null 2>&1 || true
+        done
+    fi
+
+    # Only DapeOS Icons remains visible in Appearance.
+    for theme in Papirus Papirus-Dark Papirus-Light Papirus-Panel Papirus-Panel-Light; do
+        f="/usr/share/icons/$theme/index.theme"
+        [ -f "$f" ] || continue
+        grep -q '^Hidden=true' "$f" || sed -i '/^\[Icon Theme\]/a Hidden=true' "$f"
+    done
 }
 
