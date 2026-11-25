@@ -10,10 +10,10 @@ done
 
 if [ "$dark" = "true" ]; then
     export GTK_THEME=Adwaita:dark
-    export PANEL_ICON_THEME=Papirus-Light
+    export PANEL_ICON_THEME=Papirus-Dark
 else
     export GTK_THEME=Adwaita:light
-    export PANEL_ICON_THEME=Papirus-Dark
+    export PANEL_ICON_THEME=Papirus-Light
 fi
 
 exec /usr/bin/nm-applet "$@"
