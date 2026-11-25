@@ -1,12 +1,22 @@
 #!/bin/sh
-# Sync Papirus icon theme with the GTK theme (panel dark mode is independent).
+exec 7>/tmp/dapeos-theme-sync.lock
+flock -w 10 7 || exit 0
+# Sync the single DapeOS icon theme with the GTK theme.
 theme="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || echo Adwaita)"
 case "$theme" in
-    *[Dd]ark*) dark=true; icon="Papirus-Dark" ;;
-    *)         dark=false; icon="Papirus-Light" ;;
+    *[Dd]ark*) dark=true ;;
+    *)         dark=false ;;
 esac
 
-xfconf-query -c xsettings -p /Net/IconThemeName -s "$icon" 2>/dev/null || true
+if command -v dapeos-icon-sync >/dev/null 2>&1; then
+    dapeos-icon-sync || true
+    # Force running GTK apps to reload the same theme name after its contents changed.
+    xfconf-query -c xsettings -p /Net/IconThemeName -s hicolor 2>/dev/null || true
+    sleep 0.15
+    xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true
+else
+    xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true
+fi
 xfconf-query -c xsettings -p /Gtk/ApplicationPreferDarkTheme -n -t bool -s "$dark" 2>/dev/null || \
     xfconf-query -c xsettings -p /Gtk/ApplicationPreferDarkTheme -s "$dark" 2>/dev/null || true
 

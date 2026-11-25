@@ -23,6 +23,22 @@ watch_channel() {
     done
 }
 
+watch_dark_poll() {
+    local last
+    last=$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)
+    while :; do
+        sleep 1
+        local now
+        now=$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)
+        if [ "$now" != "$last" ]; then
+            last="$now"
+            sleep 0.3
+            restart_panel
+        fi
+    done
+}
+
 watch_channel xfce4-panel &
 watch_channel xsettings &
+watch_dark_poll &
 wait

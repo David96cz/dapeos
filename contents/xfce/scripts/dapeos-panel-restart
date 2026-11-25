@@ -1,6 +1,14 @@
 #!/bin/sh
+exec 6>/tmp/dapeos-panel-restart.lock
+flock -w 10 6 || exit 0
 reopen=0
 pgrep -f 'xfce4-panel --settings' >/dev/null 2>&1 && reopen=1
+command -v dapeos-icon-sync >/dev/null 2>&1 && dapeos-icon-sync >/dev/null 2>&1 || true
+qs_was_running=0
+if pgrep -f '[d]apeos-quicksettings-c' >/dev/null 2>&1; then
+    qs_was_running=1
+    pkill -f '[d]apeos-quicksettings-c' 2>/dev/null || true
+fi
 
 for _p in $(pgrep -f 'xfce4-panel' 2>/dev/null); do
     _cmd=$(tr '\0' ' ' </proc/$_p/cmdline 2>/dev/null || true)
@@ -19,4 +27,8 @@ dapeos-touchpad >/dev/null 2>&1 &
 if [ "$reopen" = "1" ]; then
     sleep 0.3
     setsid /usr/bin/xfce4-panel --settings >/dev/null 2>&1 < /dev/null &
+fi
+if [ "$qs_was_running" = "1" ]; then
+    sleep 0.4
+    setsid /usr/local/bin/dapeos-quicksettings-c >/dev/null 2>&1 < /dev/null &
 fi
