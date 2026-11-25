@@ -1,11 +1,11 @@
 [Desktop Entry]
 Type=Application
-Name=Night light
+Name=Night Light
 Name[cs]=Noční světlo
 Comment=Color temperature and schedule
 Comment[cs]=Teplota barev a rozvrh
 Exec=dapeos-nightlight
-Icon=preferences-desktop-screensaver
+Icon=dapeos-nightlight
 Terminal=false
 NoDisplay=true
 X-XFCE-SettingsDialog=1

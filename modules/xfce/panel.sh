@@ -85,6 +85,9 @@ xfce_panel_icons() {
     install -d -m 755 /usr/local/lib/dapeos /usr/local/sbin /usr/local/share/dapeos/panel
     install -m 644 -o root -g root "$SRC_SO" /usr/local/lib/dapeos/panel-icons.so
     install -m 644 "$CONTENTS_DIR"/xfce/icons/panel/*.svg /usr/local/share/dapeos/panel/
+    install -d -m 755 /usr/share/icons/hicolor/scalable/apps
+    install -m 644 "$CONTENTS_DIR/xfce/icons/night-light.svg" /usr/share/icons/hicolor/scalable/apps/dapeos-nightlight.svg
+    gtk-update-icon-cache -f -t /usr/share/icons/hicolor >/dev/null 2>&1 || true
 
     install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-theme" /usr/local/sbin/
     install -m 755 "$CONTENTS_DIR/xfce/scripts/dapeos-panel-theme-light" /usr/local/sbin/
