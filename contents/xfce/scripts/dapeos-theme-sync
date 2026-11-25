@@ -1,14 +1,21 @@
 #!/bin/sh
-# Sync Papirus icon theme with the GTK theme (panel dark mode is independent).
+# System icons: one visible DapeOS Icons theme inheriting the active Papirus set.
 theme="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || echo Adwaita)"
 case "$theme" in
-    *[Dd]ark*) dark=true; icon="Papirus-Dark" ;;
-    *)         dark=false; icon="Papirus-Light" ;;
+    *[Dd]ark*) icon="Papirus-Dark" ;;
+    *)         icon="Papirus-Light" ;;
 esac
-
-xfconf-query -c xsettings -p /Net/IconThemeName -s "$icon" 2>/dev/null || true
-xfconf-query -c xsettings -p /Gtk/ApplicationPreferDarkTheme -n -t bool -s "$dark" 2>/dev/null || \
-    xfconf-query -c xsettings -p /Gtk/ApplicationPreferDarkTheme -s "$dark" 2>/dev/null || true
+DIR="$HOME/.local/share/icons/DapeOS-Icons"
+mkdir -p "$DIR"
+cat > "$DIR/index.theme" <<EOF
+[Icon Theme]
+Name=DapeOS Icons
+Comment=Default icons for DapeOS system
+Inherits=$icon
+EOF
+xfconf-query -c xsettings -p /Net/IconThemeName -s hicolor 2>/dev/null || true
+sleep 0.15
+xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS-Icons 2>/dev/null || true
 
 # Never let the standalone clipman daemon block the panel plugin.
 pkill -x xfce4-clipman 2>/dev/null || true
