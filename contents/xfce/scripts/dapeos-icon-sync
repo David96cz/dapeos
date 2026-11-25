@@ -6,6 +6,7 @@ flock -w 10 8 || exit 0
 
 STORE="$HOME/.local/share/dapeos/iconsets"
 VISIBLE="$HOME/.local/share/icons/DapeOS"
+PANEL_VISIBLE="$HOME/.local/share/icons/DapeOS-Panel"
 PANEL_ICONS="/usr/local/share/dapeos/panel"
 
 theme_name="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || true)"
@@ -13,6 +14,12 @@ case "$theme_name" in
     *[Dd]ark*) want="dark" ;;
     *)         want="light" ;;
 esac
+panel_dark="$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)"
+if [ "$panel_dark" = "true" ]; then
+    panel_want="light"
+else
+    panel_want="dark"
+fi
 
 build_theme() {
     src="$1"; dest="$2"; out_name="$3"; out_comment="$4"; hidden="$5"
@@ -67,6 +74,7 @@ link_theme() {
 }
 
 link_theme "$STORE/$want" "$VISIBLE"
+link_theme "$STORE/panel-$panel_want" "$PANEL_VISIBLE"
 
 # force a GTK icon-theme reload without changing the visible theme name
 xfconf-query -c xsettings -p /Net/IconThemeName -s hicolor 2>/dev/null || true
