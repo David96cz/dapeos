@@ -1092,6 +1092,11 @@ make_tile (const gchar *title, const gchar *sub, GtkWidget **sub_label,
     GtkWidget *s = gtk_label_new (sub);
     gtk_label_set_xalign (GTK_LABEL (s), 0.0);
     gtk_label_set_justify (GTK_LABEL (s), GTK_JUSTIFY_LEFT);
+    gtk_label_set_ellipsize (GTK_LABEL (s), PANGO_ELLIPSIZE_END);
+    gtk_label_set_width_chars (GTK_LABEL (s), 12);
+    gtk_label_set_max_width_chars (GTK_LABEL (s), 12);
+    gtk_widget_set_size_request (s, 110, -1);
+    gtk_widget_set_hexpand (s, FALSE);
     gtk_widget_set_halign (s, GTK_ALIGN_START);
     gtk_style_context_add_class (gtk_widget_get_style_context (s), "dim-label");
     gtk_box_pack_start (GTK_BOX (content), top, FALSE, FALSE, 0);
