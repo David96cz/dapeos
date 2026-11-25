@@ -44,3 +44,5 @@ T
 
 chmod -R go+rX "$DST"
 echo "Hotovo: $DST"
+
+command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t /usr/share/icons/Papirus-Panel-Light >/dev/null 2>&1 || true
