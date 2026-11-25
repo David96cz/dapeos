@@ -391,6 +391,14 @@ dapeos_status_plugin_setup() {
     deb="$(find "$BASE_DIR/packages/dapeos-status-plugin" -maxdepth 1 \
         -name "dapeos-status-plugin_*_${arch}.deb" 2>/dev/null | head -n1)"
     if [ -z "$deb" ]; then
+        local srcdir="$BASE_DIR/packages/dapeos-status-plugin"
+        if [ -d "$srcdir" ]; then
+            log "C status plugin pro $arch není hotový, kompiluji ze zdroje..."
+            ( cd "$srcdir" && ./build.sh ) || true
+            deb="$(find "$srcdir" -maxdepth 1 -name "dapeos-status-plugin_*_${arch}.deb" 2>/dev/null | head -n1)"
+        fi
+    fi
+    if [ -z "$deb" ]; then
         log "C status plugin pro $arch není k dispozici, ponechávám GenMon."
         return 0
     fi
