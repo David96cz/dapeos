@@ -31,7 +31,7 @@ Package: dapeos-status-plugin
 Version: 1.0
 Architecture: $ARCH
 Maintainer: DapeOS <dapeos@localhost>
-Depends: libgtk-3-0, libxfce4panel-2.0-4, librsvg2-2, libglib2.0-0
+Depends: libgtk-3-0t64 | libgtk-3-0, libglib2.0-0t64 | libglib2.0-0, libxfce4panel-2.0-4, librsvg2-2
 Description: DapeOS event-driven panel status
  Network, battery and volume status for the XFCE panel.
 CTRL
