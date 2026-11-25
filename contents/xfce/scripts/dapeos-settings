@@ -44,6 +44,11 @@ HIDDEN = {
     "xfce4-settings-manager.desktop",
     "xfce-settings-manager.desktop",
 }
+HIDE_PATTERNS = (
+    "blueman-adapters",
+    "xfce4-settings-editor",
+    "xfce-settings-editor",
+)
 
 GROUPS = ["Appearance", "Hardware", "System", "Personal", "Other"]
 
@@ -118,6 +123,8 @@ def collect():
                 continue
             base = os.path.basename(path)
             if base in seen or base in HIDDEN or base in hidden:
+                continue
+            if any(p in base for p in HIDE_PATTERNS):
                 continue
             data = parse(path)
             if data:
