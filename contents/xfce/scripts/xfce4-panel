@@ -5,9 +5,14 @@ lib=/usr/local/lib/dapeos/panel-icons.so
 [ -f "$lib" ] && export LD_PRELOAD="$lib${LD_PRELOAD:+:$LD_PRELOAD}"
 
 dark=false
+panel_mode=""
 for prop in $(xfconf-query -c xfce4-panel -l 2>/dev/null | grep '/dark-mode$'); do
-    [ "$(xfconf-query -c xfce4-panel -p "$prop" 2>/dev/null)" = "true" ] && dark=true
+    case "$prop" in
+        /panels/panel-*/*) panel_mode="$(xfconf-query -c xfce4-panel -p "$prop" 2>/dev/null || true)" ;;
+    esac
 done
+[ -n "$panel_mode" ] || panel_mode="$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)"
+[ "$panel_mode" = "true" ] && dark=true
 
 if command -v dapeos-icon-sync >/dev/null 2>&1; then
     printf '%s icon-sync-start\n' "$(date +%H:%M:%S)" >> /tmp/dapeos-panel-wrapper.log 2>/dev/null || true

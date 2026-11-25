@@ -20,8 +20,9 @@ watch_channel() {
                     dapeos-theme-sync
                     ;;
                 *dark-mode*)
-                    sleep 0.4
-                    restart_panel
+                    case "$line" in
+                        */panels/panel-*/*) sleep 0.4; restart_panel ;;
+                    esac
                     ;;
             esac
         done
