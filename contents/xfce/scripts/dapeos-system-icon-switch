@@ -17,4 +17,5 @@ mv -Tf "$VISIBLE.tmp" "$VISIBLE"
 
 # notify running GTK apps without changing the visible theme name
 xfconf-query -c xsettings -p /Net/IconThemeName -s hicolor 2>/dev/null || true
+sleep 0.15
 xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true

@@ -9,10 +9,12 @@ for prop in $(xfconf-query -c xfce4-panel -l 2>/dev/null | grep '/dark-mode$'); 
     [ "$(xfconf-query -c xfce4-panel -p "$prop" 2>/dev/null)" = "true" ] && dark=true
 done
 
-if command -v dapeos-icon-sync >/dev/null 2>&1; then
-    printf '%s icon-sync-start\n' "$(date +%H:%M:%S)" >> /tmp/dapeos-panel-wrapper.log 2>/dev/null || true
-    timeout 8 dapeos-icon-sync >/dev/null 2>&1 || true
-    printf '%s icon-sync-done\n' "$(date +%H:%M:%S)" >> /tmp/dapeos-panel-wrapper.log 2>/dev/null || true
+STORE="$HOME/.local/share/dapeos/iconsets"
+if [ ! -f "$STORE/panel-light/index.theme" ] || [ ! -f "$STORE/panel-dark/index.theme" ]; then
+    command -v dapeos-icon-sync >/dev/null 2>&1 && timeout 60 dapeos-icon-sync >/dev/null 2>&1 || true
+fi
+if command -v dapeos-panel-icon-sync >/dev/null 2>&1; then
+    timeout 5 dapeos-panel-icon-sync >/dev/null 2>&1 || true
 fi
 
 theme_ready() {
