@@ -10,10 +10,10 @@ done
 
 if [ "$dark" = "true" ]; then
     export GTK_THEME=Adwaita:dark
-    export PANEL_ICON_THEME=Papirus-Dark
+    export PANEL_ICON_THEME=Papirus-Light
 else
     export GTK_THEME=Adwaita:light
-    export PANEL_ICON_THEME=Papirus-Light
+    export PANEL_ICON_THEME=Papirus-Dark
 fi
 
 exec /usr/bin/xfce4-panel "$@"
