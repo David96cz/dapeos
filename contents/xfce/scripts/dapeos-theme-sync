@@ -38,6 +38,10 @@ Type=Scalable
 Context=Applications
 EOF
 # Use the same Papirus icons during reload, never hicolor fallback.
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f -t "$DIR" >/dev/null 2>&1 || true
+    gtk-update-icon-cache -f -t "$SWAP" >/dev/null 2>&1 || true
+fi
 xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS-Icons-Swap 2>/dev/null || true
 sleep 0.15
 xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS-Icons 2>/dev/null || true
