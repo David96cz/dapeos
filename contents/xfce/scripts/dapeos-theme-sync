@@ -1,50 +1,14 @@
 #!/bin/sh
-# System icons: one visible DapeOS Icons theme inheriting the active Papirus set.
+# Sync Papirus icon theme with the GTK theme (panel dark mode is independent).
 theme="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || echo Adwaita)"
 case "$theme" in
-    *[Dd]ark*) icon="Papirus-Dark" ;;
-    *)         icon="Papirus-Light" ;;
+    *[Dd]ark*) dark=true; icon="Papirus-Dark" ;;
+    *)         dark=false; icon="Papirus-Light" ;;
 esac
-DIR="$HOME/.local/share/icons/DapeOS-Icons"
-SWAP="$HOME/.local/share/icons/DapeOS-Icons-Swap"
-mkdir -p "$DIR/scalable" "$SWAP/scalable"
-cat > "$DIR/index.theme" <<EOF
-[Icon Theme]
-Name=DapeOS Icons
-Comment=Default icons for DapeOS system
-Inherits=$icon
-Directories=scalable
 
-[scalable]
-Size=64
-MinSize=8
-MaxSize=512
-Type=Scalable
-Context=Applications
-EOF
-cat > "$SWAP/index.theme" <<EOF
-[Icon Theme]
-Name=DapeOS Icons Swap
-Comment=Internal DapeOS icon reload helper
-Hidden=true
-Inherits=$icon
-Directories=scalable
-
-[scalable]
-Size=64
-MinSize=8
-MaxSize=512
-Type=Scalable
-Context=Applications
-EOF
-# Use the same Papirus icons during reload, never hicolor fallback.
-if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-    gtk-update-icon-cache -f -t "$DIR" >/dev/null 2>&1 || true
-    gtk-update-icon-cache -f -t "$SWAP" >/dev/null 2>&1 || true
-fi
-xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS-Icons-Swap 2>/dev/null || true
-sleep 0.15
-xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS-Icons 2>/dev/null || true
+xfconf-query -c xsettings -p /Net/IconThemeName -s "$icon" 2>/dev/null || true
+xfconf-query -c xsettings -p /Gtk/ApplicationPreferDarkTheme -n -t bool -s "$dark" 2>/dev/null || \
+    xfconf-query -c xsettings -p /Gtk/ApplicationPreferDarkTheme -s "$dark" 2>/dev/null || true
 
 # Never let the standalone clipman daemon block the panel plugin.
 pkill -x xfce4-clipman 2>/dev/null || true
