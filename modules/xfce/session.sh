@@ -115,7 +115,7 @@ dapeos_session_setup() {
             /usr/share/locale/cs/LC_MESSAGES/dapeos.mo
     fi
     install -m 644 "$CONTENTS_DIR/xfce/scripts/dapeos_i18n.py" /usr/local/bin/dapeos_i18n.py
-    get_section "$DESKTOP_CONFIG" "SETTINGS_TO_HIDE" > /usr/share/dapeos/settings-hide.conf 2>/dev/null || true
+    config_lines "$DESKTOP_CONFIG" "SETTINGS_TO_HIDE" > /usr/share/dapeos/settings-hide.conf 2>/dev/null || true
     if [ -f "$CONTENTS_DIR/xfce/config/app-names.conf" ]; then
         install -m 644 "$CONTENTS_DIR/xfce/config/app-names.conf" /usr/share/dapeos/app-names.conf
     fi
