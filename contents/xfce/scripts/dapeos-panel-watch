@@ -1,35 +1,52 @@
 #!/bin/sh
-# Long-running xfconf watcher; survive xfconf-query monitor exits.
-set -eu
+# Restartuje panel po zmene dark-mode nebo motivu/ikon (whiskermenu ikony).
 exec 9>/tmp/dapeos-panel-watch.lock
-flock -n 9 || exit 0
+if ! flock -n 9; then
+    rm -f /tmp/dapeos-panel-watch.lock
+    exec 9>/tmp/dapeos-panel-watch.lock
+    if ! flock -n 9; then
+            exit 0
+    fi
+fi
 
 restart_panel() {
     /usr/local/bin/dapeos-panel-restart
 }
 
 watch_channel() {
+    exec 9>&-
+    xfconf-query -c "$1" -m 2>/dev/null | while IFS= read -r line; do
+        case "$line" in
+            *ThemeName*)
+                dapeos-theme-sync
+                ;;
+            *dark-mode*)
+                sleep 0.4
+                restart_panel
+                ;;
+            *IconThemeName*)
+                ;;
+        esac
+    done
+}
+
+watch_dark_poll() {
+    exec 9>&-
+    local last
+    last=$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)
     while :; do
-        xfconf-query -c "$1" -m 2>/dev/null | while IFS= read -r line; do
-            case "$line" in
-                *IconThemeName*)
-                    cur="$(xfconf-query -c xsettings -p /Net/IconThemeName 2>/dev/null || true)"
-                    [ "$cur" = "DapeOS" ] || xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true
-                    ;;
-                *ThemeName*)
-                    dapeos-theme-sync
-                    ;;
-                *dark-mode*)
-                    case "$line" in
-                        */panels/panel-*/*) sleep 0.4; restart_panel ;;
-                    esac
-                    ;;
-            esac
-        done
         sleep 1
+        local now
+        now=$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)
+        if [ "$now" != "$last" ]; then
+            last="$now"
+            sleep 0.3
+            restart_panel
+        fi
     done
 }
 
 watch_channel xfce4-panel &
 watch_channel xsettings &
+watch_dark_poll &
 wait
