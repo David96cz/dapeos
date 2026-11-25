@@ -104,6 +104,7 @@ dapeos_session_setup() {
         install -m 644 "$CONTENTS_DIR/xfce/config/dapeos-bluetooth.desktop" /usr/share/applications/dapeos-bluetooth.desktop
     fi
     if [ -f "$CONTENTS_DIR/xfce/config/dapeos-nightlight.desktop" ]; then
+        rm -f "$USER_HOME/.local/share/applications/dapeos-nightlight.desktop" 2>/dev/null || true
         install -m 644 "$CONTENTS_DIR/xfce/config/dapeos-nightlight.desktop" /usr/share/applications/dapeos-nightlight.desktop
     fi
 
