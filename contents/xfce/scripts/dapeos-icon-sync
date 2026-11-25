@@ -1,57 +1,40 @@
 #!/bin/sh
-# Build one visible DapeOS theme and one hidden inverse panel theme.
+# Build cached light/dark icon trees once and switch them via symlink.
 set -eu
 exec 8>/tmp/dapeos-icon-sync.lock
-flock -w 5 8 || exit 0
-SYSTEM_THEME="$HOME/.local/share/icons/DapeOS"
-PANEL_THEME="$HOME/.local/share/icons/DapeOS-Panel"
-PANEL_ICONS="/usr/local/share/dapeos/panel"
+flock -w 10 8 || exit 0
 
-rm -rf "$HOME/.local/share/icons/DapeOS.tmp."* \
-       "$HOME/.local/share/icons/DapeOS-Panel.tmp."* 2>/dev/null || true
+STORE="$HOME/.local/share/dapeos/iconsets"
+VISIBLE="$HOME/.local/share/icons/DapeOS"
+PANEL_VISIBLE="$HOME/.local/share/icons/DapeOS-Panel"
+PANEL_ICONS="/usr/local/share/dapeos/panel"
 
 theme_name="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || true)"
 case "$theme_name" in
-    *[Dd]ark*) system_src="/usr/share/icons/Papirus-Dark" ;;
-    *)         system_src="/usr/share/icons/Papirus-Light" ;;
+    *[Dd]ark*) want="dark" ;;
+    *)         want="light" ;;
 esac
 panel_dark="$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)"
 if [ "$panel_dark" = "true" ]; then
-    panel_src="/usr/share/icons/Papirus-Light"
+    panel_want="light"
 else
-    panel_src="/usr/share/icons/Papirus-Dark"
+    panel_want="dark"
 fi
 
 build_theme() {
-    src="$1"
-    dest="$2"
-    out_name="$3"
-    out_comment="$4"
-    hidden="$5"
+    src="$1"; dest="$2"; out_name="$3"; out_comment="$4"; hidden="$5"
     [ -d "$src" ] || return 0
-
     src_index="$src/index.theme"
     [ -f "$src_index" ] || src_index="$src/index.theme.dapeos-hidden"
     [ -f "$src_index" ] || return 0
+    [ -f "$dest/index.theme" ] && return 0
 
     tmp="$dest.tmp.$$"
     rm -rf "$tmp"
     trap 'rm -rf "$tmp"' EXIT HUP INT TERM
-    mkdir -p "$tmp/scalable"
-
-    # Hardlink dereferenced files: fast and no broken Papirus symlinks.
+    mkdir -p "$tmp"
     cp -alL "$src"/. "$tmp/" 2>/dev/null || cp -aL "$src"/. "$tmp/"
     rm -f "$tmp/index.theme" "$tmp/index.theme.dapeos-hidden" "$tmp/.icon-theme.cache"
-
-    if [ "$hidden" = "1" ] && [ -d "$PANEL_ICONS" ]; then
-        mkdir -p "$tmp/scalable"
-        cp -f "$PANEL_ICONS"/*.svg "$tmp/scalable/" 2>/dev/null || true
-        if [ -f "$tmp/scalable/edit-find.svg" ]; then
-            cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/search.svg"
-            cp -f "$tmp/scalable/edit-find.svg" "$tmp/scalable/system-search.svg"
-        fi
-    fi
-
     cp "$src_index" "$tmp/index.theme"
     sed -i "s/^Name=.*/Name=$out_name/" "$tmp/index.theme"
     sed -i "s/^Comment=.*/Comment=$out_comment/" "$tmp/index.theme"
@@ -60,9 +43,6 @@ build_theme() {
     if [ "$hidden" = "1" ]; then
         sed -i '/^\[Icon Theme\]/a Hidden=true' "$tmp/index.theme"
     fi
-
-    # Keep Papirus index structure intact. Only panel theme gets custom panel icons,
-    # copied into the existing size/panel directories (not into a new scalable dir).
     if [ "$hidden" = "1" ] && [ -d "$PANEL_ICONS" ]; then
         for sz in 16x16 22x22 24x24 32x32 48x48 scalable; do
             [ -d "$tmp/$sz/panel" ] || continue
@@ -74,7 +54,6 @@ build_theme() {
             done
         done
     fi
-
     mkdir -p "$(dirname "$dest")"
     rm -rf "$dest"
     mv "$tmp" "$dest"
@@ -82,7 +61,21 @@ build_theme() {
     command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$dest" >/dev/null 2>&1 || true
 }
 
-build_theme "$system_src" "$SYSTEM_THEME" "DapeOS" "DapeOS icon theme" 0
-build_theme "$panel_src" "$PANEL_THEME" "DapeOS Panel" "DapeOS panel icons" 1
-rm -rf "$HOME/.local/share/dapeos/panel-data"
+build_theme /usr/share/icons/Papirus-Light "$STORE/light" DapeOS "DapeOS light icon theme" 0
+build_theme /usr/share/icons/Papirus-Dark  "$STORE/dark"  DapeOS "DapeOS dark icon theme" 0
+build_theme /usr/share/icons/Papirus-Light "$STORE/panel-light" "DapeOS Panel" "DapeOS panel light icons" 1
+build_theme /usr/share/icons/Papirus-Dark  "$STORE/panel-dark"  "DapeOS Panel" "DapeOS panel dark icons" 1
+
+link_theme() {
+    target="$1"; link="$2"
+    mkdir -p "$(dirname "$link")"
+    ln -sfn "$target" "$link.tmp"
+    mv -Tf "$link.tmp" "$link"
+}
+
+link_theme "$STORE/$want" "$VISIBLE"
+link_theme "$STORE/panel-$panel_want" "$PANEL_VISIBLE"
+
+# force a GTK icon-theme reload without changing the visible theme name
+xfconf-query -c xsettings -p /Net/IconThemeName -s hicolor 2>/dev/null || true
 xfconf-query -c xsettings -p /Net/IconThemeName -s DapeOS 2>/dev/null || true
