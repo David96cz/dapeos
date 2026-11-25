@@ -27,7 +27,7 @@ build_theme() {
     src_index="$src/index.theme"
     [ -f "$src_index" ] || src_index="$src/index.theme.dapeos-hidden"
     [ -f "$src_index" ] || return 0
-    [ -f "$dest/index.theme" ] && return 0
+    if [ -f "$dest/index.theme" ]; then return 0; fi
 
     tmp="$dest.tmp.$$"
     rm -rf "$tmp"
