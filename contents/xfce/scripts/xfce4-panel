@@ -9,37 +9,22 @@ for prop in $(xfconf-query -c xfce4-panel -l 2>/dev/null | grep '/dark-mode$'); 
     [ "$(xfconf-query -c xfce4-panel -p "$prop" 2>/dev/null)" = "true" ] && dark=true
 done
 
-STORE="$HOME/.local/share/dapeos/iconsets"
-if [ ! -f "$STORE/panel-light/index.theme" ] || [ ! -f "$STORE/panel-dark/index.theme" ]; then
-    command -v dapeos-icon-sync >/dev/null 2>&1 && timeout 60 dapeos-icon-sync >/dev/null 2>&1 || true
-fi
-if command -v dapeos-panel-icon-sync >/dev/null 2>&1; then
-    timeout 5 dapeos-panel-icon-sync >/dev/null 2>&1 || true
-fi
-
-theme_ready() {
-    [ -f "$1/index.theme" ] && [ -e "$1/scalable/search.svg" ]
-}
-
 if [ "$dark" = "true" ]; then
     export GTK_THEME=Adwaita:dark
+    if [ -d /usr/share/icons/Papirus-Panel ]; then
+        export PANEL_ICON_THEME=Papirus-Panel
+    else
+        export PANEL_ICON_THEME=Papirus-Dark
+    fi
 else
     export GTK_THEME=Adwaita:light
+    if [ -d /usr/share/icons/Papirus-Panel-Light ]; then
+        export PANEL_ICON_THEME=Papirus-Panel-Light
+    else
+        export PANEL_ICON_THEME=Papirus-Light
+    fi
 fi
-
-panel_theme="$HOME/.local/share/icons/DapeOS-Panel"
-i=0
-while [ "$i" -lt 20 ] && ! theme_ready "$panel_theme"; do
-    sleep 0.1
-    i=$((i + 1))
-done
-if theme_ready "$panel_theme"; then
-    export PANEL_ICON_THEME=DapeOS-Panel
-    export PANEL_ICONS_FORCE=1
-else
-    export PANEL_ICON_THEME=DapeOS
-fi
-printf '%s dark=%s theme=%s\n' "$(date +%H:%M:%S)" "$dark" "$PANEL_ICON_THEME" >> /tmp/dapeos-panel-icons.log 2>/dev/null || true
+printf '%s wrapper=%s dark=%s theme=%s\n' "$(date +%H:%M:%S)" "$0" "$dark" "$PANEL_ICON_THEME" >> /tmp/dapeos-panel-wrapper.log 2>/dev/null || true
 
 if [ -x /usr/bin/xfce4-panel.actual ]; then
     exec /usr/bin/xfce4-panel.actual "$@"
