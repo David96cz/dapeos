@@ -838,11 +838,8 @@ static gint panel_height (void)
 static GtkWidget *
 volume_icon (const gchar *name)
 {
-    const gchar *theme_name = "DapeOS";
-    GtkIconTheme *theme = gtk_icon_theme_new ();
-    gtk_icon_theme_set_custom_theme (theme, theme_name);
+    GtkIconTheme *theme = gtk_icon_theme_get_default ();
     GdkPixbuf *pix = gtk_icon_theme_load_icon (theme, name, 24, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
-    g_object_unref (theme);
     if (pix) {
         GtkWidget *img = gtk_image_new_from_pixbuf (pix);
         g_object_unref (pix);
@@ -3462,6 +3459,9 @@ static void build_ui (void)
     gtk_grid_set_row_spacing (GTK_GRID (grid), 8);
     GtkWidget *net_t, *net_o, *bt_t, *bt_o, *night_t, *night_o;
     GtkWidget *net = make_tile ("Network", "", &net_label, &net_status_label, &net_t, &net_o);
+    gtk_label_set_ellipsize (GTK_LABEL (net_label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_max_width_chars (GTK_LABEL (net_label), 12);
+    gtk_widget_set_size_request (net_label, 110, -1);
     GtkWidget *bt = make_tile ("Bluetooth", "", &bt_label, &bt_status_label, &bt_t, &bt_o);
     gtk_label_set_ellipsize (GTK_LABEL (bt_label), PANGO_ELLIPSIZE_END);
     gtk_label_set_max_width_chars (GTK_LABEL (bt_label), 12);
@@ -3609,6 +3609,10 @@ activate (GtkApplication *app, gpointer data)
     qs_trace_mark ("activate");
     (void) data;
     if (window == NULL) {
+        const gchar *panel_theme = g_getenv ("PANEL_ICON_THEME");
+        if (!panel_theme || !*panel_theme)
+            panel_theme = is_dark () ? "Papirus-Dark" : "Papirus-Light";
+        gtk_icon_theme_set_custom_theme (gtk_icon_theme_get_default (), panel_theme);
         build_ui ();
         gtk_application_add_window (app, GTK_WINDOW (window));
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
@@ -3650,7 +3654,6 @@ int main (int argc, char **argv)
 {
     qs_trace_init ();
     qs_trace_mark ("main-start");
-    unsetenv ("GTK_THEME");
     application = gtk_application_new ("cz.dapeos.quicksettings", G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect (application, "activate", G_CALLBACK (activate), NULL);
     int status = g_application_run (G_APPLICATION (application), argc, argv);
