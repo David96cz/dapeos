@@ -14,12 +14,12 @@ case "$theme_name" in
     *[Dd]ark*) want="dark" ;;
     *)         want="light" ;;
 esac
-panel_dark="$(xfconf-query -c xfce4-panel -p /panels/dark-mode 2>/dev/null || true)"
-if [ "$panel_dark" = "true" ]; then
-    panel_want="light"
-else
-    panel_want="dark"
-fi
+panel_want="dark"
+for prop in $(xfconf-query -c xfce4-panel -l 2>/dev/null | grep '/dark-mode$'); do
+    if [ "$(xfconf-query -c xfce4-panel -p "$prop" 2>/dev/null)" = "true" ]; then
+        panel_want="light"
+    fi
+done
 
 build_theme() {
     src="$1"; dest="$2"; out_name="$3"; out_comment="$4"; hidden="$5"
