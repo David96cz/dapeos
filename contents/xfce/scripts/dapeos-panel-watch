@@ -22,14 +22,14 @@ restart_panel() {
 watch_channel() {
     xfconf-query -c "$1" -m 2>/dev/null | while IFS= read -r line; do
         case "$line" in
+            *IconThemeName*)
+                ;;
             *ThemeName*)
                 dapeos-theme-sync
                 ;;
             *dark-mode*)
                 sleep 0.4
                 restart_panel
-                ;;
-            *IconThemeName*)
                 ;;
         esac
     done
