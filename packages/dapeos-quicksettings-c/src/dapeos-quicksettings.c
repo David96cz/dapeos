@@ -827,6 +827,26 @@ static gboolean is_dark (void)
     return dark;
 }
 
+static const gchar *
+panel_icon_theme (void)
+{
+    const gchar *env = g_getenv ("PANEL_ICON_THEME");
+    if (env && *env) return env;
+    gchar *list = run_cmd ("xfconf-query -c xfce4-panel -l 2>/dev/null");
+    gchar **lines = g_strsplit (list, "\n", -1);
+    gboolean dark = FALSE;
+    for (guint i = 0; lines[i]; i++) {
+        if (!g_str_has_suffix (lines[i], "/dark-mode")) continue;
+        gchar *cmd = g_strdup_printf ("xfconf-query -c xfce4-panel -p '%s' 2>/dev/null", lines[i]);
+        gchar *val = run_cmd (cmd);
+        if (g_strcmp0 (val, "true") == 0) dark = TRUE;
+        g_free (val); g_free (cmd);
+    }
+    g_strfreev (lines);
+    g_free (list);
+    return dark ? "Papirus-Dark" : "Papirus-Light";
+}
+
 static gint panel_height (void)
 {
     gchar *out = run_cmd ("xfconf-query -c xfce4-panel -p /panels/panel-2/size 2>/dev/null");
@@ -838,8 +858,10 @@ static gint panel_height (void)
 static GtkWidget *
 volume_icon (const gchar *name)
 {
-    GtkIconTheme *theme = gtk_icon_theme_get_default ();
+    GtkIconTheme *theme = gtk_icon_theme_new ();
+    gtk_icon_theme_set_custom_theme (theme, panel_icon_theme ());
     GdkPixbuf *pix = gtk_icon_theme_load_icon (theme, name, 24, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
+    g_object_unref (theme);
     if (pix) {
         GtkWidget *img = gtk_image_new_from_pixbuf (pix);
         g_object_unref (pix);
@@ -3614,10 +3636,7 @@ activate (GtkApplication *app, gpointer data)
     qs_trace_mark ("activate");
     (void) data;
     if (window == NULL) {
-        const gchar *panel_theme = g_getenv ("PANEL_ICON_THEME");
-        if (!panel_theme || !*panel_theme)
-            panel_theme = is_dark () ? "Papirus-Dark" : "Papirus-Light";
-        gtk_icon_theme_set_custom_theme (gtk_icon_theme_get_default (), panel_theme);
+        gtk_icon_theme_set_custom_theme (gtk_icon_theme_get_default (), panel_icon_theme ());
         build_ui ();
         gtk_application_add_window (app, GTK_WINDOW (window));
         gtk_stack_set_visible_child_name (GTK_STACK (qstack), "main");
