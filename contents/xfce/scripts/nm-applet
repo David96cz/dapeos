@@ -11,14 +11,14 @@ done
 if [ "$dark" = "true" ]; then
     export GTK_THEME=Adwaita:dark
     if [ -d /usr/share/icons/Papirus-Panel ]; then
-        export PANEL_ICON_THEME=Papirus-Panel
+        export PANEL_ICON_THEME=Papirus-Dark
     else
         export PANEL_ICON_THEME=Papirus-Dark
     fi
 else
     export GTK_THEME=Adwaita:light
     if [ -d /usr/share/icons/Papirus-Panel-Light ]; then
-        export PANEL_ICON_THEME=Papirus-Panel-Light
+        export PANEL_ICON_THEME=Papirus-Dark-Light
     else
         export PANEL_ICON_THEME=Papirus-Light
     fi
