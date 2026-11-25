@@ -42,6 +42,9 @@ Type=Scalable
 Context=Applications
 T
 
+for icon in "$BASE"/22x22/apps/thunar.svg "$BASE"/22x22/apps/system-file-manager.svg; do
+    [ -f "$icon" ] && cp -f "$icon" "$DST/scalable/thunar.svg" && break
+done
 chmod -R go+rX "$DST"
 echo "Hotovo: $DST"
 
