@@ -406,20 +406,3 @@ genmon_event_setup() {
     apt-get install -y "$deb" || return 0
     apt-mark hold xfce4-genmon-plugin >/dev/null 2>&1 || true
 }
-
-
-dapeos_quicksettings_c_setup() {
-    local arch deb
-    arch="$(dpkg --print-architecture)"
-    deb="$(find "$BASE_DIR/packages/dapeos-quicksettings-c" -maxdepth 1 \
-        -name "dapeos-quicksettings-c_*_${arch}.deb" 2>/dev/null | head -n1)"
-    if [ -n "$deb" ]; then
-        log "Instaluji C quick settings: $(basename "$deb")"
-        apt-get install -y "$deb" || return 0
-    elif [ -x "$BASE_DIR/packages/dapeos-quicksettings-c/dapeos-quicksettings-c" ]; then
-        install -m 755 "$BASE_DIR/packages/dapeos-quicksettings-c/dapeos-quicksettings-c" \
-            /usr/local/bin/dapeos-quicksettings-c
-    else
-        log "C quick settings pro $arch nejsou k dispozici."
-    fi
-}

@@ -24,13 +24,4 @@ else
     fi
 fi
 
-if [ -x /usr/bin/xfce4-panel.actual ]; then
-    exec /usr/bin/xfce4-panel.actual "$@"
-elif [ -x /usr/bin/xfce4-panel.orig ]; then
-    exec /usr/bin/xfce4-panel.orig "$@"
-elif [ -x /usr/bin/xfce4-panel.bin ]; then
-    exec /usr/bin/xfce4-panel.bin "$@"
-elif [ -x /usr/bin/xfce4-panel.real ]; then
-    exec /usr/bin/xfce4-panel.real "$@"
-fi
 exec /usr/bin/xfce4-panel "$@"
